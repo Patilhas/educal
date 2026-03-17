@@ -1,0 +1,22 @@
+gantt
+    title Schedule Final Project - Educal
+    dateFormat DD-MM-YYYY
+    axisFormat %d/%m
+    todayMarker off
+
+    section Deliverables
+    Initial Report Delivery         :milestone, m1, 2026-03-13, 0d
+    Intermidiate Report Delivery      :milestone, m2, 2026-05-01, 0d
+    Final Report Delivery           :milestone, m3, 2026-07-11, 0d
+
+    section Backend
+    API Architecture and Setup        :b1, 2026-03-14, 40d
+    Business Logic and Database :b2, after b1, 55d
+    Testing     :b3, after b2, 15d
+
+    section Frontend
+    Base Interface and Prototyping     :f1, 2026-03-16, 45d
+    Feature Development:f2, after f1, 55d
+    Polishing         :f3, after f2, 15d
+
+https://mermaid.live/edit#pako:eNp1k9uOmzAQhl_FsrR3pjUhZFvuNqWRVmqkqFupasXNBA_gLtjImFXSKO9eg4Fme5grM4dv_hnsC821QJrQEpS1mSLOrLQ1kqe8QtG7w04qqMnB6B-YWxKQj6LPofapAizutGnAkjQN9vvgmzMfgpPsptCdeHvXTGwt4LwH84yG6KLIlHd3Di21IinW8gUNHGvsfORRSStd_8_YamPnhDOZLWmky7VaISNNyMiKrzYBj4IwYoSLmWHRNFJIp_bfoFeU1UyJAx7-pvg9_E_HH4xoZtwH4cR4PekW8mdUE_rh8EgeTF5J66K9QQJKkCe0fbvAj7ezrRlZz7K2fScVdh35pEuZj5UpWDhCh67KzQKFm54M9XE81XxxOqUqJ3K05LjsMP5L6s5ot8BZ63YAjxstIPdK3d2w2p7bBVncit04sXPjHcI4X4ovWOu2QWWTYtFY3Go86Fp21Yz02EVp4ZVSRksjBU2s6ZHRxv1lGD7pZWBk1FbYYEYTd8wo8z5_0Z3v4vtktO9wD6evUthq8BdQd8hugkvkHeeD-5qpq-vcgvqudTM3N7ovK5r4atq3w9NIJZQGmsVr3BbRfNC9sjQJV5vVSKHJhZ5oEvOY0TNN-BvuLFxHPA7D9f16w99H9_GV0Z9jt5BRFNJqs_cPd3y_118-6iQB

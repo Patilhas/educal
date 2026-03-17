@@ -1,0 +1,16 @@
+Tecnologias:
+- NextJS
+
+Objetivos:
+- Calendário académico que dê a opção de passagem de eventos de um ano letivo para o ano a seguir, com opção futura para novos eventos/edições. Cada evento deve ter a possibilidade de ter vários dias e também emails com certos destinatários para estar anexado ao evento.
+- Sistema de regras que não pode acontecer a certos eventos: "Evento não pode acontecer a fins de semana e feriados"
+- Sistema de notificações customizado para cada tipo de evento com base em dias úteis
+
+Plano:
+- Primeiro criar um calendário com sistema CRUD (Nome, descrição, Destinatário do email e corpo do email)
+- Migração do calendário entre anos, com confirmação de cada evento a respeitar as regras e possibilidade de mudar os textos/datas se quiserem
+- Implementar sistema de regras como "Evento não pode acontecer a fins de semana e feriados"
+
+Futuro:
+- Módulo de criação de PDFs
+- Gestão de equipa, extensível para ser partilhado com outros serviços
