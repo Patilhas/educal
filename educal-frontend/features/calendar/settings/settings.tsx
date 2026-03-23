@@ -44,11 +44,11 @@ export function Settings() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56">
-        <DropdownMenuLabel>Calendar settings</DropdownMenuLabel>
+        <DropdownMenuLabel>Definições do Calendário</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem>
-            Use dark mode
+            Usar modo escuro
             <DropdownMenuShortcut>
               <Switch
                 icon={
@@ -67,7 +67,7 @@ export function Settings() {
           </DropdownMenuItem>
 
           <DropdownMenuItem>
-            Use dot badge
+            Usar emblema circular
             <DropdownMenuShortcut>
               <Switch
                 icon={
@@ -85,7 +85,7 @@ export function Settings() {
             </DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuItem>
-            Use 24 hour format
+            Usar formato 24h
             <DropdownMenuShortcut>
               <Switch
                 icon={
@@ -102,7 +102,7 @@ export function Settings() {
                       strokeLinejoin="round"
                       className="icon icon-tabler icons-tabler-outline icon-tabler-clock-24"
                     >
-                      <title>24 Hour Format</title>
+                      <title>Formato 24 Horas</title>
                       <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                       <path d="M3 12a9 9 0 0 0 5.998 8.485m12.002 -8.485a9 9 0 1 0 -18 0" />
                       <path d="M12 7v5" />
@@ -123,7 +123,7 @@ export function Settings() {
                       strokeLinejoin="round"
                       className="icon icon-tabler icons-tabler-outline icon-tabler-clock-12"
                     >
-                      <title>12 Hour Format</title>
+                      <title>Formato 12 Horas</title>
                       <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                       <path d="M3 12a9 9 0 0 0 9 9m9 -9a9 9 0 1 0 -18 0" />
                       <path d="M12 7v5l.5 .5" />
@@ -140,15 +140,15 @@ export function Settings() {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuLabel>Agenda view group by</DropdownMenuLabel>
+          <DropdownMenuLabel>Agrupar agenda por</DropdownMenuLabel>
           <DropdownMenuRadioGroup
             value={agendaModeGroupBy}
             onValueChange={(value) =>
               setAgendaModeGroupBy(value as "date" | "color")
             }
           >
-            <DropdownMenuRadioItem value="date">Date</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="color">Color</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="date">Data</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="color">Cor</DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
         </DropdownMenuGroup>
       </DropdownMenuContent>

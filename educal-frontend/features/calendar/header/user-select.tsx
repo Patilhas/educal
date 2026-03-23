@@ -32,7 +32,7 @@ export function UserSelect() {
               </Avatar>
             ))}
           </AvatarGroup>
-          All
+          Todos
         </SelectItem>
 
         {users.map((user) => (

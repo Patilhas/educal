@@ -1,4 +1,4 @@
-import { getYear, isSameDay, isSameMonth } from "date-fns";
+import {formatDate, getYear, isSameDay, isSameMonth} from "date-fns";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { staggerContainer, transition } from "@/features/calendar/animations";
@@ -7,28 +7,12 @@ import { EventListDialog } from "@/features/calendar/dialogs/events-list-dialog"
 import { getCalendarCells } from "@/features/calendar/helpers";
 import type { IEvent } from "@/features/calendar/interfaces";
 import { EventBullet } from "@/features/calendar/views/month-view/event-bullet";
+import {WEEK_DAYS} from "@/features/calendar/constants";
 
 interface IProps {
   singleDayEvents: IEvent[];
   multiDayEvents: IEvent[];
 }
-
-const MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-
-const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
 export function CalendarYearView({ singleDayEvents, multiDayEvents }: IProps) {
   const { selectedDate, setSelectedDate } = useCalendar();
@@ -44,8 +28,9 @@ export function CalendarYearView({ singleDayEvents, multiDayEvents }: IProps) {
         variants={staggerContainer}
         className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 auto-rows-fr"
       >
-        {MONTHS.map((month, monthIndex) => {
+        {[...Array(12)].map((_, monthIndex) => {
           const monthDate = new Date(currentYear, monthIndex, 1);
+          const month = formatDate(monthDate, "MMMM");
           const cells = getCalendarCells(monthDate);
 
           return (
@@ -70,7 +55,7 @@ export function CalendarYearView({ singleDayEvents, multiDayEvents }: IProps) {
               </button>
 
               <div className="grid grid-cols-7 text-center text-xs font-medium text-muted-foreground py-2">
-                {WEEKDAYS.map((day) => (
+                {WEEK_DAYS.map((day) => (
                   <div key={day} className="p-1">
                     {day}
                   </div>

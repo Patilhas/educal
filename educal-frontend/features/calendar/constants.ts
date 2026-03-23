@@ -8,3 +8,5 @@ export const COLORS: TEventColor[] = [
 	"purple",
 	"orange",
 ];
+
+export const WEEK_DAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];

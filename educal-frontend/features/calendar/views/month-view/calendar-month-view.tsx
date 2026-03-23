@@ -13,13 +13,12 @@ import {
 
 import type { IEvent } from "@/features/calendar/interfaces";
 import { DayCell } from "@/features/calendar/views/month-view/day-cell";
+import {WEEK_DAYS} from "@/features/calendar/constants";
 
 interface IProps {
 	singleDayEvents: IEvent[];
 	multiDayEvents: IEvent[];
 }
-
-const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export function CalendarMonthView({ singleDayEvents, multiDayEvents }: IProps) {
 	const { selectedDate } = useCalendar();

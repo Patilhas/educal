@@ -46,7 +46,7 @@ export const AgendaEvents: FC = () => {
   return (
     <Command className="py-4 h-[80vh] bg-transparent">
       <div className="mb-4 mx-4">
-        <CommandInput placeholder="Type a command or search..." />
+        <CommandInput placeholder="Escreve um comando ou pesquisa..." />
       </div>
       <CommandList className="max-h-max px-3 border-t">
         {groupedAndSortedEvents.map(([date, groupedEvents]) => (
