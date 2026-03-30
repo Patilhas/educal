@@ -1,6 +1,10 @@
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import type { ControllerRenderProps, UseFormReturn } from "react-hook-form";
+import type {
+  ControllerRenderProps,
+  FieldValues,
+  UseFormReturn,
+} from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -17,11 +21,10 @@ import {
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
-import type { TEventFormData } from "@/features/calendar/schemas";
 
 interface DatePickerProps {
-  form: UseFormReturn<TEventFormData>;
-  field: ControllerRenderProps<TEventFormData, "endDate" | "startDate">;
+  form: UseFormReturn<FieldValues>;
+  field: ControllerRenderProps<FieldValues, string>;
 }
 
 export function DateTimePicker({ form, field }: DatePickerProps) {
@@ -29,12 +32,13 @@ export function DateTimePicker({ form, field }: DatePickerProps) {
 
   function handleDateSelect(date: Date | undefined) {
     if (date) {
-      form.setValue(field.name, date);
+      form.setValue(field.name, date, { shouldValidate: true });
     }
   }
 
   function handleTimeChange(type: "hour" | "minute" | "ampm", value: string) {
-    const currentDate = form.getValues(field.name) || new Date();
+    const currentValue = form.getValues(field.name);
+    const currentDate = currentValue instanceof Date ? currentValue : new Date();
     const newDate = new Date(currentDate);
 
     if (type === "hour") {
@@ -50,7 +54,7 @@ export function DateTimePicker({ form, field }: DatePickerProps) {
       }
     }
 
-    form.setValue(field.name, newDate);
+    form.setValue(field.name, newDate, { shouldValidate: true });
   }
 
   return (

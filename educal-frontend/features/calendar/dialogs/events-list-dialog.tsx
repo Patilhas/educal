@@ -71,7 +71,7 @@ export function EventListDialog({
                 >
                   <EventBullet color={event.color} />
                   <div className="flex justify-between items-center w-full">
-                    <p className="text-sm font-medium">{event.title}</p>
+                    <p className="text-sm font-medium">{event.name}</p>
                     <p className="text-xs">
                       {formatTime(event.startDate, use24HourFormat)}
                     </p>

@@ -1,4 +1,10 @@
-import { COLORS } from "@/features/calendar/constants";
+import {
+	COLORS,
+	EVENT_CATEGORIES,
+	EVENT_CLASSIFICATIONS,
+	EVENT_RESPONSIBLES,
+	EVENT_STATUSES,
+} from "@/features/calendar/constants";
 import type { IEvent, IUser } from "@/features/calendar/interfaces";
 
 export const USERS_MOCK: IUser[] = [
@@ -133,10 +139,32 @@ const mockGenerator = (numberOfEvents: number): IEvent[] => {
 		id: currentId++,
 		startDate: new Date(now.getTime() - 30 * 60000).toISOString(),
 		endDate: new Date(now.getTime() + 30 * 60000).toISOString(),
+		name: events[Math.floor(Math.random() * events.length)],
 		title: events[Math.floor(Math.random() * events.length)],
+		objective:
+			"Garantir que a atividade anual e as suas ocorrencias ficam planeadas para o ano letivo.",
+		daysBetweenOccurrences: (Math.floor(Math.random() * 90) + 1).toString(),
+		category:
+			EVENT_CATEGORIES[Math.floor(Math.random() * EVENT_CATEGORIES.length)],
+		classification:
+			EVENT_CLASSIFICATIONS[
+				Math.floor(Math.random() * EVENT_CLASSIFICATIONS.length)
+			],
+		status: EVENT_STATUSES[Math.floor(Math.random() * EVENT_STATUSES.length)],
+		responsible:
+			EVENT_RESPONSIBLES[Math.floor(Math.random() * EVENT_RESPONSIBLES.length)],
 		color: COLORS[Math.floor(Math.random() * COLORS.length)],
 		description:
 			"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+		occurrences: [
+			{
+				id: crypto.randomUUID(),
+				description:
+					"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt.",
+				startDate: new Date(now.getTime() - 30 * 60000).toISOString(),
+				endDate: new Date(now.getTime() + 30 * 60000).toISOString(),
+			},
+		],
 		user: randomUser,
 	};
 
@@ -181,10 +209,31 @@ const mockGenerator = (numberOfEvents: number): IEvent[] => {
 			id: currentId++,
 			startDate: startDate.toISOString(),
 			endDate: endDate.toISOString(),
-			title: events[Math.floor(Math.random() * events.length)],
+			name: events[Math.floor(Math.random() * events.length)],
+			objective:
+				"Executar e acompanhar uma etapa do planeamento academico com regras definidas.",
+			daysBetweenOccurrences: (Math.floor(Math.random() * 120) + 1).toString(),
+			category:
+				EVENT_CATEGORIES[Math.floor(Math.random() * EVENT_CATEGORIES.length)],
+			classification:
+				EVENT_CLASSIFICATIONS[
+					Math.floor(Math.random() * EVENT_CLASSIFICATIONS.length)
+				],
+			status: EVENT_STATUSES[Math.floor(Math.random() * EVENT_STATUSES.length)],
+			responsible:
+				EVENT_RESPONSIBLES[Math.floor(Math.random() * EVENT_RESPONSIBLES.length)],
 			color: COLORS[Math.floor(Math.random() * COLORS.length)],
 			description:
 				"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+			occurrences: [
+				{
+					id: crypto.randomUUID(),
+					description:
+						"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt.",
+					startDate: startDate.toISOString(),
+					endDate: endDate.toISOString(),
+				},
+			],
 			user: USERS_MOCK[Math.floor(Math.random() * USERS_MOCK.length)],
 		});
 	}

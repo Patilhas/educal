@@ -124,7 +124,7 @@ export function MonthEventBadge({
                     Day {eventCurrentDay} of {eventTotalDays} •{" "}
                   </span>
                 )}
-                {event.title}
+                {event.name}
               </p>
             )}
           </div>

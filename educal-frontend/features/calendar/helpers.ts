@@ -61,7 +61,7 @@ export function rangeText(view: TCalendarView, date: Date): string {
 			end = endOfMonth(date);
 			break;
 		default:
-			return "Error while formatting";
+			return "Erro ao formatar";
 	}
 
 	return `${format(start, FORMAT_STRING)} - ${format(end, FORMAT_STRING)}`;

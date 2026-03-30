@@ -1,9 +1,8 @@
 import { addMinutes, format, set } from "date-fns";
 import { type ReactNode, useEffect, useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { DateTimePicker } from "@/components/ui/date-time-picker";
 import {
   Form,
   FormControl,
@@ -31,12 +30,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { COLORS } from "@/features/calendar/constants";
+import {
+  COLORS,
+  EVENT_CATEGORIES,
+  EVENT_CLASSIFICATIONS,
+  EVENT_RESPONSIBLES,
+  EVENT_STATUSES,
+} from "@/features/calendar/constants";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import { useDisclosure } from "@/features/calendar/hooks";
 import type { IEvent } from "@/features/calendar/interfaces";
 import { eventSchema, type TEventFormData } from "@/features/calendar/schemas";
-import {standardSchemaResolver} from "@hookform/resolvers/standard-schema";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 interface IProps {
   children: ReactNode;
@@ -61,6 +66,7 @@ export function AddEditEventDialog({
         const now = new Date();
         return { startDate: now, endDate: addMinutes(now, 30) };
       }
+
       const start = startTime
         ? set(new Date(startDate), {
             hours: startTime.hour,
@@ -68,8 +74,8 @@ export function AddEditEventDialog({
             seconds: 0,
           })
         : new Date(startDate);
-      const end = addMinutes(start, 30);
-      return { startDate: start, endDate: end };
+
+      return { startDate: start, endDate: addMinutes(start, 30) };
     }
 
     return {
@@ -79,33 +85,98 @@ export function AddEditEventDialog({
   }, [startDate, startTime, event, isEditing]);
 
   const form = useForm<TEventFormData>({
-    resolver: standardSchemaResolver(eventSchema),
+    resolver: zodResolver(eventSchema),
     defaultValues: {
-      title: event?.title ?? "",
-      description: event?.description ?? "",
-      startDate: initialDates.startDate,
-      endDate: initialDates.endDate,
+      name: event?.name ?? "",
+      objective: event?.objective ?? "",
+      daysBetweenOccurrences: event?.daysBetweenOccurrences ?? "",
+      category: event?.category ?? EVENT_CATEGORIES[0],
+      classification: event?.classification ?? EVENT_CLASSIFICATIONS[0],
+      status: event?.status ?? EVENT_STATUSES[0],
+      responsible: event?.responsible ?? EVENT_RESPONSIBLES[0],
       color: event?.color ?? "blue",
+      occurrences:
+        event?.occurrences?.map((occurrence) => ({
+          id: occurrence.id,
+          description: occurrence.description,
+          startDate: new Date(occurrence.startDate),
+          endDate: new Date(occurrence.endDate),
+        })) ?? [
+          {
+            id: crypto.randomUUID(),
+            description: event?.description ?? "",
+            startDate: initialDates.startDate,
+            endDate: initialDates.endDate,
+          },
+        ],
     },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "occurrences",
   });
 
   useEffect(() => {
     form.reset({
-      title: event?.title ?? "",
-      description: event?.description ?? "",
-      startDate: initialDates.startDate,
-      endDate: initialDates.endDate,
+      name: event?.name ?? "",
+      objective: event?.objective ?? "",
+      daysBetweenOccurrences: event?.daysBetweenOccurrences ?? "",
+      category: event?.category ?? EVENT_CATEGORIES[0],
+      classification: event?.classification ?? EVENT_CLASSIFICATIONS[0],
+      status: event?.status ?? EVENT_STATUSES[0],
+      responsible: event?.responsible ?? EVENT_RESPONSIBLES[0],
       color: event?.color ?? "blue",
+      occurrences:
+        event?.occurrences?.map((occurrence) => ({
+          id: occurrence.id,
+          description: occurrence.description,
+          startDate: new Date(occurrence.startDate),
+          endDate: new Date(occurrence.endDate),
+        })) ?? [
+          {
+            id: crypto.randomUUID(),
+            description: event?.description ?? "",
+            startDate: initialDates.startDate,
+            endDate: initialDates.endDate,
+          },
+        ],
     });
   }, [event, initialDates, form]);
 
+  const toInputDate = (date: Date) => {
+    const adjusted = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return adjusted.toISOString().slice(0, 16);
+  };
+
   const onSubmit = (values: TEventFormData) => {
     try {
+      const sortedOccurrences = [...values.occurrences].sort(
+        (a, b) => a.startDate.getTime() - b.startDate.getTime(),
+      );
+
+      const firstOccurrence = sortedOccurrences[0];
+      const id = isEditing ? event.id : Math.floor(Math.random() * 1000000);
+
       const formattedEvent: IEvent = {
-        ...values,
-        startDate: format(values.startDate, "yyyy-MM-dd'T'HH:mm:ss"),
-        endDate: format(values.endDate, "yyyy-MM-dd'T'HH:mm:ss"),
-        id: isEditing ? event.id : Math.floor(Math.random() * 1000000),
+        id,
+        name: values.name,
+        objective: values.objective,
+        daysBetweenOccurrences: values.daysBetweenOccurrences,
+        category: values.category,
+        classification: values.classification,
+        status: values.status,
+        responsible: values.responsible,
+        startDate: format(firstOccurrence.startDate, "yyyy-MM-dd'T'HH:mm:ss"),
+        endDate: format(firstOccurrence.endDate, "yyyy-MM-dd'T'HH:mm:ss"),
+        description: firstOccurrence.description,
+        occurrences: sortedOccurrences.map((occurrence) => ({
+          id: occurrence.id,
+          description: occurrence.description,
+          startDate: format(occurrence.startDate, "yyyy-MM-dd'T'HH:mm:ss"),
+          endDate: format(occurrence.endDate, "yyyy-MM-dd'T'HH:mm:ss"),
+        })),
+        color: values.color,
         user: isEditing
           ? event.user
           : {
@@ -113,22 +184,23 @@ export function AddEditEventDialog({
               name: "Jeraidi Yassir",
               picturePath: null,
             },
-        color: values.color,
       };
 
       if (isEditing) {
         updateEvent(formattedEvent);
-        toast.success("Event updated successfully");
+        toast.success("Evento atualizado com sucesso");
       } else {
         addEvent(formattedEvent);
-        toast.success("Event created successfully");
+        toast.success("Evento criado com sucesso");
       }
 
       onClose();
       form.reset();
     } catch (error) {
       console.error(`Error ${isEditing ? "editing" : "adding"} event:`, error);
-      toast.error(`Failed to ${isEditing ? "edit" : "add"} event`);
+      toast.error(
+        `Nao foi possivel ${isEditing ? "editar" : "adicionar"} o evento`,
+      );
     }
   };
 
@@ -137,11 +209,13 @@ export function AddEditEventDialog({
       <ModalTrigger asChild>{children}</ModalTrigger>
       <ModalContent>
         <ModalHeader>
-          <ModalTitle>{isEditing ? "Edit Event" : "Add New Event"}</ModalTitle>
+          <ModalTitle>
+            {isEditing ? "Editar evento" : "Adicionar novo evento"}
+          </ModalTitle>
           <ModalDescription>
             {isEditing
-              ? "Modify your existing event."
-              : "Create a new event for your calendar."}
+              ? "Altere os dados do evento existente."
+              : "Crie um novo evento no calendário."}
           </ModalDescription>
         </ModalHeader>
 
@@ -153,16 +227,13 @@ export function AddEditEventDialog({
           >
             <FormField
               control={form.control}
-              name="title"
+              name="name"
               render={({ field, fieldState }) => (
                 <FormItem>
-                  <FormLabel htmlFor="title" className="required">
-                    Title
-                  </FormLabel>
+                  <FormLabel className="required">Nome</FormLabel>
                   <FormControl>
                     <Input
-                      id="title"
-                      placeholder="Enter a title"
+                      placeholder="Introduza o nome do evento"
                       {...field}
                       className={fieldState.invalid ? "border-red-500" : ""}
                     />
@@ -171,44 +242,163 @@ export function AddEditEventDialog({
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
-              name="startDate"
-              render={({ field }) => (
-                <DateTimePicker form={form} field={field} />
+              name="objective"
+              render={({ field, fieldState }) => (
+                <FormItem>
+                  <FormLabel className="required">Objetivo</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      placeholder="Descreva o objetivo do evento"
+                      className={fieldState.invalid ? "border-red-500" : ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
-              name="endDate"
-              render={({ field }) => (
-                <DateTimePicker form={form} field={field} />
+              name="daysBetweenOccurrences"
+              render={({ field, fieldState }) => (
+                <FormItem>
+                  <FormLabel>Dias entre ocorrências</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      inputMode="numeric"
+                      placeholder="ex.: 30"
+                      className={fieldState.invalid ? "border-red-500" : ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
               )}
             />
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="required">Categoria</FormLabel>
+                    <FormControl>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a categoria" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {EVENT_CATEGORIES.map((category) => (
+                            <SelectItem value={category} key={category}>
+                              {category}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="classification"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="required">Classificação</FormLabel>
+                    <FormControl>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a classificação" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {EVENT_CLASSIFICATIONS.map((classification) => (
+                            <SelectItem value={classification} key={classification}>
+                              {classification}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="required">Estado</FormLabel>
+                    <FormControl>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o estado" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {EVENT_STATUSES.map((status) => (
+                            <SelectItem value={status} key={status}>
+                              {status}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="responsible"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="required">Responsável</FormLabel>
+                    <FormControl>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o responsável" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {EVENT_RESPONSIBLES.map((responsible) => (
+                            <SelectItem value={responsible} key={responsible}>
+                              {responsible}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <FormField
               control={form.control}
               name="color"
               render={({ field, fieldState }) => (
                 <FormItem>
-                  <FormLabel className="required">Variant</FormLabel>
+                  <FormLabel className="required">Cor</FormLabel>
                   <FormControl>
                     <Select value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger
-                        className={`w-full ${
-                          fieldState.invalid ? "border-red-500" : ""
-                        }`}
+                        className={fieldState.invalid ? "border-red-500" : ""}
                       >
-                        <SelectValue placeholder="Select a variant" />
+                        <SelectValue placeholder="Selecione uma cor" />
                       </SelectTrigger>
                       <SelectContent>
                         {COLORS.map((color) => (
                           <SelectItem value={color} key={color}>
-                            <div className="flex items-center gap-2">
-                              <div
-                                className={`size-3.5 rounded-full bg-${color}-600 dark:bg-${color}-700`}
-                              />
-                              {color}
-                            </div>
+                            {color}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -218,36 +408,121 @@ export function AddEditEventDialog({
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field, fieldState }) => (
-                <FormItem>
-                  <FormLabel className="required">Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder="Enter a description"
-                      className={fieldState.invalid ? "border-red-500" : ""}
+
+            <div className="space-y-3 rounded-md border p-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium">Ocorrências</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    append({
+                      id: crypto.randomUUID(),
+                      description: "",
+                      startDate: initialDates.startDate,
+                      endDate: initialDates.endDate,
+                    })
+                  }
+                >
+                  Adicionar ocorrência
+                </Button>
+              </div>
+
+              {fields.map((occurrence, index) => (
+                <div key={occurrence.id} className="space-y-3 rounded-md border p-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Ocorrência {index + 1}
+                    </p>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      disabled={fields.length === 1}
+                      onClick={() => remove(index)}
+                    >
+                      Remover
+                    </Button>
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name={`occurrences.${index}.description`}
+                    render={({ field, fieldState }) => (
+                      <FormItem>
+                        <FormLabel className="required">Descrição</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            {...field}
+                            placeholder="Descreva esta ocorrência"
+                            className={fieldState.invalid ? "border-red-500" : ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name={`occurrences.${index}.startDate`}
+                      render={({ field, fieldState }) => (
+                        <FormItem>
+                          <FormLabel className="required">Data de início</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="datetime-local"
+                              value={field.value ? toInputDate(field.value) : ""}
+                              onChange={(event) =>
+                                field.onChange(new Date(event.target.value))
+                              }
+                              className={fieldState.invalid ? "border-red-500" : ""}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+
+                    <FormField
+                      control={form.control}
+                      name={`occurrences.${index}.endDate`}
+                      render={({ field, fieldState }) => (
+                        <FormItem>
+                          <FormLabel className="required">Data de fim</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="datetime-local"
+                              value={field.value ? toInputDate(field.value) : ""}
+                              onChange={(event) =>
+                                field.onChange(new Date(event.target.value))
+                              }
+                              className={fieldState.invalid ? "border-red-500" : ""}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
           </form>
         </Form>
+
         <ModalFooter className="flex justify-end gap-2">
           <ModalClose asChild>
             <Button type="button" variant="outline">
-              Cancel
+              Cancelar
             </Button>
           </ModalClose>
           <Button form="event-form" type="submit">
-            {isEditing ? "Save Changes" : "Create Event"}
+            {isEditing ? "Guardar alterações" : "Criar evento"}
           </Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
   );
 }
+

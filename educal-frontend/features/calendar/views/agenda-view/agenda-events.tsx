@@ -80,7 +80,7 @@ export const AgendaEvents: FC = () => {
                         <Avatar>
                           <AvatarImage src="" alt="@shadcn" />
                           <AvatarFallback className={getBgColor(event.color)}>
-                            {getFirstLetters(event.title)}
+                            {getFirstLetters(event.name)}
                           </AvatarFallback>
                         </Avatar>
                       )}
@@ -91,7 +91,7 @@ export const AgendaEvents: FC = () => {
                             "text-foreground": badgeVariant === "dot",
                           })}
                         >
-                          {event.title}
+                          {event.name}
                         </p>
                         <p className="text-muted-foreground text-sm line-clamp-1 text-ellipsis md:text-clip w-1/3">
                           {event.description}

@@ -117,9 +117,9 @@ export function DndProvider({ children }: DndProviderProps) {
           endDate: newEndDate.toISOString(),
         };
         updateEvent(updatedEvent);
-        toast.success("Event updated successfully");
+        toast.success("Evento atualizado com sucesso");
       } catch {
-        toast.error("Failed to update event");
+        toast.error("Não foi possível atualizar o evento");
       }
     },
     [updateEvent],

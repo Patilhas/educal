@@ -212,7 +212,7 @@ export function CalendarDayView({ singleDayEvents, multiDayEvents }: IProps) {
                   return (
                     <div key={event.id} className="space-y-1.5">
                       <p className="line-clamp-2 text-sm font-semibold">
-                        {event.title}
+                        {event.name}
                       </p>
 
                       {user && (
