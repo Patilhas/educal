@@ -9,8 +9,8 @@ import {
 import {useCalendar} from "@/features/calendar/contexts/calendar-context";
 import {AddEditEventDialog} from "@/features/calendar/dialogs/add-edit-event-dialog";
 import {DroppableArea} from "@/features/calendar/dnd/droppable-area";
-import {groupEvents} from "@/features/calendar/helpers";
-import type {IEvent} from "@/features/calendar/interfaces";
+import {groupOccurrences} from "@/features/calendar/helpers";
+import type {IEvent, IOccurrence} from "@/features/calendar/interfaces";
 import {CalendarTimeline} from "@/features/calendar/views/week-and-day-view/calendar-time-line";
 import {RenderGroupedEvents} from "@/features/calendar/views/week-and-day-view/render-grouped-events";
 import {
@@ -18,11 +18,11 @@ import {
 } from "@/features/calendar/views/week-and-day-view/week-view-multi-day-events-row";
 
 interface IProps {
-    singleDayEvents: IEvent[];
-    multiDayEvents: IEvent[];
+    singleDayOccurrences: { event: IEvent; occurrence: IOccurrence }[];
+    multiDayOccurrences: { event: IEvent; occurrence: IOccurrence }[];
 }
 
-export function CalendarWeekView({singleDayEvents, multiDayEvents}: IProps) {
+export function CalendarWeekView({singleDayOccurrences, multiDayOccurrences}: IProps) {
     const {selectedDate, use24HourFormat} = useCalendar();
 
     const weekStart = startOfWeek(selectedDate);
@@ -54,7 +54,7 @@ export function CalendarWeekView({singleDayEvents, multiDayEvents}: IProps) {
                 <div>
                     <WeekViewMultiDayEventsRow
                         selectedDate={selectedDate}
-                        multiDayEvents={multiDayEvents}
+                        multiDayOccurrences={multiDayOccurrences}
                     />
 
                     {/* Week header */}
@@ -130,12 +130,12 @@ export function CalendarWeekView({singleDayEvents, multiDayEvents}: IProps) {
                         >
                             <div className="grid grid-cols-7 divide-x">
                                 {weekDays.map((day, dayIndex) => {
-                                    const dayEvents = singleDayEvents.filter(
-                                        (event) =>
-                                            isSameDay(parseISO(event.startDate), day) ||
-                                            isSameDay(parseISO(event.endDate), day),
+                                    const dayOccurrences = singleDayOccurrences.filter(
+                                        ({ occurrence }) =>
+                                            isSameDay(parseISO(occurrence.startDate), day) ||
+                                            isSameDay(parseISO(occurrence.endDate), day),
                                     );
-                                    const groupedEvents = groupEvents(dayEvents);
+                                    const groupedOccurrences = groupOccurrences(dayOccurrences);
 
                                     return (
                                         <motion.div
@@ -195,7 +195,7 @@ export function CalendarWeekView({singleDayEvents, multiDayEvents}: IProps) {
                                             ))}
 
                                             <RenderGroupedEvents
-                                                groupedEvents={groupedEvents}
+                                                groupedOccurrences={groupedOccurrences}
                                                 day={day}
                                             />
                                         </motion.div>

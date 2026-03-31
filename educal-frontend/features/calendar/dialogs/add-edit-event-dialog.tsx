@@ -78,10 +78,17 @@ export function AddEditEventDialog({
       return { startDate: start, endDate: addMinutes(start, 30) };
     }
 
-    return {
-      startDate: new Date(event.startDate),
-      endDate: new Date(event.endDate),
-    };
+    // Use the first occurrence's dates since events no longer have startDate/endDate
+    if (event && event.occurrences && event.occurrences.length > 0) {
+      return {
+        startDate: new Date(event.occurrences[0].startDate),
+        endDate: new Date(event.occurrences[0].endDate),
+      };
+    }
+
+    // Fallback for new events
+    const now = new Date();
+    return { startDate: now, endDate: addMinutes(now, 30) };
   }, [startDate, startTime, event, isEditing]);
 
   const form = useForm<TEventFormData>({
@@ -104,7 +111,7 @@ export function AddEditEventDialog({
         })) ?? [
           {
             id: crypto.randomUUID(),
-            description: event?.description ?? "",
+            description: "",
             startDate: initialDates.startDate,
             endDate: initialDates.endDate,
           },
@@ -136,7 +143,7 @@ export function AddEditEventDialog({
         })) ?? [
           {
             id: crypto.randomUUID(),
-            description: event?.description ?? "",
+            description: "",
             startDate: initialDates.startDate,
             endDate: initialDates.endDate,
           },
@@ -155,7 +162,6 @@ export function AddEditEventDialog({
         (a, b) => a.startDate.getTime() - b.startDate.getTime(),
       );
 
-      const firstOccurrence = sortedOccurrences[0];
       const id = isEditing ? event.id : Math.floor(Math.random() * 1000000);
 
       const formattedEvent: IEvent = {
@@ -167,9 +173,6 @@ export function AddEditEventDialog({
         classification: values.classification,
         status: values.status,
         responsible: values.responsible,
-        startDate: format(firstOccurrence.startDate, "yyyy-MM-dd'T'HH:mm:ss"),
-        endDate: format(firstOccurrence.endDate, "yyyy-MM-dd'T'HH:mm:ss"),
-        description: firstOccurrence.description,
         occurrences: sortedOccurrences.map((occurrence) => ({
           id: occurrence.id,
           description: occurrence.description,

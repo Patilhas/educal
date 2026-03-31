@@ -11,30 +11,30 @@ import {
 	getCalendarCells,
 } from "@/features/calendar/helpers";
 
-import type { IEvent } from "@/features/calendar/interfaces";
+import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
 import { DayCell } from "@/features/calendar/views/month-view/day-cell";
 import {WEEK_DAYS} from "@/features/calendar/constants";
 
 interface IProps {
-	singleDayEvents: IEvent[];
-	multiDayEvents: IEvent[];
+	singleDayOccurrences: { event: IEvent; occurrence: IOccurrence }[];
+	multiDayOccurrences: { event: IEvent; occurrence: IOccurrence }[];
 }
 
-export function CalendarMonthView({ singleDayEvents, multiDayEvents }: IProps) {
+export function CalendarMonthView({ singleDayOccurrences, multiDayOccurrences }: IProps) {
 	const { selectedDate } = useCalendar();
 
-	const allEvents = [...multiDayEvents, ...singleDayEvents];
+	const allOccurrences = [...multiDayOccurrences, ...singleDayOccurrences];
 
 	const cells = useMemo(() => getCalendarCells(selectedDate), [selectedDate]);
 
 	const eventPositions = useMemo(
 		() =>
 			calculateMonthEventPositions(
-				multiDayEvents,
-				singleDayEvents,
+				multiDayOccurrences,
+				singleDayOccurrences,
 				selectedDate,
 			),
-		[multiDayEvents, singleDayEvents, selectedDate],
+		[multiDayOccurrences, singleDayOccurrences, selectedDate],
 	);
 
 	return (
@@ -58,7 +58,7 @@ export function CalendarMonthView({ singleDayEvents, multiDayEvents }: IProps) {
 					<DayCell
 						key={cell.date.toISOString()}
 						cell={cell}
-						events={allEvents}
+						occurrences={allOccurrences}
 						eventPositions={eventPositions}
 					/>
 				))}

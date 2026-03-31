@@ -26,8 +26,6 @@ export interface IOccurrence {
 
 export interface IEvent {
 	id: number;
-	startDate: string;
-	endDate: string;
 	name: string;
 	objective: string;
 	daysBetweenOccurrences: string;
@@ -35,7 +33,6 @@ export interface IEvent {
 	classification: TEventClassification;
 	status: TEventStatus;
 	responsible: TEventResponsible;
-	description: string;
 	occurrences: IOccurrence[];
 	color: TEventColor;
 	user: IUser;

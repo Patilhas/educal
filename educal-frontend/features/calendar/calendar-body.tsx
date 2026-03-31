@@ -13,15 +13,24 @@ import { CalendarYearView } from "@/features/calendar/views/year-view/calendar-y
 export function CalendarBody() {
   const { view, events } = useCalendar();
 
-  const singleDayEvents = events.filter((event) => {
-    const startDate = parseISO(event.startDate);
-    const endDate = parseISO(event.endDate);
+  // Transform events with occurrences into flat list with occurrence data
+  // Each item has event data + occurrence data
+  const eventOccurrences = events.flatMap((event) =>
+    event.occurrences.map((occurrence) => ({
+      event,
+      occurrence,
+    }))
+  );
+
+  const singleDayOccurrences = eventOccurrences.filter(({ occurrence }) => {
+    const startDate = parseISO(occurrence.startDate);
+    const endDate = parseISO(occurrence.endDate);
     return isSameDay(startDate, endDate);
   });
 
-  const multiDayEvents = events.filter((event) => {
-    const startDate = parseISO(event.startDate);
-    const endDate = parseISO(event.endDate);
+  const multiDayOccurrences = eventOccurrences.filter(({ occurrence }) => {
+    const startDate = parseISO(occurrence.startDate);
+    const endDate = parseISO(occurrence.endDate);
     return !isSameDay(startDate, endDate);
   });
 
@@ -37,26 +46,26 @@ export function CalendarBody() {
       >
         {view === "month" && (
           <CalendarMonthView
-            singleDayEvents={singleDayEvents}
-            multiDayEvents={multiDayEvents}
+            singleDayOccurrences={singleDayOccurrences}
+            multiDayOccurrences={multiDayOccurrences}
           />
         )}
         {view === "week" && (
           <CalendarWeekView
-            singleDayEvents={singleDayEvents}
-            multiDayEvents={multiDayEvents}
+            singleDayOccurrences={singleDayOccurrences}
+            multiDayOccurrences={multiDayOccurrences}
           />
         )}
         {view === "day" && (
           <CalendarDayView
-            singleDayEvents={singleDayEvents}
-            multiDayEvents={multiDayEvents}
+            singleDayOccurrences={singleDayOccurrences}
+            multiDayOccurrences={multiDayOccurrences}
           />
         )}
         {view === "year" && (
           <CalendarYearView
-            singleDayEvents={singleDayEvents}
-            multiDayEvents={multiDayEvents}
+            singleDayOccurrences={singleDayOccurrences}
+            multiDayOccurrences={multiDayOccurrences}
           />
         )}
         {view === "agenda" && (

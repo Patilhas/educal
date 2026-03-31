@@ -135,12 +135,12 @@ const mockGenerator = (numberOfEvents: number): IEvent[] => {
 	endRange.setDate(now.getDate() + 30);
 
 	// Create an event happening now
+	const occurrenceStart = new Date(now.getTime() - 30 * 60000);
+	const occurrenceEnd = new Date(now.getTime() + 30 * 60000);
+	
 	const currentEvent = {
 		id: currentId++,
-		startDate: new Date(now.getTime() - 30 * 60000).toISOString(),
-		endDate: new Date(now.getTime() + 30 * 60000).toISOString(),
 		name: events[Math.floor(Math.random() * events.length)],
-		title: events[Math.floor(Math.random() * events.length)],
 		objective:
 			"Garantir que a atividade anual e as suas ocorrencias ficam planeadas para o ano letivo.",
 		daysBetweenOccurrences: (Math.floor(Math.random() * 90) + 1).toString(),
@@ -154,15 +154,13 @@ const mockGenerator = (numberOfEvents: number): IEvent[] => {
 		responsible:
 			EVENT_RESPONSIBLES[Math.floor(Math.random() * EVENT_RESPONSIBLES.length)],
 		color: COLORS[Math.floor(Math.random() * COLORS.length)],
-		description:
-			"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
 		occurrences: [
 			{
 				id: crypto.randomUUID(),
 				description:
 					"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt.",
-				startDate: new Date(now.getTime() - 30 * 60000).toISOString(),
-				endDate: new Date(now.getTime() + 30 * 60000).toISOString(),
+				startDate: occurrenceStart.toISOString(),
+				endDate: occurrenceEnd.toISOString(),
 			},
 		],
 		user: randomUser,
@@ -175,26 +173,26 @@ const mockGenerator = (numberOfEvents: number): IEvent[] => {
 		// Determine if this is a multi-day event (10% chance)
 		const isMultiDay = Math.random() < 0.1;
 
-		const startDate = new Date(
+		const occurrenceStart = new Date(
 			startRange.getTime() +
 			Math.random() * (endRange.getTime() - startRange.getTime()),
 		);
 
 		// Set time between 8 AM and 8 PM
-		startDate.setHours(
+		occurrenceStart.setHours(
 			8 + Math.floor(Math.random() * 12),
 			Math.floor(Math.random() * 60),
 			0,
 			0,
 		);
 
-		const endDate = new Date(startDate);
+		const occurrenceEnd = new Date(occurrenceStart);
 
 		if (isMultiDay) {
 			// Multi-day event: Add 1-4 days
 			const additionalDays = Math.floor(Math.random() * 4) + 1;
-			endDate.setDate(startDate.getDate() + additionalDays);
-			endDate.setHours(
+			occurrenceEnd.setDate(occurrenceStart.getDate() + additionalDays);
+			occurrenceEnd.setHours(
 				8 + Math.floor(Math.random() * 12),
 				Math.floor(Math.random() * 60),
 				0,
@@ -202,13 +200,11 @@ const mockGenerator = (numberOfEvents: number): IEvent[] => {
 			);
 		} else {
 			// Same-day event: Add 1-3 hours
-			endDate.setHours(endDate.getHours() + Math.floor(Math.random() * 3) + 1);
+			occurrenceEnd.setHours(occurrenceEnd.getHours() + Math.floor(Math.random() * 3) + 1);
 		}
 
 		result.push({
 			id: currentId++,
-			startDate: startDate.toISOString(),
-			endDate: endDate.toISOString(),
 			name: events[Math.floor(Math.random() * events.length)],
 			objective:
 				"Executar e acompanhar uma etapa do planeamento academico com regras definidas.",
@@ -223,15 +219,13 @@ const mockGenerator = (numberOfEvents: number): IEvent[] => {
 			responsible:
 				EVENT_RESPONSIBLES[Math.floor(Math.random() * EVENT_RESPONSIBLES.length)],
 			color: COLORS[Math.floor(Math.random() * COLORS.length)],
-			description:
-				"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
 			occurrences: [
 				{
 					id: crypto.randomUUID(),
 					description:
 						"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt.",
-					startDate: startDate.toISOString(),
-					endDate: endDate.toISOString(),
+					startDate: occurrenceStart.toISOString(),
+					endDate: occurrenceEnd.toISOString(),
 				},
 			],
 			user: USERS_MOCK[Math.floor(Math.random() * USERS_MOCK.length)],

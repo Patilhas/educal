@@ -6,7 +6,7 @@ import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import { EventDetailsDialog } from "@/features/calendar/dialogs/event-details-dialog";
 import { DraggableEvent } from "@/features/calendar/dnd/draggable-event";
 import { formatTime } from "@/features/calendar/helpers";
-import type { IEvent } from "@/features/calendar/interfaces";
+import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
 import { EventBullet } from "@/features/calendar/views/month-view/event-bullet";
 
 const eventBadgeVariants = cva(
@@ -53,39 +53,41 @@ interface IProps extends Omit<
   "color" | "multiDayPosition"
 > {
   event: IEvent;
+  occurrence: IOccurrence;
   cellDate: Date;
-  eventCurrentDay?: number;
-  eventTotalDays?: number;
+  occurrenceCurrentDay?: number;
+  occurrenceTotalDays?: number;
   className?: string;
   position?: "first" | "middle" | "last" | "none";
 }
 
 export function MonthEventBadge({
   event,
+  occurrence,
   cellDate,
-  eventCurrentDay,
-  eventTotalDays,
+  occurrenceCurrentDay,
+  occurrenceTotalDays,
   className,
   position: propPosition,
 }: IProps) {
   const { badgeVariant, use24HourFormat } = useCalendar();
 
-  const itemStart = startOfDay(parseISO(event.startDate));
-  const itemEnd = endOfDay(parseISO(event.endDate));
+  const occurrenceStart = startOfDay(parseISO(occurrence.startDate));
+  const occurrenceEnd = endOfDay(parseISO(occurrence.endDate));
 
-  if (cellDate < itemStart || cellDate > itemEnd) return null;
+  if (cellDate < occurrenceStart || cellDate > occurrenceEnd) return null;
 
   let position: "first" | "middle" | "last" | "none" | undefined;
 
   if (propPosition) {
     position = propPosition;
-  } else if (eventCurrentDay && eventTotalDays) {
+  } else if (occurrenceCurrentDay && occurrenceTotalDays) {
     position = "none";
-  } else if (isSameDay(itemStart, itemEnd)) {
+  } else if (isSameDay(occurrenceStart, occurrenceEnd)) {
     position = "none";
-  } else if (isSameDay(cellDate, itemStart)) {
+  } else if (isSameDay(cellDate, occurrenceStart)) {
     position = "first";
-  } else if (isSameDay(cellDate, itemEnd)) {
+  } else if (isSameDay(cellDate, occurrenceEnd)) {
     position = "last";
   } else {
     position = "middle";
@@ -110,8 +112,8 @@ export function MonthEventBadge({
   }[position || "none"];
 
   return (
-    <DraggableEvent event={event} className={marginClass}>
-      <EventDetailsDialog event={event}>
+    <DraggableEvent event={event} occurrence={occurrence} className={marginClass}>
+      <EventDetailsDialog event={event} occurrence={occurrence}>
         <button type="button" className={eventBadgeClasses}>
           <div className="flex items-center gap-1.5 truncate">
             {!["middle", "last"].includes(position) &&
@@ -119,9 +121,9 @@ export function MonthEventBadge({
 
             {renderBadgeText && (
               <p className="flex-1 truncate font-semibold">
-                {eventCurrentDay && (
+                {occurrenceCurrentDay && (
                   <span className="text-xs">
-                    Day {eventCurrentDay} of {eventTotalDays} •{" "}
+                    Dia {occurrenceCurrentDay} de {occurrenceTotalDays} •{" "}
                   </span>
                 )}
                 {event.name}
@@ -132,7 +134,7 @@ export function MonthEventBadge({
           <div className="hidden sm:block">
             {renderBadgeTime && (
               <span>
-                {formatTime(new Date(event.startDate), use24HourFormat)}
+                {formatTime(new Date(occurrence.startDate), use24HourFormat)}
               </span>
             )}
           </div>
@@ -141,3 +143,4 @@ export function MonthEventBadge({
     </DraggableEvent>
   );
 }
+

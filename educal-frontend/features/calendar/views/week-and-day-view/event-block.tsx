@@ -8,7 +8,7 @@ import { EventDetailsDialog } from "@/features/calendar/dialogs/event-details-di
 import { DraggableEvent } from "@/features/calendar/dnd/draggable-event";
 import { ResizableEvent } from "@/features/calendar/dnd/resizable-event";
 import { formatTime } from "@/features/calendar/helpers";
-import type { IEvent } from "@/features/calendar/interfaces";
+import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
 
 const calendarWeekEventCardVariants = cva(
   "flex select-none flex-col gap-0.5 truncate whitespace-nowrap rounded-md border px-2 py-1.5 text-xs focus-visible:outline-offset-2",
@@ -53,13 +53,14 @@ interface IProps
     HTMLAttributes<HTMLDivElement>,
     Omit<VariantProps<typeof calendarWeekEventCardVariants>, "color"> {
   event: IEvent;
+  occurrence: IOccurrence;
 }
 
-export function EventBlock({ event, className }: IProps) {
+export function EventBlock({ event, occurrence, className }: IProps) {
   const { badgeVariant, use24HourFormat } = useCalendar();
 
-  const start = parseISO(event.startDate);
-  const end = parseISO(event.endDate);
+  const start = parseISO(occurrence.startDate);
+  const end = parseISO(occurrence.endDate);
   const durationInMinutes = differenceInMinutes(end, start);
   const heightInPixels = (durationInMinutes / 60) * 96 - 8;
 
@@ -73,9 +74,9 @@ export function EventBlock({ event, className }: IProps) {
   );
 
   return (
-    <ResizableEvent event={event}>
-      <DraggableEvent event={event}>
-        <EventDetailsDialog event={event}>
+    <ResizableEvent event={event} occurrence={occurrence}>
+      <DraggableEvent event={event} occurrence={occurrence}>
+        <EventDetailsDialog event={event} occurrence={occurrence}>
           <button
             type="button"
             className={calendarWeekEventCardClasses}

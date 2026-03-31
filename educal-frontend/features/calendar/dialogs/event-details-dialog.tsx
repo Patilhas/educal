@@ -17,17 +17,22 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import { AddEditEventDialog } from "@/features/calendar/dialogs/add-edit-event-dialog";
 import { formatTime } from "@/features/calendar/helpers";
-import type { IEvent } from "@/features/calendar/interfaces";
+import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
 
 interface IProps {
   event: IEvent;
+  occurrence?: IOccurrence;
   children: ReactNode;
 }
 
-export function EventDetailsDialog({ event, children }: IProps) {
-  const startDate = parseISO(event.startDate);
-  const endDate = parseISO(event.endDate);
+export function EventDetailsDialog({ event, occurrence, children }: IProps) {
   const { use24HourFormat, removeEvent } = useCalendar();
+
+  // Use the provided occurrence or fall back to the first one
+  const displayOccurrence = occurrence || event.occurrences[0];
+  
+  const startDate = displayOccurrence ? parseISO(displayOccurrence.startDate) : new Date();
+  const endDate = displayOccurrence ? parseISO(displayOccurrence.endDate) : new Date();
 
   const deleteEvent = (eventId: number) => {
     try {
@@ -102,29 +107,33 @@ export function EventDetailsDialog({ event, children }: IProps) {
               </div>
             </div>
 
-            <div className="flex items-start gap-2">
-              <Calendar className="mt-1 size-4 shrink-0 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">Data de início</p>
-                <p className="text-sm text-muted-foreground">
-                  {format(startDate, "EEEE dd MMMM")}
-                  <span className="mx-1">às</span>
-                  {formatTime(parseISO(event.startDate), use24HourFormat)}
-                </p>
-              </div>
-            </div>
+            {displayOccurrence && (
+              <>
+                <div className="flex items-start gap-2">
+                  <Calendar className="mt-1 size-4 shrink-0 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Data de início</p>
+                    <p className="text-sm text-muted-foreground">
+                      {format(startDate, "EEEE dd MMMM")}
+                      <span className="mx-1">às</span>
+                      {formatTime(parseISO(displayOccurrence.startDate), use24HourFormat)}
+                    </p>
+                  </div>
+                </div>
 
-            <div className="flex items-start gap-2">
-              <Clock className="mt-1 size-4 shrink-0 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">Data de fim</p>
-                <p className="text-sm text-muted-foreground">
-                  {format(endDate, "EEEE dd MMMM")}
-                  <span className="mx-1">às</span>
-                  {formatTime(parseISO(event.endDate), use24HourFormat)}
-                </p>
-              </div>
-            </div>
+                <div className="flex items-start gap-2">
+                  <Clock className="mt-1 size-4 shrink-0 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Data de fim</p>
+                    <p className="text-sm text-muted-foreground">
+                      {format(endDate, "EEEE dd MMMM")}
+                      <span className="mx-1">às</span>
+                      {formatTime(parseISO(displayOccurrence.endDate), use24HourFormat)}
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
 
             <div className="flex items-start gap-2">
               <Text className="mt-1 size-4 shrink-0 text-muted-foreground" />
@@ -141,17 +150,17 @@ export function EventDetailsDialog({ event, children }: IProps) {
               {(event.occurrences ?? []).length === 0 && (
                 <p className="text-sm text-muted-foreground">Sem ocorrências.</p>
               )}
-              {(event.occurrences ?? []).map((occurrence, index) => (
-                <div key={occurrence.id} className="rounded-md border p-2">
+              {(event.occurrences ?? []).map((occ, index) => (
+                <div key={occ.id} className="rounded-md border p-2">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Ocorrência {index + 1}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {occurrence.description}
+                    {occ.description}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {format(parseISO(occurrence.startDate), "dd/MM/yyyy HH:mm")} -{" "}
-                    {format(parseISO(occurrence.endDate), "dd/MM/yyyy HH:mm")}
+                    {format(parseISO(occ.startDate), "dd/MM/yyyy HH:mm")} -{" "}
+                    {format(parseISO(occ.endDate), "dd/MM/yyyy HH:mm")}
                   </p>
                 </div>
               ))}

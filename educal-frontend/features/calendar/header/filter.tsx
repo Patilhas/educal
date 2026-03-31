@@ -8,20 +8,11 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Toggle } from "@/components/ui/toggle";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
-import type { TEventColor } from "@/features/calendar/types";
+import {COLORS} from "@/features/calendar/constants";
 
 export default function FilterEvents() {
 	const { selectedColors, filterEventsBySelectedColors, clearFilter } =
 		useCalendar();
-
-	const colors: TEventColor[] = [
-		"blue",
-		"green",
-		"red",
-		"yellow",
-		"purple",
-		"orange",
-	];
 
 	return (
 		<DropdownMenu>
@@ -31,7 +22,7 @@ export default function FilterEvents() {
 				</Toggle>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end" className="w-[150px]">
-				{colors.map((color) => (
+				{COLORS.map((color) => (
 					<DropdownMenuItem
 						key={color}
 						className="flex items-center gap-2 cursor-pointer"

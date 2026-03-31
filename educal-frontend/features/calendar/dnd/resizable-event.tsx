@@ -15,10 +15,11 @@ import { useCallback, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 
-import type { IEvent } from "@/features/calendar/interfaces";
+import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
 
 interface ResizableEventBlockProps {
   event: IEvent;
+  occurrence: IOccurrence;
   children: React.ReactNode;
   className?: string;
 }
@@ -29,6 +30,7 @@ const MIN_DURATION = 15; // in minutes
 
 export function ResizableEvent({
   event,
+  occurrence,
   children,
   className,
 }: ResizableEventBlockProps) {
@@ -40,8 +42,8 @@ export function ResizableEvent({
     end: string;
   } | null>(null);
 
-  const start = useMemo(() => parseISO(event.startDate), [event.startDate]);
-  const end = useMemo(() => parseISO(event.endDate), [event.endDate]);
+  const start = useMemo(() => parseISO(occurrence.startDate), [occurrence.startDate]);
+  const end = useMemo(() => parseISO(occurrence.endDate), [occurrence.endDate]);
   const durationInMinutes = useMemo(
     () => differenceInMinutes(end, start),
     [start, end],
@@ -91,11 +93,22 @@ export function ResizableEvent({
         end: format(newEnd, use24HourFormat ? "HH:mm" : "h:mm a"),
       });
 
-      updateEvent({
+      // Update only the occurrence, not the entire event
+      const updatedEvent = {
         ...event,
-        startDate: newStart.toISOString(),
-        endDate: newEnd.toISOString(),
-      });
+        occurrences: event.occurrences.map((occ) => {
+          if (occ.id === occurrence.id) {
+            return {
+              ...occ,
+              startDate: newStart.toISOString(),
+              endDate: newEnd.toISOString(),
+            };
+          }
+          return occ;
+        }),
+      };
+
+      updateEvent(updatedEvent);
     },
     [
       start,
@@ -105,6 +118,7 @@ export function ResizableEvent({
       use24HourFormat,
       updateEvent,
       event,
+      occurrence,
     ],
   );
 

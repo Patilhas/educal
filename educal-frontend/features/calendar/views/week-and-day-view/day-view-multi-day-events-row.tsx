@@ -5,65 +5,66 @@ import {
   parseISO,
   startOfDay,
 } from "date-fns";
-import type { IEvent } from "@/features/calendar/interfaces";
+import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
 import { MonthEventBadge } from "@/features/calendar/views/month-view/month-event-badge";
 
 interface IProps {
   selectedDate: Date;
-  multiDayEvents: IEvent[];
+  multiDayOccurrences: { event: IEvent; occurrence: IOccurrence }[];
 }
 
 export function DayViewMultiDayEventsRow({
   selectedDate,
-  multiDayEvents,
+  multiDayOccurrences,
 }: IProps) {
   const dayStart = startOfDay(selectedDate);
   const dayEnd = endOfDay(selectedDate);
 
-  const multiDayEventsInDay = multiDayEvents
-    .filter((event) => {
-      const eventStart = parseISO(event.startDate);
-      const eventEnd = parseISO(event.endDate);
+  const multiDayOccurrencesInDay = multiDayOccurrences
+    .filter(({ occurrence }) => {
+      const occurrenceStart = parseISO(occurrence.startDate);
+      const occurrenceEnd = parseISO(occurrence.endDate);
 
       return (
-        isWithinInterval(dayStart, { start: eventStart, end: eventEnd }) ||
-        isWithinInterval(dayEnd, { start: eventStart, end: eventEnd }) ||
-        (eventStart <= dayStart && eventEnd >= dayEnd)
+        isWithinInterval(dayStart, { start: occurrenceStart, end: occurrenceEnd }) ||
+        isWithinInterval(dayEnd, { start: occurrenceStart, end: occurrenceEnd }) ||
+        (occurrenceStart <= dayStart && occurrenceEnd >= dayEnd)
       );
     })
     .sort((a, b) => {
       const durationA = differenceInDays(
-        parseISO(a.endDate),
-        parseISO(a.startDate),
+        parseISO(a.occurrence.endDate),
+        parseISO(a.occurrence.startDate),
       );
       const durationB = differenceInDays(
-        parseISO(b.endDate),
-        parseISO(b.startDate),
+        parseISO(b.occurrence.endDate),
+        parseISO(b.occurrence.startDate),
       );
       return durationB - durationA;
     });
 
-  if (multiDayEventsInDay.length === 0) return null;
+  if (multiDayOccurrencesInDay.length === 0) return null;
 
   return (
     <div className="flex border-b">
       <div className="w-18"></div>
       <div className="flex flex-1 flex-col gap-1 border-l py-1">
-        {multiDayEventsInDay.map((event) => {
-          const eventStart = startOfDay(parseISO(event.startDate));
-          const eventEnd = startOfDay(parseISO(event.endDate));
+        {multiDayOccurrencesInDay.map(({ event, occurrence }) => {
+          const occurrenceStart = startOfDay(parseISO(occurrence.startDate));
+          const occurrenceEnd = startOfDay(parseISO(occurrence.endDate));
           const currentDate = startOfDay(selectedDate);
 
-          const eventTotalDays = differenceInDays(eventEnd, eventStart) + 1;
-          const eventCurrentDay = differenceInDays(currentDate, eventStart) + 1;
+          const occurrenceTotalDays = differenceInDays(occurrenceEnd, occurrenceStart) + 1;
+          const occurrenceCurrentDay = differenceInDays(currentDate, occurrenceStart) + 1;
 
           return (
             <MonthEventBadge
-              key={event.id}
+              key={occurrence.id}
               event={event}
+              occurrence={occurrence}
               cellDate={selectedDate}
-              eventCurrentDay={eventCurrentDay}
-              eventTotalDays={eventTotalDays}
+              occurrenceCurrentDay={occurrenceCurrentDay}
+              occurrenceTotalDays={occurrenceTotalDays}
             />
           );
         })}

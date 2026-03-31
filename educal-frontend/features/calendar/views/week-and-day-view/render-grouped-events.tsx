@@ -1,37 +1,37 @@
 import { areIntervalsOverlapping, parseISO } from "date-fns";
-import { getEventBlockStyle } from "@/features/calendar/helpers";
-import type { IEvent } from "@/features/calendar/interfaces";
+import { getOccurrenceBlockStyle } from "@/features/calendar/helpers";
+import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
 import { EventBlock } from "@/features/calendar/views/week-and-day-view/event-block";
 
 interface RenderGroupedEventsProps {
-  groupedEvents: IEvent[][];
+  groupedOccurrences: { event: IEvent; occurrence: IOccurrence }[][];
   day: Date;
 }
 
 export function RenderGroupedEvents({
-  groupedEvents,
+  groupedOccurrences,
   day,
 }: RenderGroupedEventsProps) {
-  return groupedEvents.map((group, groupIndex) =>
-    group.map((event) => {
-      let style = getEventBlockStyle(
-        event,
+  return groupedOccurrences.map((group, groupIndex) =>
+    group.map(({ event, occurrence }) => {
+      let style = getOccurrenceBlockStyle(
+        occurrence,
         day,
         groupIndex,
-        groupedEvents.length,
+        groupedOccurrences.length,
       );
-      const hasOverlap = groupedEvents.some(
+      const hasOverlap = groupedOccurrences.some(
         (otherGroup, otherIndex) =>
           otherIndex !== groupIndex &&
-          otherGroup.some((otherEvent) =>
+          otherGroup.some(({ occurrence: otherOccurrence }) =>
             areIntervalsOverlapping(
               {
-                start: parseISO(event.startDate),
-                end: parseISO(event.endDate),
+                start: parseISO(occurrence.startDate),
+                end: parseISO(occurrence.endDate),
               },
               {
-                start: parseISO(otherEvent.startDate),
-                end: parseISO(otherEvent.endDate),
+                start: parseISO(otherOccurrence.startDate),
+                end: parseISO(otherOccurrence.endDate),
               },
             ),
           ),
@@ -40,8 +40,8 @@ export function RenderGroupedEvents({
       if (!hasOverlap) style = { ...style, width: "100%", left: "0%" };
 
       return (
-        <div key={event.id} className="absolute p-1" style={style}>
-          <EventBlock event={event} />
+        <div key={occurrence.id} className="absolute p-1" style={style}>
+          <EventBlock event={event} occurrence={occurrence} />
         </div>
       );
     }),

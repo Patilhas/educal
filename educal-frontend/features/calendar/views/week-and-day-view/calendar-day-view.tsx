@@ -7,18 +7,18 @@ import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 
 import { AddEditEventDialog } from "@/features/calendar/dialogs/add-edit-event-dialog";
 import { DroppableArea } from "@/features/calendar/dnd/droppable-area";
-import { groupEvents } from "@/features/calendar/helpers";
-import type { IEvent } from "@/features/calendar/interfaces";
+import { groupOccurrences } from "@/features/calendar/helpers";
+import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
 import { CalendarTimeline } from "@/features/calendar/views/week-and-day-view/calendar-time-line";
 import { DayViewMultiDayEventsRow } from "@/features/calendar/views/week-and-day-view/day-view-multi-day-events-row";
 import { RenderGroupedEvents } from "@/features/calendar/views/week-and-day-view/render-grouped-events";
 
 interface IProps {
-  singleDayEvents: IEvent[];
-  multiDayEvents: IEvent[];
+  singleDayOccurrences: { event: IEvent; occurrence: IOccurrence }[];
+  multiDayOccurrences: { event: IEvent; occurrence: IOccurrence }[];
 }
 
-export function CalendarDayView({ singleDayEvents, multiDayEvents }: IProps) {
+export function CalendarDayView({ singleDayOccurrences, multiDayOccurrences }: IProps) {
   const { selectedDate, setSelectedDate, users, use24HourFormat } =
     useCalendar();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -52,31 +52,31 @@ export function CalendarDayView({ singleDayEvents, multiDayEvents }: IProps) {
     };
   }, []);
 
-  const getCurrentEvents = (events: IEvent[]) => {
+  const getCurrentOccurrences = (occurrences: { event: IEvent; occurrence: IOccurrence }[]) => {
     const now = new Date();
 
     return (
-      events.filter((event) =>
+      occurrences.filter(({ occurrence }) =>
         isWithinInterval(now, {
-          start: parseISO(event.startDate),
-          end: parseISO(event.endDate),
+          start: parseISO(occurrence.startDate),
+          end: parseISO(occurrence.endDate),
         }),
       ) || []
     );
   };
 
-  const currentEvents = getCurrentEvents(singleDayEvents);
+  const currentOccurrences = getCurrentOccurrences(singleDayOccurrences);
 
-  const dayEvents = singleDayEvents.filter((event) => {
-    const eventDate = parseISO(event.startDate);
+  const dayOccurrences = singleDayOccurrences.filter(({ occurrence }) => {
+    const occurrenceDate = parseISO(occurrence.startDate);
     return (
-      eventDate.getDate() === selectedDate.getDate() &&
-      eventDate.getMonth() === selectedDate.getMonth() &&
-      eventDate.getFullYear() === selectedDate.getFullYear()
+      occurrenceDate.getDate() === selectedDate.getDate() &&
+      occurrenceDate.getMonth() === selectedDate.getMonth() &&
+      occurrenceDate.getFullYear() === selectedDate.getFullYear()
     );
   });
 
-  const groupedEvents = groupEvents(dayEvents);
+  const groupedOccurrences = groupOccurrences(dayOccurrences);
 
   return (
     <div className="flex">
@@ -84,7 +84,7 @@ export function CalendarDayView({ singleDayEvents, multiDayEvents }: IProps) {
         <div>
           <DayViewMultiDayEventsRow
             selectedDate={selectedDate}
-            multiDayEvents={multiDayEvents}
+            multiDayOccurrences={multiDayOccurrences}
           />
 
           {/* Day header */}
@@ -165,7 +165,7 @@ export function CalendarDayView({ singleDayEvents, multiDayEvents }: IProps) {
                 ))}
 
                 <RenderGroupedEvents
-                  groupedEvents={groupedEvents}
+                  groupedOccurrences={groupedOccurrences}
                   day={selectedDate}
                 />
               </div>
@@ -186,7 +186,7 @@ export function CalendarDayView({ singleDayEvents, multiDayEvents }: IProps) {
         />
 
         <div className="flex-1 space-y-3">
-          {currentEvents.length > 0 ? (
+          {currentOccurrences.length > 0 ? (
             <div className="flex items-start gap-2 px-4 pt-4">
               <span className="relative mt-[5px] flex size-2.5">
                 <span className="absolute inline-flex size-full animate-ping rounded-full bg-green-400 opacity-75"></span>
@@ -194,23 +194,23 @@ export function CalendarDayView({ singleDayEvents, multiDayEvents }: IProps) {
               </span>
 
               <p className="text-sm font-semibold text-t-secondary">
-                Happening now
+                A acontecer
               </p>
             </div>
           ) : (
             <p className="p-4 text-center text-sm italic text-t-tertiary">
-              No appointments or consultations at the moment
+              Nenhum evento a acontecer no momento
             </p>
           )}
 
-          {currentEvents.length > 0 && (
+          {currentOccurrences.length > 0 && (
             <ScrollArea className="h-[422px] px-4" type="always">
               <div className="space-y-6 pb-4">
-                {currentEvents.map((event) => {
+                {currentOccurrences.map(({ event, occurrence }) => {
                   const user = users.find((user) => user.id === event.user.id);
 
                   return (
-                    <div key={event.id} className="space-y-1.5">
+                    <div key={occurrence.id} className="space-y-1.5">
                       <p className="line-clamp-2 text-sm font-semibold">
                         {event.name}
                       </p>
@@ -227,7 +227,7 @@ export function CalendarDayView({ singleDayEvents, multiDayEvents }: IProps) {
                       <div className="flex items-center gap-1.5">
                         <Calendar className="size-4 text-t-quinary" />
                         <span className="text-sm text-t-tertiary">
-                          {format(new Date(event.startDate), "MMM d, yyyy")}
+                          {format(new Date(occurrence.startDate), "MMM d, yyyy")}
                         </span>
                       </div>
 
@@ -235,12 +235,12 @@ export function CalendarDayView({ singleDayEvents, multiDayEvents }: IProps) {
                         <Clock className="size-4 text-t-quinary" />
                         <span className="text-sm text-t-tertiary">
                           {format(
-                            parseISO(event.startDate),
+                            parseISO(occurrence.startDate),
                             use24HourFormat ? "HH:mm" : "hh:mm a",
                           )}{" "}
                           -
                           {format(
-                            parseISO(event.endDate),
+                            parseISO(occurrence.endDate),
                             use24HourFormat ? "HH:mm" : "hh:mm a",
                           )}
                         </span>

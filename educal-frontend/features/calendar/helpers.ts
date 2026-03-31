@@ -25,10 +25,10 @@ import {
 	subWeeks,
 	subYears,
 } from "date-fns";
-import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import type {
 	ICalendarCell,
 	IEvent,
+	IOccurrence,
 } from "@/features/calendar/interfaces";
 import type {
 	TCalendarView,
@@ -97,47 +97,58 @@ export function getEventsCount(
 	};
 
 	const compareFn = compareFns[view];
-	return events.filter((event) => compareFn(parseISO(event.startDate), date))
-		.length;
+	
+	// Count occurrences instead of events
+	let count = 0;
+	for (const event of events) {
+		for (const occurrence of event.occurrences) {
+			if (compareFn(parseISO(occurrence.startDate), date)) {
+				count++;
+			}
+		}
+	}
+	return count;
 }
 
-export function groupEvents(dayEvents: IEvent[]): IEvent[][] {
-	const sortedEvents = dayEvents.sort(
-		(a, b) => parseISO(a.startDate).getTime() - parseISO(b.startDate).getTime(),
+export function groupOccurrences(
+	dayOccurrences: { event: IEvent; occurrence: IOccurrence }[]
+): { event: IEvent; occurrence: IOccurrence }[][] {
+	const sortedOccurrences = dayOccurrences.sort((a, b) =>
+		parseISO(a.occurrence.startDate).getTime() - parseISO(b.occurrence.startDate).getTime()
 	);
-	const groups: IEvent[][] = [];
+	const groups: { event: IEvent; occurrence: IOccurrence }[][] = [];
 
-	for (const event of sortedEvents) {
-		const eventStart = parseISO(event.startDate);
+	for (const item of sortedOccurrences) {
+		const occurrenceStart = parseISO(item.occurrence.startDate);
 		let placed = false;
 
 		for (const group of groups) {
-			const lastEventInGroup = group[group.length - 1];
-			const lastEventEnd = parseISO(lastEventInGroup.endDate);
+			const lastItemInGroup = group[group.length - 1];
+			const lastOccurrenceEnd = parseISO(lastItemInGroup.occurrence.endDate);
 
-			if (eventStart >= lastEventEnd) {
-				group.push(event);
+			if (occurrenceStart >= lastOccurrenceEnd) {
+				group.push(item);
 				placed = true;
 				break;
 			}
 		}
 
-		if (!placed) groups.push([event]);
+		if (!placed) groups.push([item]);
 	}
 
 	return groups;
 }
 
-export function getEventBlockStyle(
-	event: IEvent,
+export function getOccurrenceBlockStyle(
+	occurrence: IOccurrence,
 	day: Date,
 	groupIndex: number,
 	groupSize: number,
 ) {
-	const startDate = parseISO(event.startDate);
-	const dayStart = startOfDay(day); // Use startOfDay instead of manual reset
-	const eventStart = startDate < dayStart ? dayStart : startDate;
-	const startMinutes = differenceInMinutes(eventStart, dayStart);
+	const startDate = parseISO(occurrence.startDate);
+	const dayStart = startOfDay(day);
+	const occurrenceStart = startDate < dayStart ? dayStart : startDate;
+	const startMinutes = differenceInMinutes(occurrenceStart, dayStart);
 
 	const top = (startMinutes / 1440) * 100; // 1440 minutes in a day
 	const width = 100 / groupSize;
@@ -180,8 +191,8 @@ export function getCalendarCells(selectedDate: Date): ICalendarCell[] {
 }
 
 export function calculateMonthEventPositions(
-	multiDayEvents: IEvent[],
-	singleDayEvents: IEvent[],
+	multiDayOccurrences: { event: IEvent; occurrence: IOccurrence }[],
+	singleDayOccurrences: { event: IEvent; occurrence: IOccurrence }[],
 	selectedDate: Date,
 ): Record<string, number> {
 	const monthStart = startOfMonth(selectedDate);
@@ -194,40 +205,40 @@ export function calculateMonthEventPositions(
 		occupiedPositions[day.toISOString()] = [false, false, false];
 	});
 
-	const sortedEvents = [
-		...multiDayEvents.sort((a, b) => {
+	const sortedOccurrences = [
+		...multiDayOccurrences.sort((a, b) => {
 			const aDuration = differenceInDays(
-				parseISO(a.endDate),
-				parseISO(a.startDate),
+				parseISO(a.occurrence.endDate),
+				parseISO(a.occurrence.startDate),
 			);
 			const bDuration = differenceInDays(
-				parseISO(b.endDate),
-				parseISO(b.startDate),
+				parseISO(b.occurrence.endDate),
+				parseISO(b.occurrence.startDate),
 			);
 			return (
 				bDuration - aDuration ||
-				parseISO(a.startDate).getTime() - parseISO(b.startDate).getTime()
+				parseISO(a.occurrence.startDate).getTime() - parseISO(b.occurrence.startDate).getTime()
 			);
 		}),
-		...singleDayEvents.sort(
+		...singleDayOccurrences.sort(
 			(a, b) =>
-				parseISO(a.startDate).getTime() - parseISO(b.startDate).getTime(),
+				parseISO(a.occurrence.startDate).getTime() - parseISO(b.occurrence.startDate).getTime(),
 		),
 	];
 
-	sortedEvents.forEach((event) => {
-		const eventStart = parseISO(event.startDate);
-		const eventEnd = parseISO(event.endDate);
-		const eventDays = eachDayOfInterval({
-			start: eventStart < monthStart ? monthStart : eventStart,
-			end: eventEnd > monthEnd ? monthEnd : eventEnd,
+	sortedOccurrences.forEach(({ occurrence }) => {
+		const occurrenceStart = parseISO(occurrence.startDate);
+		const occurrenceEnd = parseISO(occurrence.endDate);
+		const occurrenceDays = eachDayOfInterval({
+			start: occurrenceStart < monthStart ? monthStart : occurrenceStart,
+			end: occurrenceEnd > monthEnd ? monthEnd : occurrenceEnd,
 		});
 
 		let position = -1;
 
 		for (let i = 0; i < 3; i++) {
 			if (
-				eventDays.every((day) => {
+				occurrenceDays.every((day) => {
 					const dayPositions = occupiedPositions[startOfDay(day).toISOString()];
 					return dayPositions && !dayPositions[i];
 				})
@@ -238,11 +249,11 @@ export function calculateMonthEventPositions(
 		}
 
 		if (position !== -1) {
-			eventDays.forEach((day) => {
+			occurrenceDays.forEach((day) => {
 				const dayKey = startOfDay(day).toISOString();
 				occupiedPositions[dayKey][position] = true;
 			});
-			eventPositions[event.id] = position;
+			eventPositions[occurrence.id] = position;
 		}
 	});
 
@@ -251,25 +262,26 @@ export function calculateMonthEventPositions(
 
 export function getMonthCellEvents(
 	date: Date,
-	events: IEvent[],
+	occurrences: { event: IEvent; occurrence: IOccurrence }[],
 	eventPositions: Record<string, number>,
 ) {
 	const dayStart = startOfDay(date);
-	const eventsForDate = events.filter((event) => {
-		const eventStart = parseISO(event.startDate);
-		const eventEnd = parseISO(event.endDate);
+	const occurrencesForDate = occurrences.filter(({ occurrence }) => {
+		const occurrenceStart = parseISO(occurrence.startDate);
+		const occurrenceEnd = parseISO(occurrence.endDate);
 		return (
-			(dayStart >= eventStart && dayStart <= eventEnd) ||
-			isSameDay(dayStart, eventStart) ||
-			isSameDay(dayStart, eventEnd)
+			(dayStart >= occurrenceStart && dayStart <= occurrenceEnd) ||
+			isSameDay(dayStart, occurrenceStart) ||
+			isSameDay(dayStart, occurrenceEnd)
 		);
 	});
 
-	return eventsForDate
-		.map((event) => ({
-			...event,
-			position: eventPositions[event.id] ?? -1,
-			isMultiDay: event.startDate !== event.endDate,
+	return occurrencesForDate
+		.map(({ event, occurrence }) => ({
+			event,
+			occurrence,
+			position: eventPositions[occurrence.id] ?? -1,
+			isMultiDay: occurrence.startDate !== occurrence.endDate,
 		}))
 		.sort((a, b) => {
 			if (a.isMultiDay && !b.isMultiDay) return -1;
@@ -294,97 +306,18 @@ export const getFirstLetters = (str: string): string => {
 	return `${words[0].charAt(0).toUpperCase()}${words[1].charAt(0).toUpperCase()}`;
 };
 
-export const getEventsForDay = (
-	events: IEvent[],
-	date: Date,
-	isWeek = false,
-): IEvent[] => {
-	const targetDate = startOfDay(date);
-	return events
-		.filter((event) => {
-			const startOfDayForEventStart = startOfDay(parseISO(event.startDate));
-			const startOfDayForEventEnd = startOfDay(parseISO(event.endDate));
-			if (isWeek) {
-				return (
-					event.startDate !== event.endDate &&
-					startOfDayForEventStart <= targetDate &&
-					startOfDayForEventEnd >= targetDate
-				);
-			}
-			return (
-				startOfDayForEventStart <= targetDate &&
-				startOfDayForEventEnd >= targetDate
-			);
-		})
-		.map((event) => {
-			const eventStart = startOfDay(parseISO(event.startDate));
-			const eventEnd = startOfDay(parseISO(event.endDate));
-			let point: "start" | "end" | "none" | undefined;
-
-			if (isSameDay(eventStart, eventEnd)) {
-				point = "none";
-			} else if (isSameDay(eventStart, targetDate)) {
-				point = "start";
-			} else if (isSameDay(eventEnd, targetDate)) {
-				point = "end";
-			}
-
-			return { ...event, point };
-		});
-};
-
-export const getWeekDates = (date: Date): Date[] => {
-	const startDate = startOfWeek(date, { weekStartsOn: 1 });
-	return Array.from({ length: 7 }, (_, i) => addDays(startDate, i));
-};
-
-export const getEventsForWeek = (events: IEvent[], date: Date): IEvent[] => {
-	const weekDates = getWeekDates(date);
-	const startOfWeekDate = weekDates[0];
-	const endOfWeekDate = weekDates[6];
-
-	return events.filter((event) => {
-		const eventStart = parseISO(event.startDate);
-		const eventEnd = parseISO(event.endDate);
-		return (
-			isValid(eventStart) &&
-			isValid(eventEnd) &&
-			eventStart <= endOfWeekDate &&
-			eventEnd >= startOfWeekDate
-		);
-	});
-};
-
-export const getEventsForMonth = (events: IEvent[], date: Date): IEvent[] => {
+export const getEventsForMonth = (occurrences: { event: IEvent; occurrence: IOccurrence }[], date: Date): { event: IEvent; occurrence: IOccurrence }[] => {
 	const startOfMonthDate = startOfMonth(date);
 	const endOfMonthDate = endOfMonth(date);
 
-	return events.filter((event) => {
-		const eventStart = parseISO(event.startDate);
-		const eventEnd = parseISO(event.endDate);
+	return occurrences.filter(({ occurrence }) => {
+		const occurrenceStart = parseISO(occurrence.startDate);
+		const occurrenceEnd = parseISO(occurrence.endDate);
 		return (
-			isValid(eventStart) &&
-			isValid(eventEnd) &&
-			eventStart <= endOfMonthDate &&
-			eventEnd >= startOfMonthDate
-		);
-	});
-};
-
-export const getEventsForYear = (events: IEvent[], date: Date): IEvent[] => {
-	if (!events || !Array.isArray(events) || !isValid(date)) return [];
-
-	const startOfYearDate = startOfYear(date);
-	const endOfYearDate = endOfYear(date);
-
-	return events.filter((event) => {
-		const eventStart = parseISO(event.startDate);
-		const eventEnd = parseISO(event.endDate);
-		return (
-			isValid(eventStart) &&
-			isValid(eventEnd) &&
-			eventStart <= endOfYearDate &&
-			eventEnd >= startOfYearDate
+			isValid(occurrenceStart) &&
+			isValid(occurrenceEnd) &&
+			occurrenceStart <= endOfMonthDate &&
+			occurrenceEnd >= startOfMonthDate
 		);
 	});
 };
@@ -415,24 +348,6 @@ export const getBgColor = (color: string): string => {
 		purple: "bg-purple-400 dark:bg-purple-600",
 	};
 	return colorClasses[color as TEventColor] || "";
-};
-
-export const useGetEventsByMode = (events: IEvent[]) => {
-	const { view, selectedDate } = useCalendar();
-
-	switch (view) {
-		case "day":
-			return getEventsForDay(events, selectedDate);
-		case "week":
-			return getEventsForWeek(events, selectedDate);
-		case "agenda":
-		case "month":
-			return getEventsForMonth(events, selectedDate);
-		case "year":
-			return getEventsForYear(events, selectedDate);
-		default:
-			return [];
-	}
 };
 
 export const toCapitalize = (str: string): string => {

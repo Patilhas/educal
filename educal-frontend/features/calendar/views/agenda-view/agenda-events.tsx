@@ -31,15 +31,23 @@ export const AgendaEvents: FC = () => {
     selectedDate,
   } = useCalendar();
 
-  const monthEvents = getEventsForMonth(events, selectedDate);
+  // Transform events to occurrences
+  const occurrences = events.flatMap((event) =>
+    event.occurrences.map((occurrence) => ({
+      event,
+      occurrence,
+    }))
+  );
 
-  const agendaEvents = Object.groupBy(monthEvents, (event) => {
+  const monthOccurrences = getEventsForMonth(occurrences, selectedDate);
+
+  const agendaOccurrences = Object.groupBy(monthOccurrences, ({ event, occurrence }) => {
     return agendaModeGroupBy === "date"
-      ? format(parseISO(event.startDate), "yyyy-MM-dd")
+      ? format(parseISO(occurrence.startDate), "yyyy-MM-dd")
       : event.color;
   });
 
-  const groupedAndSortedEvents = Object.entries(agendaEvents).sort(
+  const groupedAndSortedOccurrences = Object.entries(agendaOccurrences).sort(
     (a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime(),
   );
 
@@ -49,18 +57,18 @@ export const AgendaEvents: FC = () => {
         <CommandInput placeholder="Escreve um comando ou pesquisa..." />
       </div>
       <CommandList className="max-h-max px-3 border-t">
-        {groupedAndSortedEvents.map(([date, groupedEvents]) => (
+        {groupedAndSortedOccurrences.map(([date, groupedOccurrences]) => (
           <CommandGroup
             key={date}
             heading={
               agendaModeGroupBy === "date"
                 ? format(parseISO(date), "EEEE, MMMM d, yyyy")
-                : toCapitalize(groupedEvents![0].color)
+                : toCapitalize(groupedOccurrences![0].event.color)
             }
           >
-            {groupedEvents!.map((event) => (
+            {groupedOccurrences!.map(({ event, occurrence }) => (
               <CommandItem
-                key={event.id}
+                key={occurrence.id}
                 className={cn(
                   "mb-2 p-4 border rounded-md data-[selected=true]:bg-bg transition-all data-[selected=true]:text-none hover:cursor-pointer",
                   {
@@ -71,7 +79,7 @@ export const AgendaEvents: FC = () => {
                   },
                 )}
               >
-                <EventDetailsDialog event={event}>
+                <EventDetailsDialog event={event} occurrence={occurrence}>
                   <div className="w-full flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
                       {badgeVariant === "dot" ? (
@@ -93,30 +101,27 @@ export const AgendaEvents: FC = () => {
                         >
                           {event.name}
                         </p>
-                        <p className="text-muted-foreground text-sm line-clamp-1 text-ellipsis md:text-clip w-1/3">
-                          {event.description}
-                        </p>
                       </div>
                     </div>
                     <div className="w-40 flex justify-center items-center gap-1">
                       {agendaModeGroupBy === "date" ? (
                         <>
                           <p className="text-sm">
-                            {formatTime(event.startDate, use24HourFormat)}
+                            {formatTime(occurrence.startDate, use24HourFormat)}
                           </p>
                           <span className="text-muted-foreground">-</span>
                           <p className="text-sm">
-                            {formatTime(event.endDate, use24HourFormat)}
+                            {formatTime(occurrence.endDate, use24HourFormat)}
                           </p>
                         </>
                       ) : (
                         <>
                           <p className="text-sm">
-                            {format(event.startDate, "MM/dd/yyyy")}
+                            {format(occurrence.startDate, "MM/dd/yyyy")}
                           </p>
-                          <span className="text-sm">at</span>
+                          <span className="text-sm">às</span>
                           <p className="text-sm">
-                            {formatTime(event.startDate, use24HourFormat)}
+                            {formatTime(occurrence.startDate, use24HourFormat)}
                           </p>
                         </>
                       )}

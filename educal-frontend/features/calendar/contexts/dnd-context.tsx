@@ -11,12 +11,12 @@ import React, {
 } from "react";
 import { toast } from "sonner";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
-import type { IEvent } from "@/features/calendar/interfaces";
+import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
 
 interface DragDropContextType {
-  draggedEvent: IEvent | null;
+  draggedOccurrence: { event: IEvent; occurrence: IOccurrence } | null;
   isDragging: boolean;
-  startDrag: (event: IEvent) => void;
+  startDrag: (event: IEvent, occurrence: IOccurrence) => void;
   endDrag: () => void;
   handleEventDrop: (date: Date, hour?: number, minute?: number) => void;
 }
@@ -32,26 +32,26 @@ const DragDropContext = createContext<DragDropContextType | undefined>(
 export function DndProvider({ children }: DndProviderProps) {
   const { updateEvent } = useCalendar();
   const [dragState, setDragState] = useState<{
-    draggedEvent: IEvent | null;
+    draggedOccurrence: { event: IEvent; occurrence: IOccurrence } | null;
     isDragging: boolean;
-  }>({ draggedEvent: null, isDragging: false });
+  }>({ draggedOccurrence: null, isDragging: false });
 
   const onEventDroppedRef = useRef<
-    ((event: IEvent, newStartDate: Date, newEndDate: Date) => void) | null
+    ((event: IEvent, occurrence: IOccurrence, newStartDate: Date, newEndDate: Date) => void) | null
   >(null);
 
-  const startDrag = useCallback((event: IEvent) => {
-    setDragState({ draggedEvent: event, isDragging: true });
+  const startDrag = useCallback((event: IEvent, occurrence: IOccurrence) => {
+    setDragState({ draggedOccurrence: { event, occurrence }, isDragging: true });
   }, []);
 
   const endDrag = useCallback(() => {
-    setDragState({ draggedEvent: null, isDragging: false });
+    setDragState({ draggedOccurrence: null, isDragging: false });
   }, []);
 
   const calculateNewDates = useCallback(
-    (event: IEvent, targetDate: Date, hour?: number, minute?: number) => {
-      const originalStart = new Date(event.startDate);
-      const originalEnd = new Date(event.endDate);
+    (occurrence: IOccurrence, targetDate: Date, hour?: number, minute?: number) => {
+      const originalStart = new Date(occurrence.startDate);
+      const originalEnd = new Date(occurrence.endDate);
       const duration = originalEnd.getTime() - originalStart.getTime();
 
       const newStart = new Date(targetDate);
@@ -80,16 +80,16 @@ export function DndProvider({ children }: DndProviderProps) {
 
   const handleEventDrop = useCallback(
     (targetDate: Date, hour?: number, minute?: number) => {
-      const { draggedEvent } = dragState;
-      if (!draggedEvent) return;
+      const { draggedOccurrence } = dragState;
+      if (!draggedOccurrence) return;
 
       const { newStart, newEnd } = calculateNewDates(
-        draggedEvent,
+        draggedOccurrence.occurrence,
         targetDate,
         hour,
         minute,
       );
-      const originalStart = new Date(draggedEvent.startDate);
+      const originalStart = new Date(draggedOccurrence.occurrence.startDate);
 
       // Check if dropped in same position
       if (isSamePosition(originalStart, newStart)) {
@@ -100,26 +100,35 @@ export function DndProvider({ children }: DndProviderProps) {
       // Instantly update event
       const callback = onEventDroppedRef.current;
       if (callback) {
-        callback(draggedEvent, newStart, newEnd);
+        callback(draggedOccurrence.event, draggedOccurrence.occurrence, newStart, newEnd);
       }
       endDrag();
     },
     [dragState, calculateNewDates, isSamePosition, endDrag],
   );
 
-  // Default event update handler
-  const handleEventUpdate = useCallback(
-    (event: IEvent, newStartDate: Date, newEndDate: Date) => {
+  // Default occurrence update handler
+  const handleOccurrenceUpdate = useCallback(
+    (event: IEvent, occurrence: IOccurrence, newStartDate: Date, newEndDate: Date) => {
       try {
+        // Update only the specific occurrence in the event's occurrences array
         const updatedEvent = {
           ...event,
-          startDate: newStartDate.toISOString(),
-          endDate: newEndDate.toISOString(),
+          occurrences: event.occurrences.map((occ) => {
+            if (occ.id === occurrence.id) {
+              return {
+                ...occ,
+                startDate: newStartDate.toISOString(),
+                endDate: newEndDate.toISOString(),
+              };
+            }
+            return occ;
+          }),
         };
         updateEvent(updatedEvent);
-        toast.success("Evento atualizado com sucesso");
+        toast.success("Ocorrência atualizada com sucesso");
       } catch {
-        toast.error("Não foi possível atualizar o evento");
+        toast.error("Não foi possível atualizar a ocorrência");
       }
     },
     [updateEvent],
@@ -127,12 +136,12 @@ export function DndProvider({ children }: DndProviderProps) {
 
   // Set default callback
   React.useEffect(() => {
-    onEventDroppedRef.current = handleEventUpdate;
-  }, [handleEventUpdate]);
+    onEventDroppedRef.current = handleOccurrenceUpdate;
+  }, [handleOccurrenceUpdate]);
 
   const contextValue = useMemo(
     () => ({
-      draggedEvent: dragState.draggedEvent,
+      draggedOccurrence: dragState.draggedOccurrence,
       isDragging: dragState.isDragging,
       startDrag,
       endDrag,
