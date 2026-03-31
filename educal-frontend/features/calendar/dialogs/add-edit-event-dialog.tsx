@@ -42,6 +42,7 @@ import { useDisclosure } from "@/features/calendar/hooks";
 import type { IEvent } from "@/features/calendar/interfaces";
 import { eventSchema, type TEventFormData } from "@/features/calendar/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
+import {USERS_MOCK} from "@/features/calendar/mocks";
 
 interface IProps {
   children: ReactNode;
@@ -182,11 +183,7 @@ export function AddEditEventDialog({
         color: values.color,
         user: isEditing
           ? event.user
-          : {
-              id: Math.floor(Math.random() * 1000000).toString(),
-              name: "Jeraidi Yassir",
-              picturePath: null,
-            },
+          : USERS_MOCK[0]
       };
 
       if (isEditing) {

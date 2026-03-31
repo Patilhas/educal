@@ -10,33 +10,31 @@ export const COLORS: TEventColor[] = [
 ];
 
 export const EVENT_CATEGORIES = [
-	"Academico",
-	"Administrativo",
-	"Avaliacao",
-	"Interservicos",
-	"Comunicacao",
+	"TFM",
+	"Candidaturas",
+	"Matrículas e Inscrições",
 ] as const;
 
 export const EVENT_CLASSIFICATIONS = [
-	"Obrigatorio",
-	"Opcional",
-	"Interno",
-	"Externo",
+	"Planeamento",
+	"Verificação",
+	"Execução",
+	"Melhoria",
 ] as const;
 
 export const EVENT_STATUSES = [
-	"Planeado",
-	"Em progresso",
-	"Concluido",
-	"Cancelado",
+	"Feito",
+	"Por fazer",
+	"A realizar este mês",
+	"Em curso",
 ] as const;
 
 export const EVENT_RESPONSIBLES = [
 	"Servicos Academicos",
-	"Conselho Pedagogico",
-	"Coordenacao",
-	"Docente",
-	"Secretaria",
+	"Conselho Pedagógico",
+    "Conselho Técnico-Científico",
+    "Direção",
+    "Coordenadores de Curso",
 ] as const;
 
 export const WEEK_DAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
