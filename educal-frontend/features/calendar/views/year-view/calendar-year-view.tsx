@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { staggerContainer, transition } from "@/features/calendar/animations";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import { EventListDialog } from "@/features/calendar/dialogs/events-list-dialog";
-import { getCalendarCells } from "@/features/calendar/helpers";
+import { getCalendarCells, getEventColorByCategory } from "@/features/calendar/helpers";
 import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
 import { EventBullet } from "@/features/calendar/views/month-view/event-bullet";
 import {WEEK_DAYS} from "@/features/calendar/constants";
@@ -101,14 +101,14 @@ export function CalendarYearView({ singleDayOccurrences, multiDayOccurrences }: 
                                   .map(({ event }) => (
                                     <EventBullet
                                       key={event.id}
-                                      color={event.color}
+                                      color={getEventColorByCategory(event.category)}
                                       className="size-1.5"
                                     />
                                   ))
                               ) : (
                                 <div className="flex flex-col justify-center items-center">
                                   <EventBullet
-                                    color={dayOccurrences[0].event.color}
+                                    color={getEventColorByCategory(dayOccurrences[0].event.category)}
                                     className="size-1.5"
                                   />
                                   <span className="text-[0.6rem]">

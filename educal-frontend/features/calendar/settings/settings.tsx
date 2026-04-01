@@ -144,11 +144,11 @@ export function Settings() {
           <DropdownMenuRadioGroup
             value={agendaModeGroupBy}
             onValueChange={(value) =>
-              setAgendaModeGroupBy(value as "date" | "color")
+              setAgendaModeGroupBy(value as "date" | "category")
             }
           >
             <DropdownMenuRadioItem value="date">Data</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="color">Cor</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="category">Categoria</DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
         </DropdownMenuGroup>
       </DropdownMenuContent>

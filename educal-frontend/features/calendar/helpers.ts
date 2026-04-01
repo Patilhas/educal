@@ -30,6 +30,7 @@ import type {
 	IEvent,
 	IOccurrence,
 } from "@/features/calendar/interfaces";
+import { EVENT_CATEGORIES } from "@/features/calendar/constants";
 import type {
 	TCalendarView,
 	TEventColor,
@@ -113,7 +114,7 @@ export function getEventsCount(
 export function groupOccurrences(
 	dayOccurrences: { event: IEvent; occurrence: IOccurrence }[]
 ): { event: IEvent; occurrence: IOccurrence }[][] {
-	const sortedOccurrences = dayOccurrences.sort((a, b) =>
+	const sortedOccurrences = [...dayOccurrences].sort((a, b) =>
 		parseISO(a.occurrence.startDate).getTime() - parseISO(b.occurrence.startDate).getTime()
 	);
 	const groups: { event: IEvent; occurrence: IOccurrence }[][] = [];
@@ -322,6 +323,18 @@ export const getEventsForMonth = (occurrences: { event: IEvent; occurrence: IOcc
 	});
 };
 
+export const getEventColorByCategory = (
+	category: keyof typeof EVENT_CATEGORIES,
+): TEventColor => {
+	return EVENT_CATEGORIES[category]?.color ?? "blue";
+};
+
+export const getEventCategoryLabel = (
+	category: keyof typeof EVENT_CATEGORIES,
+): string => {
+	return EVENT_CATEGORIES[category]?.label ?? category;
+};
+
 export const getColorClass = (color: string): string => {
 	const colorClasses: Record<TEventColor, string> = {
 		red: "border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300",
@@ -348,9 +361,4 @@ export const getBgColor = (color: string): string => {
 		purple: "bg-purple-400 dark:bg-purple-600",
 	};
 	return colorClasses[color as TEventColor] || "";
-};
-
-export const toCapitalize = (str: string): string => {
-	if (!str) return "";
-	return str.charAt(0).toUpperCase() + str.slice(1);
 };

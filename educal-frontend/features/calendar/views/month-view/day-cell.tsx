@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { transition } from "@/features/calendar/animations";
 import { EventListDialog } from "@/features/calendar/dialogs/events-list-dialog";
 import { DroppableArea } from "@/features/calendar/dnd/droppable-area";
-import { getMonthCellEvents } from "@/features/calendar/helpers";
+import { getEventColorByCategory, getMonthCellEvents } from "@/features/calendar/helpers";
 import { useMediaQuery } from "@/features/calendar/hooks";
 import type { ICalendarCell, IEvent, IOccurrence } from "@/features/calendar/interfaces";
 import { EventBullet } from "@/features/calendar/views/month-view/event-bullet";
@@ -86,7 +86,10 @@ export function DayCell({ cell, occurrences, eventPositions }: IProps) {
           transition={{ delay: position * 0.1, ...transition }}
         >
           {showBullet && (
-            <EventBullet className="lg:hidden" color={item.event.color} />
+            <EventBullet
+              className="lg:hidden"
+              color={getEventColorByCategory(item.event.category)}
+            />
           )}
           <MonthEventBadge
             className="hidden lg:flex"

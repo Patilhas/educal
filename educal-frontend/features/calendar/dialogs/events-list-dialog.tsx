@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/responsive-modal";
 import { cn } from "@/lib/utils";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
-import { formatTime } from "@/features/calendar/helpers";
+import { formatTime, getEventColorByCategory } from "@/features/calendar/helpers";
 import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
 import { dayCellVariants } from "@/features/calendar/views/month-view/day-cell";
 import { EventBullet } from "@/features/calendar/views/month-view/event-bullet";
@@ -49,7 +49,14 @@ export function EventListDialog({
         <ModalHeader>
           <ModalTitle className="my-2">
             <div className="flex items-center gap-2">
-              <EventBullet color={cellOccurrences[0]?.event.color} className="" />
+              <EventBullet
+                color={
+                  cellOccurrences[0]
+                    ? getEventColorByCategory(cellOccurrences[0].event.category)
+                    : "blue"
+                }
+                className=""
+              />
               <p className="text-sm font-medium">
                 Events on {format(date, "EEEE, MMMM d, yyyy")}
               </p>
@@ -64,12 +71,12 @@ export function EventListDialog({
                   className={cn(
                     "flex items-center gap-2 p-2 border rounded-md hover:bg-muted cursor-pointer",
                     {
-                      [dayCellVariants({ color: occurrence.event.color })]:
+                      [dayCellVariants({ color: getEventColorByCategory(occurrence.event.category) })]:
                         badgeVariant === "colored",
                     },
                   )}
                 >
-                  <EventBullet color={occurrence.event.color} />
+                  <EventBullet color={getEventColorByCategory(occurrence.event.category)} />
                   <div className="flex justify-between items-center w-full">
                     <p className="text-sm font-medium">{occurrence.event.name}</p>
                     <p className="text-xs">

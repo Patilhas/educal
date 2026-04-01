@@ -16,7 +16,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import { AddEditEventDialog } from "@/features/calendar/dialogs/add-edit-event-dialog";
-import { formatTime } from "@/features/calendar/helpers";
+import {formatTime, getEventCategoryLabel} from "@/features/calendar/helpers";
 import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
 
 interface IProps {
@@ -66,7 +66,9 @@ export function EventDetailsDialog({ event, occurrence, children }: IProps) {
                 <Tag className="mt-1 size-4 shrink-0 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium">Categoria</p>
-                  <p className="text-sm text-muted-foreground">{event.category}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {getEventCategoryLabel(event.category)}
+                  </p>
                 </div>
               </div>
 

@@ -1,4 +1,3 @@
-import type { TEventColor } from "@/features/calendar/types";
 import type {
 	EVENT_CATEGORIES,
 	EVENT_CLASSIFICATIONS,
@@ -6,7 +5,7 @@ import type {
 	EVENT_STATUSES,
 } from "@/features/calendar/constants";
 
-type TEventCategory = (typeof EVENT_CATEGORIES)[number];
+export type TEventCategory = keyof typeof EVENT_CATEGORIES;
 type TEventClassification = (typeof EVENT_CLASSIFICATIONS)[number];
 type TEventStatus = (typeof EVENT_STATUSES)[number];
 type TEventResponsible = (typeof EVENT_RESPONSIBLES)[number];
@@ -34,7 +33,6 @@ export interface IEvent {
 	status: TEventStatus;
 	responsible: TEventResponsible;
 	occurrences: IOccurrence[];
-	color: TEventColor;
 	user: IUser;
 }
 

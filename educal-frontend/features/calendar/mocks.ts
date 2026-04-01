@@ -1,6 +1,5 @@
 import {
-	COLORS,
-	EVENT_CATEGORIES,
+	EVENT_CATEGORY_KEYS,
 	EVENT_CLASSIFICATIONS,
 	EVENT_RESPONSIBLES,
 	EVENT_STATUSES,
@@ -94,7 +93,7 @@ const mockGenerator = (numberOfEvents: number): IEvent[] => {
 			"Garantir que a atividade anual e as suas ocorrencias ficam planeadas para o ano letivo.",
 		daysBetweenOccurrences: (Math.floor(Math.random() * 90) + 1).toString(),
 		category:
-			EVENT_CATEGORIES[Math.floor(Math.random() * EVENT_CATEGORIES.length)],
+			EVENT_CATEGORY_KEYS[Math.floor(Math.random() * EVENT_CATEGORY_KEYS.length)],
 		classification:
 			EVENT_CLASSIFICATIONS[
 				Math.floor(Math.random() * EVENT_CLASSIFICATIONS.length)
@@ -102,7 +101,6 @@ const mockGenerator = (numberOfEvents: number): IEvent[] => {
 		status: EVENT_STATUSES[Math.floor(Math.random() * EVENT_STATUSES.length)],
 		responsible:
 			EVENT_RESPONSIBLES[Math.floor(Math.random() * EVENT_RESPONSIBLES.length)],
-		color: COLORS[Math.floor(Math.random() * COLORS.length)],
 		occurrences: [
 			{
 				id: crypto.randomUUID(),
@@ -159,7 +157,7 @@ const mockGenerator = (numberOfEvents: number): IEvent[] => {
 				"Executar e acompanhar uma etapa do planeamento academico com regras definidas.",
 			daysBetweenOccurrences: (Math.floor(Math.random() * 120) + 1).toString(),
 			category:
-				EVENT_CATEGORIES[Math.floor(Math.random() * EVENT_CATEGORIES.length)],
+				EVENT_CATEGORY_KEYS[Math.floor(Math.random() * EVENT_CATEGORY_KEYS.length)],
 			classification:
 				EVENT_CLASSIFICATIONS[
 					Math.floor(Math.random() * EVENT_CLASSIFICATIONS.length)
@@ -167,7 +165,6 @@ const mockGenerator = (numberOfEvents: number): IEvent[] => {
 			status: EVENT_STATUSES[Math.floor(Math.random() * EVENT_STATUSES.length)],
 			responsible:
 				EVENT_RESPONSIBLES[Math.floor(Math.random() * EVENT_RESPONSIBLES.length)],
-			color: COLORS[Math.floor(Math.random() * COLORS.length)],
 			occurrences: [
 				{
 					id: crypto.randomUUID(),

@@ -7,7 +7,7 @@ import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import { EventDetailsDialog } from "@/features/calendar/dialogs/event-details-dialog";
 import { DraggableEvent } from "@/features/calendar/dnd/draggable-event";
 import { ResizableEvent } from "@/features/calendar/dnd/resizable-event";
-import { formatTime } from "@/features/calendar/helpers";
+import { formatTime, getEventColorByCategory } from "@/features/calendar/helpers";
 import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
 
 const calendarWeekEventCardVariants = cva(
@@ -63,9 +63,10 @@ export function EventBlock({ event, occurrence, className }: IProps) {
   const end = parseISO(occurrence.endDate);
   const durationInMinutes = differenceInMinutes(end, start);
   const heightInPixels = (durationInMinutes / 60) * 96 - 8;
+  const eventColor = getEventColorByCategory(event.category);
 
   const color = (
-    badgeVariant === "dot" ? `${event.color}-dot` : event.color
+    badgeVariant === "dot" ? `${eventColor}-dot` : eventColor
   ) as VariantProps<typeof calendarWeekEventCardVariants>["color"];
 
   const calendarWeekEventCardClasses = cn(

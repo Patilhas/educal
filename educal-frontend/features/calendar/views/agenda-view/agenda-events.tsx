@@ -16,9 +16,10 @@ import {
   formatTime,
   getBgColor,
   getColorClass,
+  getEventCategoryLabel,
+  getEventColorByCategory,
   getEventsForMonth,
   getFirstLetters,
-  toCapitalize,
 } from "@/features/calendar/helpers";
 import { EventBullet } from "@/features/calendar/views/month-view/event-bullet";
 
@@ -44,7 +45,7 @@ export const AgendaEvents: FC = () => {
   const agendaOccurrences = Object.groupBy(monthOccurrences, ({ event, occurrence }) => {
     return agendaModeGroupBy === "date"
       ? format(parseISO(occurrence.startDate), "yyyy-MM-dd")
-      : event.color;
+      : event.category;
   });
 
   const groupedAndSortedOccurrences = Object.entries(agendaOccurrences).sort(
@@ -63,7 +64,7 @@ export const AgendaEvents: FC = () => {
             heading={
               agendaModeGroupBy === "date"
                 ? format(parseISO(date), "EEEE, MMMM d, yyyy")
-                : toCapitalize(groupedOccurrences![0].event.color)
+                : getEventCategoryLabel(groupedOccurrences![0].event.category)
             }
           >
             {groupedOccurrences!.map(({ event, occurrence }) => (
@@ -72,7 +73,8 @@ export const AgendaEvents: FC = () => {
                 className={cn(
                   "mb-2 p-4 border rounded-md data-[selected=true]:bg-bg transition-all data-[selected=true]:text-none hover:cursor-pointer",
                   {
-                    [getColorClass(event.color)]: badgeVariant === "colored",
+                    [getColorClass(getEventColorByCategory(event.category))]:
+                      badgeVariant === "colored",
                     "hover:bg-zinc-200 dark:hover:bg-gray-900":
                       badgeVariant === "dot",
                     "hover:opacity-60": badgeVariant === "colored",
@@ -83,11 +85,11 @@ export const AgendaEvents: FC = () => {
                   <div className="w-full flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
                       {badgeVariant === "dot" ? (
-                        <EventBullet color={event.color} />
+                        <EventBullet color={getEventColorByCategory(event.category)} />
                       ) : (
                         <Avatar>
                           <AvatarImage src="" alt="@shadcn" />
-                          <AvatarFallback className={getBgColor(event.color)}>
+                          <AvatarFallback className={getBgColor(getEventColorByCategory(event.category))}>
                             {getFirstLetters(event.name)}
                           </AvatarFallback>
                         </Avatar>

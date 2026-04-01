@@ -31,8 +31,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  COLORS,
   EVENT_CATEGORIES,
+  EVENT_CATEGORY_KEYS,
   EVENT_CLASSIFICATIONS,
   EVENT_RESPONSIBLES,
   EVENT_STATUSES,
@@ -50,6 +50,15 @@ interface IProps {
   startTime?: { hour: number; minute: number };
   event?: IEvent;
 }
+
+const toNumericId = (seed: string): number => {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash << 5) - hash + seed.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash) || 1;
+};
 
 export function AddEditEventDialog({
   children,
@@ -98,11 +107,10 @@ export function AddEditEventDialog({
       name: event?.name ?? "",
       objective: event?.objective ?? "",
       daysBetweenOccurrences: event?.daysBetweenOccurrences ?? "",
-      category: event?.category ?? EVENT_CATEGORIES[0],
+      category: event?.category ?? EVENT_CATEGORY_KEYS[0],
       classification: event?.classification ?? EVENT_CLASSIFICATIONS[0],
       status: event?.status ?? EVENT_STATUSES[0],
       responsible: event?.responsible ?? EVENT_RESPONSIBLES[0],
-      color: event?.color ?? "blue",
       occurrences:
         event?.occurrences?.map((occurrence) => ({
           id: occurrence.id,
@@ -130,11 +138,10 @@ export function AddEditEventDialog({
       name: event?.name ?? "",
       objective: event?.objective ?? "",
       daysBetweenOccurrences: event?.daysBetweenOccurrences ?? "",
-      category: event?.category ?? EVENT_CATEGORIES[0],
+      category: event?.category ?? EVENT_CATEGORY_KEYS[0],
       classification: event?.classification ?? EVENT_CLASSIFICATIONS[0],
       status: event?.status ?? EVENT_STATUSES[0],
       responsible: event?.responsible ?? EVENT_RESPONSIBLES[0],
-      color: event?.color ?? "blue",
       occurrences:
         event?.occurrences?.map((occurrence) => ({
           id: occurrence.id,
@@ -163,7 +170,9 @@ export function AddEditEventDialog({
         (a, b) => a.startDate.getTime() - b.startDate.getTime(),
       );
 
-      const id = isEditing ? event.id : Math.floor(Math.random() * 1000000);
+      const id = isEditing
+        ? event.id
+        : toNumericId(sortedOccurrences[0]?.id ?? values.name);
 
       const formattedEvent: IEvent = {
         id,
@@ -180,7 +189,6 @@ export function AddEditEventDialog({
           startDate: format(occurrence.startDate, "yyyy-MM-dd'T'HH:mm:ss"),
           endDate: format(occurrence.endDate, "yyyy-MM-dd'T'HH:mm:ss"),
         })),
-        color: values.color,
         user: isEditing
           ? event.user
           : USERS_MOCK[0]
@@ -293,9 +301,9 @@ export function AddEditEventDialog({
                           <SelectValue placeholder="Selecione a categoria" />
                         </SelectTrigger>
                         <SelectContent>
-                          {EVENT_CATEGORIES.map((category) => (
+                          {EVENT_CATEGORY_KEYS.map((category) => (
                             <SelectItem value={category} key={category}>
-                              {category}
+                              {EVENT_CATEGORIES[category].label}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -382,32 +390,6 @@ export function AddEditEventDialog({
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="color"
-              render={({ field, fieldState }) => (
-                <FormItem>
-                  <FormLabel className="required">Cor</FormLabel>
-                  <FormControl>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger
-                        className={fieldState.invalid ? "border-red-500" : ""}
-                      >
-                        <SelectValue placeholder="Selecione uma cor" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {COLORS.map((color) => (
-                          <SelectItem value={color} key={color}>
-                            {color}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <div className="space-y-3 rounded-md border p-3">
               <div className="flex items-center justify-between">

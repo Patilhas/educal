@@ -3,15 +3,15 @@
 import type React from "react";
 import { createContext, useContext, useState } from "react";
 import { useLocalStorage } from "@/features/calendar/hooks";
-import type { IEvent, IUser } from "@/features/calendar/interfaces";
-import type { TCalendarView, TEventColor } from "@/features/calendar/types";
+import type { IEvent, IUser, TEventCategory } from "@/features/calendar/interfaces";
+import type { TCalendarView } from "@/features/calendar/types";
 
 interface ICalendarContext {
   selectedDate: Date;
   view: TCalendarView;
   setView: (view: TCalendarView) => void;
-  agendaModeGroupBy: "date" | "color";
-  setAgendaModeGroupBy: (groupBy: "date" | "color") => void;
+  agendaModeGroupBy: "date" | "category";
+  setAgendaModeGroupBy: (groupBy: "date" | "category") => void;
   use24HourFormat: boolean;
   toggleTimeFormat: () => void;
   setSelectedDate: (date: Date | undefined) => void;
@@ -19,8 +19,8 @@ interface ICalendarContext {
   setSelectedUserId: (userId: IUser["id"] | "all") => void;
   badgeVariant: "dot" | "colored";
   setBadgeVariant: (variant: "dot" | "colored") => void;
-  selectedColors: TEventColor[];
-  filterEventsBySelectedColors: (colors: TEventColor) => void;
+  selectedCategories: TEventCategory[];
+  filterEventsBySelectedCategories: (category: TEventCategory) => void;
   filterEventsBySelectedUser: (userId: IUser["id"] | "all") => void;
   users: IUser[];
   events: IEvent[];
@@ -34,7 +34,7 @@ interface CalendarSettings {
   badgeVariant: "dot" | "colored";
   view: TCalendarView;
   use24HourFormat: boolean;
-  agendaModeGroupBy: "date" | "color";
+  agendaModeGroupBy: "date" | "category";
 }
 
 const DEFAULT_SETTINGS: CalendarSettings = {
@@ -78,14 +78,14 @@ export function CalendarProvider({
     settings.use24HourFormat,
   );
   const [agendaModeGroupBy, setAgendaModeGroupByState] = useState<
-    "date" | "color"
+    "date" | "category"
   >(settings.agendaModeGroupBy);
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedUserId, setSelectedUserId] = useState<IUser["id"] | "all">(
     "all",
   );
-  const [selectedColors, setSelectedColors] = useState<TEventColor[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<TEventCategory[]>([]);
 
   const [allEvents, setAllEvents] = useState<IEvent[]>(events || []);
   const [filteredEvents, setFilteredEvents] = useState<IEvent[]>(events || []);
@@ -113,28 +113,27 @@ export function CalendarProvider({
     updateSettings({ use24HourFormat: newValue });
   };
 
-  const setAgendaModeGroupBy = (groupBy: "date" | "color") => {
+  const setAgendaModeGroupBy = (groupBy: "date" | "category") => {
     setAgendaModeGroupByState(groupBy);
     updateSettings({ agendaModeGroupBy: groupBy });
   };
 
-  const filterEventsBySelectedColors = (color: TEventColor) => {
-    const isColorSelected = selectedColors.includes(color);
-    const newColors = isColorSelected
-      ? selectedColors.filter((c) => c !== color)
-      : [...selectedColors, color];
+  const filterEventsBySelectedCategories = (category: TEventCategory) => {
+    const isCategorySelected = selectedCategories.includes(category);
+    const newCategories = isCategorySelected
+      ? selectedCategories.filter((c) => c !== category)
+      : [...selectedCategories, category];
 
-    if (newColors.length > 0) {
+    if (newCategories.length > 0) {
       const filtered = allEvents.filter((event) => {
-        const eventColor = event.color || "blue";
-        return newColors.includes(eventColor);
+        return newCategories.includes(event.category);
       });
       setFilteredEvents(filtered);
     } else {
       setFilteredEvents(allEvents);
     }
 
-    setSelectedColors(newColors);
+    setSelectedCategories(newCategories);
   };
 
   const filterEventsBySelectedUser = (userId: IUser["id"] | "all") => {
@@ -172,7 +171,7 @@ export function CalendarProvider({
 
   const clearFilter = () => {
     setFilteredEvents(allEvents);
-    setSelectedColors([]);
+    setSelectedCategories([]);
     setSelectedUserId("all");
   };
 
@@ -184,8 +183,8 @@ export function CalendarProvider({
     badgeVariant,
     setBadgeVariant,
     users,
-    selectedColors,
-    filterEventsBySelectedColors,
+    selectedCategories,
+    filterEventsBySelectedCategories,
     filterEventsBySelectedUser,
     events: filteredEvents,
     view: currentView,
