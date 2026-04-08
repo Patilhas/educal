@@ -10,18 +10,18 @@ export const occurrenceSchema = z
   .object({
 	id: z.string(),
 	description: z.string().min(1, "A descrição da ocorrência é obrigatória"),
-	startDate: z.date("A data de início da ocorrência e obrigatória"),
-	endDate: z.date("A data de fim da ocorrência e obrigatória"),
+	startDate: z.date("A data de início da ocorrência é obrigatória"),
+	endDate: z.date("A data de fim da ocorrência é obrigatória"),
   })
   .refine((occurrence) => occurrence.endDate > occurrence.startDate, {
-	message: "A data de fim da ocorrência deve ser posterior a data de início",
+	message: "A data de fim da ocorrência deve ser posterior à data de início",
 	path: ["endDate"],
   });
 
 export const eventSchema = z.object({
   name: z.string().min(1, "O nome do evento é obrigatório"),
   objective: z.string().min(1, "O objetivo é obrigatório"),
-  daysBetweenOccurrences: z.string().regex(/^\d*$/, "Use apenas numeros"),
+  daysBetweenOccurrences: z.string().regex(/^\d*$/, "Use apenas números"),
   category: z.enum(EVENT_CATEGORY_KEYS),
   classification: z.enum(EVENT_CLASSIFICATIONS),
   status: z.enum(EVENT_STATUSES),

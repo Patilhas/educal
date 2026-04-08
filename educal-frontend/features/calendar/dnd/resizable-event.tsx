@@ -41,6 +41,10 @@ export function ResizableEvent({
     start: string;
     end: string;
   } | null>(null);
+  const [pendingResizeRange, setPendingResizeRange] = useState<{
+    startDate: string;
+    endDate: string;
+  } | null>(null);
 
   const start = useMemo(() => parseISO(occurrence.startDate), [occurrence.startDate]);
   const end = useMemo(() => parseISO(occurrence.endDate), [occurrence.endDate]);
@@ -92,23 +96,10 @@ export function ResizableEvent({
         start: format(newStart, use24HourFormat ? "HH:mm" : "h:mm a"),
         end: format(newEnd, use24HourFormat ? "HH:mm" : "h:mm a"),
       });
-
-      // Update only the occurrence, not the entire event
-      const updatedEvent = {
-        ...event,
-        occurrences: event.occurrences.map((occ) => {
-          if (occ.id === occurrence.id) {
-            return {
-              ...occ,
-              startDate: newStart.toISOString(),
-              endDate: newEnd.toISOString(),
-            };
-          }
-          return occ;
-        }),
-      };
-
-      updateEvent(updatedEvent);
+      setPendingResizeRange({
+        startDate: newStart.toISOString(),
+        endDate: newEnd.toISOString(),
+      });
     },
     [
       start,
@@ -116,16 +107,32 @@ export function ResizableEvent({
       durationInMinutes,
       resizeBoundaries,
       use24HourFormat,
-      updateEvent,
-      event,
-      occurrence,
     ],
   );
 
   const handleResizeStop = useCallback(() => {
+    if (pendingResizeRange) {
+      const updatedEvent = {
+        ...event,
+        occurrences: event.occurrences.map((occ) => {
+          if (occ.id === occurrence.id) {
+            return {
+              ...occ,
+              startDate: pendingResizeRange.startDate,
+              endDate: pendingResizeRange.endDate,
+            };
+          }
+          return occ;
+        }),
+      };
+
+      updateEvent(updatedEvent);
+    }
+
     setIsResizing(false);
     setResizePreview(null);
-  }, []);
+    setPendingResizeRange(null);
+  }, [event, occurrence, pendingResizeRange, updateEvent]);
 
   const resizeConfig = useMemo(
     () => ({

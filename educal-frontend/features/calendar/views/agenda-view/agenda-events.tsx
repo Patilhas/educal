@@ -42,11 +42,21 @@ export const AgendaEvents: FC = () => {
 
   const monthOccurrences = getEventsForMonth(occurrences, selectedDate);
 
-  const agendaOccurrences = Object.groupBy(monthOccurrences, ({ event, occurrence }) => {
-    return agendaModeGroupBy === "date"
-      ? format(parseISO(occurrence.startDate), "yyyy-MM-dd")
-      : event.category;
-  });
+  const agendaOccurrences = monthOccurrences.reduce<
+    Record<string, typeof monthOccurrences>
+  >((groups, item) => {
+    const groupKey =
+      agendaModeGroupBy === "date"
+        ? format(parseISO(item.occurrence.startDate), "yyyy-MM-dd")
+        : item.event.category;
+
+    if (!groups[groupKey]) {
+      groups[groupKey] = [];
+    }
+
+    groups[groupKey].push(item);
+    return groups;
+  }, {});
 
   const groupedAndSortedOccurrences = Object.entries(agendaOccurrences).sort(
     (a, b) => {

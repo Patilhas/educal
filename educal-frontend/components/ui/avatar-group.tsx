@@ -20,7 +20,7 @@ const AvatarGroup = ({
 	const displayedAvatars = React.Children.toArray(children)
 		.slice(0, max)
 		.reverse();
-	const remainingAvatars = max ? Math.max(totalAvatars - max, 1) : 0;
+	const remainingAvatars = max ? Math.max(totalAvatars - max, 0) : 0;
 
 	return (
 		<div

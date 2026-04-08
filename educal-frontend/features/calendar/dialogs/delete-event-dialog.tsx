@@ -46,7 +46,7 @@ export default function DeleteEventDialog({ eventId }: DeleteEventDialogProps) {
         <AlertDialogHeader>
           <AlertDialogTitle>Tem a certeza absoluta?</AlertDialogTitle>
           <AlertDialogDescription>
-            Esta ação nao pode ser revertida. O evento será eliminado
+            Esta ação não pode ser revertida. O evento será eliminado
             permanentemente.
           </AlertDialogDescription>
         </AlertDialogHeader>
