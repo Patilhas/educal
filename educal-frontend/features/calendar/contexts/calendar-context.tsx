@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useMemo, useState } from "react";
 import { useLocalStorage } from "@/features/calendar/hooks";
 import type { IEvent, IUser, TEventCategory } from "@/features/calendar/interfaces";
 import type { TCalendarView } from "@/features/calendar/types";
@@ -44,7 +44,7 @@ const DEFAULT_SETTINGS: CalendarSettings = {
   agendaModeGroupBy: "date",
 };
 
-const CalendarContext = createContext({} as ICalendarContext);
+const CalendarContext = createContext<ICalendarContext | null>(null);
 
 export function CalendarProvider({
   children,
@@ -88,7 +88,6 @@ export function CalendarProvider({
   const [selectedCategories, setSelectedCategories] = useState<TEventCategory[]>([]);
 
   const [allEvents, setAllEvents] = useState<IEvent[]>(events || []);
-  const [filteredEvents, setFilteredEvents] = useState<IEvent[]>(events || []);
 
   const updateSettings = (newPartialSettings: Partial<CalendarSettings>) => {
     setSettings({
@@ -124,26 +123,11 @@ export function CalendarProvider({
       ? selectedCategories.filter((c) => c !== category)
       : [...selectedCategories, category];
 
-    if (newCategories.length > 0) {
-      const filtered = allEvents.filter((event) => {
-        return newCategories.includes(event.category);
-      });
-      setFilteredEvents(filtered);
-    } else {
-      setFilteredEvents(allEvents);
-    }
-
     setSelectedCategories(newCategories);
   };
 
   const filterEventsBySelectedUser = (userId: IUser["id"] | "all") => {
     setSelectedUserId(userId);
-    if (userId === "all") {
-      setFilteredEvents(allEvents);
-    } else {
-      const filtered = allEvents.filter((event) => event.user.id === userId);
-      setFilteredEvents(filtered);
-    }
   };
 
   const handleSelectDate = (date: Date | undefined) => {
@@ -153,27 +137,32 @@ export function CalendarProvider({
 
   const addEvent = (event: IEvent) => {
     setAllEvents((prev) => [...prev, event]);
-    setFilteredEvents((prev) => [...prev, event]);
   };
 
   const updateEvent = (event: IEvent) => {
     // Events no longer have startDate/endDate - dates are on occurrences
     setAllEvents((prev) => prev.map((e) => (e.id === event.id ? event : e)));
-    setFilteredEvents((prev) =>
-      prev.map((e) => (e.id === event.id ? event : e)),
-    );
   };
 
   const removeEvent = (eventId: number) => {
     setAllEvents((prev) => prev.filter((e) => e.id !== eventId));
-    setFilteredEvents((prev) => prev.filter((e) => e.id !== eventId));
   };
 
   const clearFilter = () => {
-    setFilteredEvents(allEvents);
     setSelectedCategories([]);
     setSelectedUserId("all");
   };
+
+  const filteredEvents = useMemo(() => {
+    return allEvents.filter((event) => {
+      const matchesCategory =
+        selectedCategories.length === 0 || selectedCategories.includes(event.category);
+      const matchesUser =
+        selectedUserId === "all" || event.user.id === selectedUserId;
+
+      return matchesCategory && matchesUser;
+    });
+  }, [allEvents, selectedCategories, selectedUserId]);
 
   const value = {
     selectedDate,
@@ -208,7 +197,7 @@ export function CalendarProvider({
 
 export function useCalendar(): ICalendarContext {
   const context = useContext(CalendarContext);
-  if (!context)
+  if (context === null)
     throw new Error("useCalendar must be used within a CalendarProvider.");
   return context;
 }

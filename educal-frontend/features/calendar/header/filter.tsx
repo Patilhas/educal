@@ -9,7 +9,11 @@ import { Separator } from "@/components/ui/separator";
 import { Toggle } from "@/components/ui/toggle";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import { EVENT_CATEGORY_KEYS } from "@/features/calendar/constants";
-import { getEventCategoryLabel, getEventColorByCategory } from "@/features/calendar/helpers";
+import {
+	getEventCategoryLabel,
+	getEventColorByCategory,
+	getFilterDotColorClass,
+} from "@/features/calendar/helpers";
 
 export default function FilterEvents() {
 	const { selectedCategories, filterEventsBySelectedCategories, clearFilter } =
@@ -36,7 +40,7 @@ export default function FilterEvents() {
 						}}
 					>
 						<div
-							className={`size-3.5 rounded-full bg-${color}-600 dark:bg-${color}-700`}
+							className={`size-3.5 rounded-full ${getFilterDotColorClass(color)}`}
 						/>
 						<span className="flex justify-center items-center gap-2">
 							{getEventCategoryLabel(category)}

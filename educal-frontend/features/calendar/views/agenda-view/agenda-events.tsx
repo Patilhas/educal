@@ -49,7 +49,13 @@ export const AgendaEvents: FC = () => {
   });
 
   const groupedAndSortedOccurrences = Object.entries(agendaOccurrences).sort(
-    (a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime(),
+    (a, b) => {
+      if (agendaModeGroupBy === "date") {
+        return new Date(a[0]).getTime() - new Date(b[0]).getTime();
+      }
+
+      return a[0].localeCompare(b[0], "pt-PT", { sensitivity: "base" });
+    },
   );
 
   return (
@@ -134,7 +140,7 @@ export const AgendaEvents: FC = () => {
             ))}
           </CommandGroup>
         ))}
-        <CommandEmpty>No results found.</CommandEmpty>
+        <CommandEmpty>Nenhum resultado encontrado.</CommandEmpty>
       </CommandList>
     </Command>
   );

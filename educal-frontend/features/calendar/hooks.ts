@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 
 export function useDisclosure({
 	defaultIsOpen = false,
@@ -17,7 +17,11 @@ export function useDisclosure({
 export const useLocalStorage = <T>(
 	key: string,
 	initialValue: T,
-): [T, (value: T) => void] => {
+	): [T, (value: T | ((previousValue: T) => T)) => void] => {
+	const eventName = `local-storage:${key}`;
+	const cachedRawValueRef = useRef<string | null>(null);
+	const cachedParsedValueRef = useRef<T>(initialValue);
+
 	const readValue = (): T => {
 		if (typeof window === "undefined") {
 			return initialValue;
@@ -25,22 +29,63 @@ export const useLocalStorage = <T>(
 
 		try {
 			const item = window.localStorage.getItem(key);
-			return item ? (JSON.parse(item) as T) : initialValue;
+
+			if (item === cachedRawValueRef.current) {
+				return cachedParsedValueRef.current;
+			}
+
+			const parsedValue = item !== null ? (JSON.parse(item) as T) : initialValue;
+			cachedRawValueRef.current = item;
+			cachedParsedValueRef.current = parsedValue;
+
+			return parsedValue;
 		} catch (error) {
 			console.warn(`Error reading localStorage key "${key}":`, error);
 			return initialValue;
 		}
 	};
 
-	const [storedValue, setStoredValue] = useState<T>(readValue);
+	const subscribe = (callback: () => void) => {
+		if (typeof window === "undefined") {
+			return () => {};
+		}
 
-	const setValue = (value: T) => {
+		const onStorageChange = (event: StorageEvent) => {
+			if (event.key === key) {
+				callback();
+			}
+		};
+
+		const onLocalChange = () => callback();
+
+		window.addEventListener("storage", onStorageChange);
+		window.addEventListener(eventName, onLocalChange);
+
+		return () => {
+			window.removeEventListener("storage", onStorageChange);
+			window.removeEventListener(eventName, onLocalChange);
+		};
+	};
+
+	const storedValue = useSyncExternalStore(
+		subscribe,
+		readValue,
+		() => initialValue,
+	);
+
+	const setValue = (value: T | ((previousValue: T) => T)) => {
+		const previousValue = readValue();
+		const valueToStore =
+			typeof value === "function"
+				? (value as (previousValue: T) => T)(previousValue)
+				: value;
+
 		try {
-			const valueToStore =
-				value instanceof Function ? value(storedValue) : value;
-			setStoredValue(valueToStore);
 			if (typeof window !== "undefined") {
 				window.localStorage.setItem(key, JSON.stringify(valueToStore));
+				cachedRawValueRef.current = window.localStorage.getItem(key);
+				cachedParsedValueRef.current = valueToStore;
+				window.dispatchEvent(new Event(eventName));
 			}
 		} catch (error) {
 			console.warn(`Error setting localStorage key "${key}":`, error);
@@ -51,19 +96,15 @@ export const useLocalStorage = <T>(
 };
 
 export function useMediaQuery(query: string): boolean {
-	const [matches, setMatches] = useState(false);
-
-	useEffect(() => {
+	const subscribe = (callback: () => void) => {
 		const media = window.matchMedia(query);
-		if (media.matches !== matches) {
-			setMatches(media.matches);
-		}
-
-		const listener = () => setMatches(media.matches);
+		const listener = () => callback();
 		media.addEventListener("change", listener);
-
 		return () => media.removeEventListener("change", listener);
-	}, [matches, query]);
+	};
 
-	return matches;
+	const getSnapshot = () => window.matchMedia(query).matches;
+	const getServerSnapshot = () => false;
+
+	return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }

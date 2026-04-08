@@ -1,4 +1,4 @@
-import {formatDate, getYear, isSameDay, isSameMonth, parseISO} from "date-fns";
+import { endOfDay, formatDate, getYear, isSameDay, isSameMonth, parseISO, startOfDay } from "date-fns";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { staggerContainer, transition } from "@/features/calendar/animations";
@@ -66,9 +66,18 @@ export function CalendarYearView({ singleDayOccurrences, multiDayOccurrences }: 
                 {cells.map((cell) => {
                   const isCurrentMonth = isSameMonth(cell.date, monthDate);
                   const isToday = isSameDay(cell.date, new Date());
-                  const dayOccurrences = allOccurrences.filter(({ occurrence }) =>
-                    isSameDay(parseISO(occurrence.startDate), cell.date),
-                  );
+                  const dayStart = startOfDay(cell.date);
+                  const dayEnd = endOfDay(cell.date);
+                  const dayOccurrences = allOccurrences.filter(({ occurrence }) => {
+                    const occurrenceStart = parseISO(occurrence.startDate);
+                    const occurrenceEnd = parseISO(occurrence.endDate);
+
+                    return (
+                      (occurrenceStart <= dayEnd && occurrenceEnd >= dayStart) ||
+                      isSameDay(occurrenceStart, cell.date) ||
+                      isSameDay(occurrenceEnd, cell.date)
+                    );
+                  });
                   const hasOccurrences = dayOccurrences.length > 0;
 
                   return (

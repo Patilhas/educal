@@ -8,7 +8,6 @@ import {
 	startOfDay,
 	startOfWeek,
 } from "date-fns";
-import { useMemo } from "react";
 import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
 import { MonthEventBadge } from "@/features/calendar/views/month-view/month-event-badge";
 
@@ -21,81 +20,61 @@ export function WeekViewMultiDayEventsRow({
 	selectedDate,
 	multiDayOccurrences,
 }: IProps) {
-	const weekStartMs = useMemo(
-		() => startOfWeek(selectedDate).getTime(),
-		[selectedDate],
-	);
-	const weekEndMs = useMemo(() => endOfWeek(selectedDate).getTime(), [selectedDate]);
-	const weekDays = useMemo(
-		() => Array.from({ length: 7 }, (_, i) => addDays(new Date(weekStartMs), i)),
-		[weekStartMs],
-	);
+	const weekStart = startOfWeek(selectedDate);
+	const weekEnd = endOfWeek(selectedDate);
+	const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
-	const processedOccurrences = useMemo(() => {
-		const weekStart = new Date(weekStartMs);
-		const weekEnd = new Date(weekEndMs);
+	const processedOccurrences = multiDayOccurrences
+		.map(({ event, occurrence }) => {
+			const start = parseISO(occurrence.startDate);
+			const end = parseISO(occurrence.endDate);
+			const adjustedStart = isBefore(start, weekStart) ? weekStart : start;
+			const adjustedEnd = isAfter(end, weekEnd) ? weekEnd : end;
+			const startIndex = differenceInDays(adjustedStart, weekStart);
+			const endIndex = differenceInDays(adjustedEnd, weekStart);
 
-		return multiDayOccurrences
-			.map(({ event, occurrence }) => {
-				const start = parseISO(occurrence.startDate);
-				const end = parseISO(occurrence.endDate);
-				const adjustedStart = isBefore(start, weekStart) ? weekStart : start;
-				const adjustedEnd = isAfter(end, weekEnd) ? weekEnd : end;
-				const startIndex = differenceInDays(adjustedStart, weekStart);
-				const endIndex = differenceInDays(adjustedEnd, weekStart);
+			return {
+				event,
+				occurrence,
+				adjustedStart,
+				adjustedEnd,
+				startIndex,
+				endIndex,
+			};
+		})
+		.sort((a, b) => {
+			const startDiff = a.adjustedStart.getTime() - b.adjustedStart.getTime();
+			if (startDiff !== 0) return startDiff;
+			return b.endIndex - b.startIndex - (a.endIndex - a.startIndex);
+		});
 
-				return {
-					event,
-					occurrence,
-					adjustedStart,
-					adjustedEnd,
-					startIndex,
-					endIndex,
-				};
-			})
-			.sort((a, b) => {
-				const startDiff = a.adjustedStart.getTime() - b.adjustedStart.getTime();
-				if (startDiff !== 0) return startDiff;
-				return b.endIndex - b.startIndex - (a.endIndex - a.startIndex);
-			});
-	}, [multiDayOccurrences, weekStartMs, weekEndMs]);
-
-	const occurrenceRows = useMemo(() => {
-		const rows: (typeof processedOccurrences)[] = [];
-
-		processedOccurrences.forEach((item) => {
-			let rowIndex = rows.findIndex((row) =>
-				row.every(
-					(e) => e.endIndex < item.startIndex || e.startIndex > item.endIndex,
-				),
+	const occurrenceRows = processedOccurrences.reduce<typeof processedOccurrences[]>(
+		(rows, item) => {
+			const rowIndex = rows.findIndex((row) =>
+				row.every((e) => e.endIndex < item.startIndex || e.startIndex > item.endIndex),
 			);
 
 			if (rowIndex === -1) {
-				rowIndex = rows.length;
-				rows.push([]);
+				rows.push([item]);
+			} else {
+				rows[rowIndex] = [...rows[rowIndex], item];
 			}
 
-			rows[rowIndex].push(item);
-		});
+			return rows;
+		},
+		[],
+	);
 
-		return rows;
-	}, [processedOccurrences]);
+	const hasOccurrencesInWeek = multiDayOccurrences.some(({ occurrence }) => {
+		const start = parseISO(occurrence.startDate);
+		const end = parseISO(occurrence.endDate);
 
-	const hasOccurrencesInWeek = useMemo(() => {
-		const weekStart = new Date(weekStartMs);
-		const weekEnd = new Date(weekEndMs);
-
-		return multiDayOccurrences.some(({ occurrence }) => {
-			const start = parseISO(occurrence.startDate);
-			const end = parseISO(occurrence.endDate);
-
-			return (
-				(start >= weekStart && start <= weekEnd) ||
-				(end >= weekStart && end <= weekEnd) ||
-				(start <= weekStart && end >= weekEnd)
-			);
-		});
-	}, [multiDayOccurrences, weekStartMs, weekEndMs]);
+		return (
+			(start >= weekStart && start <= weekEnd) ||
+			(end >= weekStart && end <= weekEnd) ||
+			(start <= weekStart && end >= weekEnd)
+		);
+	});
 
 	if (!hasOccurrencesInWeek) {
 		return null;

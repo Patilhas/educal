@@ -5,13 +5,13 @@ import { DayPicker } from "@/components/ui/day-picker";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 
-import { AddEditEventDialog } from "@/features/calendar/dialogs/add-edit-event-dialog";
-import { DroppableArea } from "@/features/calendar/dnd/droppable-area";
 import { groupOccurrences } from "@/features/calendar/helpers";
 import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
 import { CalendarTimeline } from "@/features/calendar/views/week-and-day-view/calendar-time-line";
 import { DayViewMultiDayEventsRow } from "@/features/calendar/views/week-and-day-view/day-view-multi-day-events-row";
 import { RenderGroupedEvents } from "@/features/calendar/views/week-and-day-view/render-grouped-events";
+import { TimeGridDaySlots } from "@/features/calendar/views/week-and-day-view/time-grid-day-slots";
+import { TimeGridHoursColumn } from "@/features/calendar/views/week-and-day-view/time-grid-hours-column";
 
 interface IProps {
   singleDayOccurrences: { event: IEvent; occurrence: IOccurrence }[];
@@ -102,67 +102,15 @@ export function CalendarDayView({ singleDayOccurrences, multiDayOccurrences }: I
         <ScrollArea className="h-[800px]" type="always" ref={scrollAreaRef}>
           <div className="flex">
             {/* Hours column */}
-            <div className="relative w-18">
-              {hours.map((hour, index) => (
-                <div key={hour} className="relative" style={{ height: "96px" }}>
-                  <div className="absolute -top-3 right-2 flex h-6 items-center">
-                    {index !== 0 && (
-                      <span className="text-xs text-t-quaternary">
-                        {format(
-                          new Date().setHours(hour, 0, 0, 0),
-                          use24HourFormat ? "HH:00" : "h a",
-                        )}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <TimeGridHoursColumn
+              hours={hours}
+              use24HourFormat={use24HourFormat}
+            />
 
             {/* Day grid */}
             <div className="relative flex-1 border-l">
               <div className="relative">
-                {hours.map((hour, index) => (
-                  <div
-                    key={hour}
-                    className="relative"
-                    style={{ height: "96px" }}
-                  >
-                    {index !== 0 && (
-                      <div className="pointer-events-none absolute inset-x-0 top-0 border-b"></div>
-                    )}
-
-                    <DroppableArea
-                      date={selectedDate}
-                      hour={hour}
-                      minute={0}
-                      className="absolute inset-x-0 top-0 h-[48px]"
-                    >
-                      <AddEditEventDialog
-                        startDate={selectedDate}
-                        startTime={{ hour, minute: 0 }}
-                      >
-                        <div className="absolute inset-0 cursor-pointer transition-colors hover:bg-secondary" />
-                      </AddEditEventDialog>
-                    </DroppableArea>
-
-                    <div className="pointer-events-none absolute inset-x-0 top-1/2 border-b border-dashed border-b-tertiary"></div>
-
-                    <DroppableArea
-                      date={selectedDate}
-                      hour={hour}
-                      minute={30}
-                      className="absolute inset-x-0 bottom-0 h-[48px]"
-                    >
-                      <AddEditEventDialog
-                        startDate={selectedDate}
-                        startTime={{ hour, minute: 30 }}
-                      >
-                        <div className="absolute inset-0 cursor-pointer transition-colors hover:bg-secondary" />
-                      </AddEditEventDialog>
-                    </DroppableArea>
-                  </div>
-                ))}
+                <TimeGridDaySlots day={selectedDate} hours={hours} />
 
                 <RenderGroupedEvents
                   groupedOccurrences={groupedOccurrences}

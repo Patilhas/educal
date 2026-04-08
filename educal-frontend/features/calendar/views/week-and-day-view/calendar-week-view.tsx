@@ -7,12 +7,12 @@ import {
     transition,
 } from "@/features/calendar/animations";
 import {useCalendar} from "@/features/calendar/contexts/calendar-context";
-import {AddEditEventDialog} from "@/features/calendar/dialogs/add-edit-event-dialog";
-import {DroppableArea} from "@/features/calendar/dnd/droppable-area";
 import {groupOccurrences} from "@/features/calendar/helpers";
 import type {IEvent, IOccurrence} from "@/features/calendar/interfaces";
 import {CalendarTimeline} from "@/features/calendar/views/week-and-day-view/calendar-time-line";
 import {RenderGroupedEvents} from "@/features/calendar/views/week-and-day-view/render-grouped-events";
+import { TimeGridDaySlots } from "@/features/calendar/views/week-and-day-view/time-grid-day-slots";
+import { TimeGridHoursColumn } from "@/features/calendar/views/week-and-day-view/time-grid-hours-column";
 import {
     WeekViewMultiDayEventsRow
 } from "@/features/calendar/views/week-and-day-view/week-view-multi-day-events-row";
@@ -43,8 +43,8 @@ export function CalendarWeekView({singleDayOccurrences, multiDayOccurrences}: IP
                 animate={{opacity: 1, y: 0}}
                 transition={transition}
             >
-                <p>Weekly view is not recommended on smaller devices.</p>
-                <p>Please switch to a desktop device or use the daily view instead.</p>
+                <p>A vista semanal não é recomendada em dispositivos pequenos.</p>
+                <p>Use um ecrã maior ou mude para a vista diária.</p>
             </motion.div>
 
             <motion.div
@@ -99,29 +99,10 @@ export function CalendarWeekView({singleDayOccurrences, multiDayOccurrences}: IP
                 <ScrollArea className="h-[736px]" type="always">
                     <div className="flex">
                         {/* Hours column */}
-                        <motion.div className="relative w-18" variants={staggerContainer}>
-                            {hours.map((hour, index) => (
-                                <motion.div
-                                    key={hour}
-                                    className="relative"
-                                    style={{height: "96px"}}
-                                    initial={{opacity: 0, x: -20}}
-                                    animate={{opacity: 1, x: 0}}
-                                    transition={{delay: index * 0.02, ...transition}}
-                                >
-                                    <div className="absolute -top-3 right-2 flex h-6 items-center">
-                                        {index !== 0 && (
-                                            <span className="text-xs text-t-quaternary">
-												{format(
-                                                    new Date().setHours(hour, 0, 0, 0),
-                                                    use24HourFormat ? "HH:00" : "h a",
-                                                )}
-											</span>
-                                        )}
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </motion.div>
+                        <TimeGridHoursColumn
+                            hours={hours}
+                            use24HourFormat={use24HourFormat}
+                        />
 
                         {/* Week grid */}
                         <motion.div
@@ -145,54 +126,7 @@ export function CalendarWeekView({singleDayOccurrences, multiDayOccurrences}: IP
                                             animate={{opacity: 1}}
                                             transition={{delay: dayIndex * 0.1, ...transition}}
                                         >
-                                            {hours.map((hour, index) => (
-                                                <motion.div
-                                                    key={hour}
-                                                    className="relative"
-                                                    style={{height: "96px"}}
-                                                    initial={{opacity: 0}}
-                                                    animate={{opacity: 1}}
-                                                    transition={{delay: index * 0.01, ...transition}}
-                                                >
-                                                    {index !== 0 && (
-                                                        <div
-                                                            className="pointer-events-none absolute inset-x-0 top-0 border-b"></div>
-                                                    )}
-
-                                                    <DroppableArea
-                                                        date={day}
-                                                        hour={hour}
-                                                        minute={0}
-                                                        className="absolute inset-x-0 top-0  h-[48px]"
-                                                    >
-                                                        <AddEditEventDialog
-                                                            startDate={day}
-                                                            startTime={{hour, minute: 0}}
-                                                        >
-                                                            <div
-                                                                className="absolute inset-0 cursor-pointer transition-colors hover:bg-secondary"/>
-                                                        </AddEditEventDialog>
-                                                    </DroppableArea>
-
-                                                    <div
-                                                        className="pointer-events-none absolute inset-x-0 top-1/2 border-b border-dashed border-b-tertiary"></div>
-
-                                                    <DroppableArea
-                                                        date={day}
-                                                        hour={hour}
-                                                        minute={30}
-                                                        className="absolute inset-x-0 bottom-0 h-[48px]"
-                                                    >
-                                                        <AddEditEventDialog
-                                                            startDate={day}
-                                                            startTime={{hour, minute: 30}}
-                                                        >
-                                                            <div
-                                                                className="absolute inset-0 cursor-pointer transition-colors hover:bg-secondary"/>
-                                                        </AddEditEventDialog>
-                                                    </DroppableArea>
-                                                </motion.div>
-                                            ))}
+                                            <TimeGridDaySlots day={day} hours={hours} />
 
                                             <RenderGroupedEvents
                                                 groupedOccurrences={groupedOccurrences}

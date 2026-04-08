@@ -9,9 +9,12 @@ import {
 } from "@/components/ui/responsive-modal";
 import { cn } from "@/lib/utils";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
-import { formatTime, getEventColorByCategory } from "@/features/calendar/helpers";
+import {
+  formatTime,
+  getColorClass,
+  getEventColorByCategory,
+} from "@/features/calendar/helpers";
 import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
-import { dayCellVariants } from "@/features/calendar/views/month-view/day-cell";
 import { EventBullet } from "@/features/calendar/views/month-view/event-bullet";
 import { EventDetailsDialog } from "@/features/calendar/dialogs/event-details-dialog";
 
@@ -58,7 +61,7 @@ export function EventListDialog({
                 className=""
               />
               <p className="text-sm font-medium">
-                Events on {format(date, "EEEE, MMMM d, yyyy")}
+                Eventos em {format(date, "EEEE, MMMM d, yyyy")}
               </p>
             </div>
           </ModalTitle>
@@ -71,7 +74,7 @@ export function EventListDialog({
                   className={cn(
                     "flex items-center gap-2 p-2 border rounded-md hover:bg-muted cursor-pointer",
                     {
-                      [dayCellVariants({ color: getEventColorByCategory(occurrence.event.category) })]:
+                      [getColorClass(getEventColorByCategory(occurrence.event.category))]:
                         badgeVariant === "colored",
                     },
                   )}

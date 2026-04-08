@@ -1,4 +1,3 @@
-import { addMinutes, format, set } from "date-fns";
 import { type ReactNode, useEffect, useMemo } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -42,7 +41,12 @@ import { useDisclosure } from "@/features/calendar/hooks";
 import type { IEvent } from "@/features/calendar/interfaces";
 import { eventSchema, type TEventFormData } from "@/features/calendar/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {USERS_MOCK} from "@/features/calendar/mocks";
+import {
+  formatEventFromForm,
+  getEventFormDefaults,
+  getInitialDates,
+  toInputDate,
+} from "@/features/calendar/dialogs/add-edit-event-dialog-utils";
 
 interface IProps {
   children: ReactNode;
@@ -50,15 +54,6 @@ interface IProps {
   startTime?: { hour: number; minute: number };
   event?: IEvent;
 }
-
-const toNumericId = (seed: string): number => {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    hash = (hash << 5) - hash + seed.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash) || 1;
-};
 
 export function AddEditEventDialog({
   children,
@@ -71,61 +66,17 @@ export function AddEditEventDialog({
   const isEditing = !!event;
 
   const initialDates = useMemo(() => {
-    if (!isEditing && !event) {
-      if (!startDate) {
-        const now = new Date();
-        return { startDate: now, endDate: addMinutes(now, 30) };
-      }
+    return getInitialDates({ event, startDate, startTime });
+  }, [event, startDate, startTime]);
 
-      const start = startTime
-        ? set(new Date(startDate), {
-            hours: startTime.hour,
-            minutes: startTime.minute,
-            seconds: 0,
-          })
-        : new Date(startDate);
-
-      return { startDate: start, endDate: addMinutes(start, 30) };
-    }
-
-    // Use the first occurrence's dates since events no longer have startDate/endDate
-    if (event && event.occurrences && event.occurrences.length > 0) {
-      return {
-        startDate: new Date(event.occurrences[0].startDate),
-        endDate: new Date(event.occurrences[0].endDate),
-      };
-    }
-
-    // Fallback for new events
-    const now = new Date();
-    return { startDate: now, endDate: addMinutes(now, 30) };
-  }, [startDate, startTime, event, isEditing]);
+  const defaultValues = useMemo(
+    () => getEventFormDefaults(event, initialDates),
+    [event, initialDates],
+  );
 
   const form = useForm<TEventFormData>({
     resolver: zodResolver(eventSchema),
-    defaultValues: {
-      name: event?.name ?? "",
-      objective: event?.objective ?? "",
-      daysBetweenOccurrences: event?.daysBetweenOccurrences ?? "",
-      category: event?.category ?? EVENT_CATEGORY_KEYS[0],
-      classification: event?.classification ?? EVENT_CLASSIFICATIONS[0],
-      status: event?.status ?? EVENT_STATUSES[0],
-      responsible: event?.responsible ?? EVENT_RESPONSIBLES[0],
-      occurrences:
-        event?.occurrences?.map((occurrence) => ({
-          id: occurrence.id,
-          description: occurrence.description,
-          startDate: new Date(occurrence.startDate),
-          endDate: new Date(occurrence.endDate),
-        })) ?? [
-          {
-            id: crypto.randomUUID(),
-            description: "",
-            startDate: initialDates.startDate,
-            endDate: initialDates.endDate,
-          },
-        ],
-    },
+    defaultValues,
   });
 
   const { fields, append, remove } = useFieldArray({
@@ -134,65 +85,16 @@ export function AddEditEventDialog({
   });
 
   useEffect(() => {
-    form.reset({
-      name: event?.name ?? "",
-      objective: event?.objective ?? "",
-      daysBetweenOccurrences: event?.daysBetweenOccurrences ?? "",
-      category: event?.category ?? EVENT_CATEGORY_KEYS[0],
-      classification: event?.classification ?? EVENT_CLASSIFICATIONS[0],
-      status: event?.status ?? EVENT_STATUSES[0],
-      responsible: event?.responsible ?? EVENT_RESPONSIBLES[0],
-      occurrences:
-        event?.occurrences?.map((occurrence) => ({
-          id: occurrence.id,
-          description: occurrence.description,
-          startDate: new Date(occurrence.startDate),
-          endDate: new Date(occurrence.endDate),
-        })) ?? [
-          {
-            id: crypto.randomUUID(),
-            description: "",
-            startDate: initialDates.startDate,
-            endDate: initialDates.endDate,
-          },
-        ],
-    });
-  }, [event, initialDates, form]);
-
-  const toInputDate = (date: Date) => {
-    const adjusted = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-    return adjusted.toISOString().slice(0, 16);
-  };
+    form.reset(defaultValues);
+  }, [defaultValues, form]);
 
   const onSubmit = (values: TEventFormData) => {
     try {
-      const sortedOccurrences = [...values.occurrences].sort(
-        (a, b) => a.startDate.getTime() - b.startDate.getTime(),
-      );
-
-      const id = isEditing
-        ? event.id
-        : toNumericId(sortedOccurrences[0]?.id ?? values.name);
-
-      const formattedEvent: IEvent = {
-        id,
-        name: values.name,
-        objective: values.objective,
-        daysBetweenOccurrences: values.daysBetweenOccurrences,
-        category: values.category,
-        classification: values.classification,
-        status: values.status,
-        responsible: values.responsible,
-        occurrences: sortedOccurrences.map((occurrence) => ({
-          id: occurrence.id,
-          description: occurrence.description,
-          startDate: format(occurrence.startDate, "yyyy-MM-dd'T'HH:mm:ss"),
-          endDate: format(occurrence.endDate, "yyyy-MM-dd'T'HH:mm:ss"),
-        })),
-        user: isEditing
-          ? event.user
-          : USERS_MOCK[0]
-      };
+      const formattedEvent: IEvent = formatEventFromForm({
+        values,
+        isEditing,
+        event,
+      });
 
       if (isEditing) {
         updateEvent(formattedEvent);
