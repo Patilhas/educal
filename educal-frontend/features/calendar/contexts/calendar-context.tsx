@@ -2,6 +2,12 @@
 
 import type React from "react";
 import { createContext, useContext, useMemo, useState } from "react";
+import {
+  createEventRequest,
+  deleteEventRequest,
+  updateEventRequest,
+  updateOccurrenceRequest,
+} from "@/features/calendar/client-requests";
 import { useLocalStorage } from "@/features/calendar/hooks";
 import type { IEvent, IUser, TEventCategory } from "@/features/calendar/interfaces";
 import type { TCalendarView } from "@/features/calendar/types";
@@ -24,9 +30,16 @@ interface ICalendarContext {
   filterEventsBySelectedUser: (userId: IUser["id"] | "all") => void;
   users: IUser[];
   events: IEvent[];
-  addEvent: (event: IEvent) => void;
-  updateEvent: (event: IEvent) => void;
-  removeEvent: (eventId: number) => void;
+  addEvent: (event: IEvent) => Promise<void>;
+  updateEvent: (event: IEvent) => Promise<void>;
+  updateOccurrence: (params: {
+    eventId: number;
+    occurrenceId: string;
+    startDate?: string;
+    endDate?: string;
+    description?: string;
+  }) => Promise<void>;
+  removeEvent: (eventId: number) => Promise<void>;
   clearFilter: () => void;
 }
 
@@ -135,17 +148,47 @@ export function CalendarProvider({
     setSelectedDate(date);
   };
 
-  const addEvent = (event: IEvent) => {
-    setAllEvents((prev) => [...prev, event]);
+  const addEvent = async (event: IEvent) => {
+    const createdEvent = await createEventRequest(event);
+    setAllEvents((prev) => [createdEvent, ...prev]);
   };
 
-  const updateEvent = (event: IEvent) => {
-    // Events no longer have startDate/endDate - dates are on occurrences
-    setAllEvents((prev) => prev.map((e) => (e.id === event.id ? event : e)));
+  const updateEvent = async (event: IEvent) => {
+    const updatedEvent = await updateEventRequest(event);
+    setAllEvents((prev) =>
+      prev.map((item) => (item.id === updatedEvent.id ? updatedEvent : item)),
+    );
   };
 
-  const removeEvent = (eventId: number) => {
-    setAllEvents((prev) => prev.filter((e) => e.id !== eventId));
+  const updateOccurrence = async ({
+    eventId,
+    occurrenceId,
+    startDate,
+    endDate,
+    description,
+  }: {
+    eventId: number;
+    occurrenceId: string;
+    startDate?: string;
+    endDate?: string;
+    description?: string;
+  }) => {
+    const updatedEvent = await updateOccurrenceRequest({
+      eventId,
+      occurrenceId,
+      startDate,
+      endDate,
+      description,
+    });
+
+    setAllEvents((prev) =>
+      prev.map((item) => (item.id === updatedEvent.id ? updatedEvent : item)),
+    );
+  };
+
+  const removeEvent = async (eventId: number) => {
+    await deleteEventRequest(eventId);
+    setAllEvents((prev) => prev.filter((event) => event.id !== eventId));
   };
 
   const clearFilter = () => {
@@ -184,6 +227,7 @@ export function CalendarProvider({
     setAgendaModeGroupBy,
     addEvent,
     updateEvent,
+    updateOccurrence,
     removeEvent,
     clearFilter,
   };

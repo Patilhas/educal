@@ -62,7 +62,7 @@ export function AddEditEventDialog({
   event,
 }: IProps) {
   const { isOpen, onClose, onToggle } = useDisclosure();
-  const { addEvent, updateEvent } = useCalendar();
+  const { addEvent, updateEvent, users } = useCalendar();
   const isEditing = !!event;
 
   const initialDates = useMemo(() => {
@@ -75,7 +75,8 @@ export function AddEditEventDialog({
   );
 
   const form = useForm<TEventFormData>({
-    resolver: zodResolver(eventSchema),
+    // Temporary cast: resolver typings are strict with the installed zod minor version.
+    resolver: zodResolver(eventSchema as never),
     defaultValues,
   });
 
@@ -88,19 +89,26 @@ export function AddEditEventDialog({
     form.reset(defaultValues);
   }, [defaultValues, form]);
 
-  const onSubmit = (values: TEventFormData) => {
+  const onSubmit = async (values: TEventFormData) => {
     try {
+      const defaultUser = event?.user ?? users[0];
+      if (!defaultUser) {
+        toast.error("Não existe utilizador disponível para criar o evento");
+        return;
+      }
+
       const formattedEvent: IEvent = formatEventFromForm({
         values,
         isEditing,
         event,
+        defaultUser,
       });
 
       if (isEditing) {
-        updateEvent(formattedEvent);
+        await updateEvent(formattedEvent);
         toast.success("Evento atualizado com sucesso");
       } else {
-        addEvent(formattedEvent);
+        await addEvent(formattedEvent);
         toast.success("Evento criado com sucesso");
       }
 

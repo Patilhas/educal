@@ -21,9 +21,9 @@ interface DeleteEventDialogProps {
 export default function DeleteEventDialog({ eventId }: DeleteEventDialogProps) {
   const { removeEvent } = useCalendar();
 
-  const deleteEvent = () => {
+  const deleteEvent = async () => {
     try {
-      removeEvent(eventId);
+      await removeEvent(eventId);
       toast.success("Evento eliminado com sucesso.");
     } catch {
       toast.error("Erro ao eliminar evento.");

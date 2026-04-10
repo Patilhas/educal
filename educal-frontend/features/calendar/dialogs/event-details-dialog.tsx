@@ -34,9 +34,9 @@ export function EventDetailsDialog({ event, occurrence, children }: IProps) {
   const startDate = displayOccurrence ? parseISO(displayOccurrence.startDate) : new Date();
   const endDate = displayOccurrence ? parseISO(displayOccurrence.endDate) : new Date();
 
-  const deleteEvent = (eventId: number) => {
+  const deleteEvent = async (eventId: number) => {
     try {
-      removeEvent(eventId);
+      await removeEvent(eventId);
       toast.success("Evento eliminado com sucesso.");
     } catch {
       toast.error("Erro ao eliminar evento.");
@@ -176,7 +176,7 @@ export function EventDetailsDialog({ event, occurrence, children }: IProps) {
           <Button
             variant="destructive"
             onClick={() => {
-              deleteEvent(event.id);
+              void deleteEvent(event.id);
             }}
           >
             Eliminar

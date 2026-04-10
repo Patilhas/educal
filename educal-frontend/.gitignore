@@ -21,6 +21,7 @@
 # misc
 .DS_Store
 *.pem
+server/calendar/data/cache/
 
 # debug
 npm-debug.log*
