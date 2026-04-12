@@ -10,6 +10,10 @@ import {
   buildCalendarSeed,
   type ICalendarDb,
 } from "@/server/calendar/data/calendar.seed";
+import {
+  loadCalendarDbFromStorage,
+  saveCalendarDbToStorage,
+} from "@/server/calendar/data/calendar.storage";
 
 const clone = <T>(value: T): T => structuredClone(value);
 
@@ -20,13 +24,19 @@ const globalForDb = globalThis as unknown as {
 export class CalendarData {
   private async readDb(): Promise<ICalendarDb> {
     if (!globalForDb.calendarDb) {
-      globalForDb.calendarDb = buildCalendarSeed();
+      const storedDb = await loadCalendarDbFromStorage();
+      globalForDb.calendarDb = storedDb ?? buildCalendarSeed();
+
+      if (!storedDb) {
+        await saveCalendarDbToStorage(globalForDb.calendarDb);
+      }
     }
-    return globalForDb.calendarDb;
+    return clone(globalForDb.calendarDb);
   }
 
   private async persistDb(nextDb: ICalendarDb): Promise<void> {
     globalForDb.calendarDb = clone(nextDb);
+    await saveCalendarDbToStorage(globalForDb.calendarDb);
   }
 
   // ─── Reference data ────────────────────────────────────────────────────────
