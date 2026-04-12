@@ -17,7 +17,7 @@ Embora embutido num ambiente Next.js, o backend demonstra uma maturidade arquite
   - *Serviço (`calendar.service.ts`)*: Contém toda a lógica de negócio (ex: validação `startDate < endDate`, garantir um `user` base, emissão de `DomainError`).
   - *Acesso a Dados (`calendar.data.ts`)*: Camada de persistência puramente isolada.
 - **Base de Dados Mockada (`calendar.data.ts`):** Em vez de manter a data apenas em memória volátil, criou-se um impressionante sistema _file-based_ que guarda os eventos numa cache JSON. Mais ainda, implementa um engenhoso **sistema de fila de gravação (`writeQueue`)**, prevenindo colapsos em _race conditions_ caso dois utilizadores gravem eventos ao mesmo tempo.
-- **Validação Strítrica:** O uso exaustivo do `zod` em `schemas.ts` não deixa payloads corrompidos contaminarem o sistema.
+- **Validação Estrita:** O uso exaustivo do `zod` em `schemas.ts` não deixa payloads corrompidos contaminarem o sistema.
 
 ### 1.2) Possíveis Melhorias (Backend)
 - **Migração de Persistência (Performance):** A base de dados lê integralmente o ficheiro `calendar-db.json` para memória. Sendo um protótipo, isto é excelente. Contudo, ao fim de 5 anos de histórico este JSON será gigante. O próximo passo de escala natural será trocar as funções da classe `CalendarData` por um ORM (como Prisma ou Drizzle) acoplado a uma Base de Dados PostgreSQL ou SQLite, sem sequer precisar de mexer nas camadas adjacentes!
