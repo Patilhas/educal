@@ -1,6 +1,13 @@
 import { access, mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
-import type { IEvent } from "@/features/calendar/interfaces";
+import type {
+  ICategory,
+  IClassification,
+  IEvent,
+  IResponsible,
+  IStatus,
+  IUser,
+} from "@/features/calendar/interfaces";
 import {
   buildCalendarSeed,
   type ICalendarDb,
@@ -71,12 +78,36 @@ export class CalendarData {
     await this.writeQueue;
   }
 
-  async listUsers() {
+  // ─── Reference data ────────────────────────────────────────────────────────
+
+  async listCategories(): Promise<ICategory[]> {
+    const db = await this.readDb();
+    return clone(db.categories);
+  }
+
+  async listClassifications(): Promise<IClassification[]> {
+    const db = await this.readDb();
+    return clone(db.classifications);
+  }
+
+  async listStatuses(): Promise<IStatus[]> {
+    const db = await this.readDb();
+    return clone(db.statuses);
+  }
+
+  async listResponsibles(): Promise<IResponsible[]> {
+    const db = await this.readDb();
+    return clone(db.responsibles);
+  }
+
+  // ─── Core data ─────────────────────────────────────────────────────────────
+
+  async listUsers(): Promise<IUser[]> {
     const db = await this.readDb();
     return clone(db.users);
   }
 
-  async listEvents() {
+  async listEvents(): Promise<IEvent[]> {
     const db = await this.readDb();
     return clone(db.events);
   }
@@ -132,6 +163,3 @@ export class CalendarData {
 }
 
 export const calendarData = new CalendarData();
-
-
-

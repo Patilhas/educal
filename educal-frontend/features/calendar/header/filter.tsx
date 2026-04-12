@@ -8,16 +8,22 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Toggle } from "@/components/ui/toggle";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
-import { EVENT_CATEGORY_KEYS } from "@/features/calendar/constants";
 import {
 	getEventCategoryLabel,
-	getEventColorByCategory,
 	getFilterDotColorClass,
 } from "@/features/calendar/helpers";
+import { useTranslations } from "@/i18n/use-translations";
+import { useEventEnums } from "@/features/calendar/hooks/use-event-enums";
 
 export function FilterEvents() {
-	const { selectedCategories, filterEventsBySelectedCategories, clearFilter } =
-		useCalendar();
+	const {
+		selectedCategories,
+		filterEventsBySelectedCategories,
+		clearFilter,
+		getEventColor,
+	} = useCalendar();
+	const enums = useEventEnums();
+	const { t } = useTranslations();
 
 	return (
 		<DropdownMenu>
@@ -27,25 +33,22 @@ export function FilterEvents() {
 				</Toggle>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end" className="w-[220px]">
-				{EVENT_CATEGORY_KEYS.map((category) => {
-					const color = getEventColorByCategory(category);
-
-					return (
+				{enums.categories.map(({ value }) => (
 					<DropdownMenuItem
-						key={category}
+						key={value}
 						className="flex items-center gap-2 cursor-pointer"
 						onClick={(e) => {
 							e.preventDefault();
-							filterEventsBySelectedCategories(category);
+							filterEventsBySelectedCategories(value);
 						}}
 					>
 						<div
-							className={`size-3.5 rounded-full ${getFilterDotColorClass(color)}`}
+							className={`size-3.5 rounded-full ${getFilterDotColorClass(getEventColor(value))}`}
 						/>
 						<span className="flex justify-center items-center gap-2">
-							{getEventCategoryLabel(category)}
+							{t(getEventCategoryLabel(value))}
 							<span>
-								{selectedCategories.includes(category) && (
+								{selectedCategories.includes(value) && (
 									<span className="text-blue-500">
 										<CheckIcon className="size-4" />
 									</span>
@@ -53,8 +56,7 @@ export function FilterEvents() {
 							</span>
 						</span>
 					</DropdownMenuItem>
-					);
-				})}
+				))}
 				<Separator className="my-2" />
 				<DropdownMenuItem
 					disabled={selectedCategories.length === 0}
@@ -65,7 +67,7 @@ export function FilterEvents() {
 					}}
 				>
 					<RefreshCcw className="size-3.5" />
-					Limpar Filtro
+					{t("calendar.filters.clearFilter")}
 				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>

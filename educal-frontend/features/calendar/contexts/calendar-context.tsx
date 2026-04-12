@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import {
   createEventRequest,
   deleteEventRequest,
@@ -9,8 +9,10 @@ import {
   updateOccurrenceRequest,
 } from "@/features/calendar/client-requests";
 import { useLocalStorage } from "@/features/calendar/hooks";
+import { useEventEnums } from "@/features/calendar/hooks/use-event-enums";
 import type { IEvent, IUser, TEventCategory } from "@/features/calendar/interfaces";
-import type { TCalendarView } from "@/features/calendar/types";
+import { getEventColorByCategory } from "@/features/calendar/helpers";
+import type { TCalendarView, TEventColor } from "@/features/calendar/types";
 
 interface ICalendarContext {
   selectedDate: Date;
@@ -41,6 +43,7 @@ interface ICalendarContext {
   }) => Promise<void>;
   removeEvent: (eventId: number) => Promise<void>;
   clearFilter: () => void;
+  getEventColor: (category: string) => TEventColor;
 }
 
 interface CalendarSettings {
@@ -101,6 +104,17 @@ export function CalendarProvider({
   const [selectedCategories, setSelectedCategories] = useState<TEventCategory[]>([]);
 
   const [allEvents, setAllEvents] = useState<IEvent[]>(events || []);
+  const enums = useEventEnums();
+
+  const categoryColorMap = useMemo(
+    () => Object.fromEntries(enums.categories.map(({ value, color }) => [value, color])),
+    [enums.categories],
+  );
+
+  const getEventColor = useCallback(
+    (category: string): TEventColor => getEventColorByCategory(category, categoryColorMap),
+    [categoryColorMap],
+  );
 
   const updateSettings = (newPartialSettings: Partial<CalendarSettings>) => {
     setSettings({
@@ -230,6 +244,7 @@ export function CalendarProvider({
     updateOccurrence,
     removeEvent,
     clearFilter,
+    getEventColor,
   };
 
   return (

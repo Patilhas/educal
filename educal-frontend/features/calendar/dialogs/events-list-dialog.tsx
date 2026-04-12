@@ -12,11 +12,11 @@ import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import {
   formatTime,
   getColorClass,
-  getEventColorByCategory,
 } from "@/features/calendar/helpers";
 import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
 import { EventBullet } from "@/features/calendar/views/month-view/event-bullet";
 import EventDetailsDialog from "@/features/calendar/dialogs/event-details-dialog";
+import { useTranslations } from "@/i18n/use-translations";
 
 interface EventListDialogProps {
   date: Date;
@@ -33,14 +33,16 @@ export function EventListDialog({
 }: EventListDialogProps) {
   const cellOccurrences = occurrences;
   const hiddenOccurrencesCount = Math.max(cellOccurrences.length - maxVisibleEvents, 0);
-  const { badgeVariant, use24HourFormat } = useCalendar();
+  const { badgeVariant, use24HourFormat, getEventColor } = useCalendar();
+  const { t } = useTranslations();
 
   const defaultTrigger = (
     <span className="cursor-pointer">
-      <span className="sm:hidden">+{hiddenOccurrencesCount}</span>
+      <span className="sm:hidden">
+        {t("calendar.views.eventsList.moreShort", { count: hiddenOccurrencesCount })}
+      </span>
       <span className="hidden sm:inline py-0.5 px-2 my-1 rounded-xl border">
-        {hiddenOccurrencesCount}
-        <span className="mx-1">mais...</span>
+        {t("calendar.views.eventsList.more", { count: hiddenOccurrencesCount })}
       </span>
     </span>
   );
@@ -55,13 +57,13 @@ export function EventListDialog({
               <EventBullet
                 color={
                   cellOccurrences[0]
-                    ? getEventColorByCategory(cellOccurrences[0].event.category)
+                    ? getEventColor(cellOccurrences[0].event.category)
                     : "blue"
                 }
                 className=""
               />
               <p className="text-sm font-medium">
-                Eventos em {format(date, "EEEE, MMMM d, yyyy")}
+                {t("calendar.views.month.eventsOn")} {format(date, "EEEE, MMMM d, yyyy")}
               </p>
             </div>
           </ModalTitle>
@@ -74,12 +76,12 @@ export function EventListDialog({
                   className={cn(
                     "flex items-center gap-2 p-2 border rounded-md hover:bg-muted cursor-pointer",
                     {
-                      [getColorClass(getEventColorByCategory(occurrence.event.category))]:
+                      [getColorClass(getEventColor(occurrence.event.category))]:
                         badgeVariant === "colored",
                     },
                   )}
                 >
-                  <EventBullet color={getEventColorByCategory(occurrence.event.category)} />
+                  <EventBullet color={getEventColor(occurrence.event.category)} />
                   <div className="flex justify-between items-center w-full">
                     <p className="text-sm font-medium">{occurrence.event.name}</p>
                     <p className="text-xs">
@@ -91,7 +93,7 @@ export function EventListDialog({
             ))
           ) : (
             <p className="text-sm text-muted-foreground">
-              Nenhum evento para esta data.
+              {t("calendar.dialogs.eventsList.noEvents")}
             </p>
           )}
         </div>

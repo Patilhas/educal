@@ -38,6 +38,7 @@ erDiagram
 
     CATEGORY {
         string value
+        string color
     }
 
     CLASSIFICATION {

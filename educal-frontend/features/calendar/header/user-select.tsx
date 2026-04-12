@@ -8,14 +8,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
+import { useTranslations } from "@/i18n/use-translations";
 
 export function UserSelect() {
   const { users, selectedUserId, filterEventsBySelectedUser } = useCalendar();
+  const { t } = useTranslations();
 
   return (
     <Select value={selectedUserId!} onValueChange={filterEventsBySelectedUser}>
       <SelectTrigger className="w-full">
-        <SelectValue placeholder="Selecionar utilizador" />
+        <SelectValue placeholder={t("calendar.userSelect.placeholder")} />
       </SelectTrigger>
       <SelectContent align="end">
         <SelectItem value="all">
@@ -32,7 +34,7 @@ export function UserSelect() {
               </Avatar>
             ))}
           </AvatarGroup>
-          Todos
+          {t("calendar.userSelect.allUsers")}
         </SelectItem>
 
         {users.map((user) => (

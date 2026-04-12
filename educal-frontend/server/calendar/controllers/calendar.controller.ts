@@ -12,6 +12,14 @@ const parseEventId = (rawValue: string) => {
 };
 
 export const calendarController = {
+  async listEnums() {
+    try {
+      return ok(await calendarService.listEnums());
+    } catch (error) {
+      return fail(error);
+    }
+  },
+
   async listUsers() {
     try {
       return ok(await calendarService.listUsers());
@@ -71,5 +79,3 @@ export const calendarController = {
     }
   },
 };
-
-

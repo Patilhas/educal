@@ -13,37 +13,39 @@ import {
 } from "lucide-react";
 import { TCalendarView } from "../types";
 import { memo } from "react";
-
-const tabs = [
-  {
-    name: "Agenda",
-    value: "agenda",
-    icon: () => <CalendarRange className="h-4 w-4" />,
-  },
-  {
-    name: "Dia",
-    value: "day",
-    icon: () => <List className="h-4 w-4" />,
-  },
-  {
-    name: "Semana",
-    value: "week",
-    icon: () => <Columns className="h-4 w-4" />,
-  },
-  {
-    name: "Mês",
-    value: "month",
-    icon: () => <Grid3X3 className="h-4 w-4" />,
-  },
-  {
-    name: "Ano",
-    value: "year",
-    icon: () => <Grid2X2 className="h-4 w-4" />,
-  },
-];
+import { useTranslations } from "@/i18n/use-translations";
 
 function Views() {
   const { view, setView } = useCalendar();
+  const { t } = useTranslations();
+
+  const tabs = [
+    {
+      name: t("calendar.views.tabs.agenda"),
+      value: "agenda",
+      icon: () => <CalendarRange className="h-4 w-4" />,
+    },
+    {
+      name: t("calendar.views.tabs.day"),
+      value: "day",
+      icon: () => <List className="h-4 w-4" />,
+    },
+    {
+      name: t("calendar.views.tabs.week"),
+      value: "week",
+      icon: () => <Columns className="h-4 w-4" />,
+    },
+    {
+      name: t("calendar.views.tabs.month"),
+      value: "month",
+      icon: () => <Grid3X3 className="h-4 w-4" />,
+    },
+    {
+      name: t("calendar.views.tabs.year"),
+      value: "year",
+      icon: () => <Grid2X2 className="h-4 w-4" />,
+    },
+  ];
 
   return (
     <Tabs

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
+import { useTranslations } from "@/i18n/use-translations";
 
 interface DeleteEventDialogProps {
   eventId: number;
@@ -20,13 +21,14 @@ interface DeleteEventDialogProps {
 
 export default function DeleteEventDialog({ eventId }: DeleteEventDialogProps) {
   const { removeEvent } = useCalendar();
+  const { t } = useTranslations();
 
   const deleteEvent = async () => {
     try {
       await removeEvent(eventId);
-      toast.success("Evento eliminado com sucesso.");
+      toast.success(t("calendar.messages.deleteSuccess"));
     } catch {
-      toast.error("Erro ao eliminar evento.");
+      toast.error(t("calendar.messages.deleteError"));
     }
   };
 
@@ -39,20 +41,19 @@ export default function DeleteEventDialog({ eventId }: DeleteEventDialogProps) {
       <AlertDialogTrigger asChild>
         <Button variant="destructive">
           <TrashIcon />
-          Eliminar
+          {t("common.actions.delete")}
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Tem a certeza absoluta?</AlertDialogTitle>
+          <AlertDialogTitle>{t("calendar.dialogs.deleteEvent.title")}</AlertDialogTitle>
           <AlertDialogDescription>
-            Esta ação não pode ser revertida. O evento será eliminado
-            permanentemente.
+            {t("calendar.dialogs.deleteEvent.description")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction onClick={deleteEvent}>Continuar</AlertDialogAction>
+          <AlertDialogCancel>{t("common.actions.cancel")}</AlertDialogCancel>
+          <AlertDialogAction onClick={deleteEvent}>{t("common.actions.delete")}</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

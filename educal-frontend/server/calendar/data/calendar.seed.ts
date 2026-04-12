@@ -1,14 +1,18 @@
-import {
-  EVENT_CATEGORY_KEYS,
-  EVENT_CLASSIFICATIONS,
-  EVENT_RESPONSIBLES,
-  EVENT_STATUSES,
-} from "@/features/calendar/constants";
 import type { IEvent, IUser } from "@/features/calendar/interfaces";
+import type {
+  ICategory,
+  IClassification,
+  IResponsible,
+  IStatus,
+} from "@/features/calendar/interfaces";
 
 export interface ICalendarDb {
   users: IUser[];
   events: IEvent[];
+  categories: ICategory[];
+  classifications: IClassification[];
+  statuses: IStatus[];
+  responsibles: IResponsible[];
 }
 
 const USERS_SEED: IUser[] = [
@@ -28,6 +32,41 @@ const USERS_SEED: IUser[] = [
     picturePath: null,
   },
 ];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Reference data — these represent DB table rows, not code constants.
+// When a real DB exists, replace this with seeded rows.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const CATEGORIES_SEED: ICategory[] = [
+  { value: "TFM", color: "purple" },
+  { value: "CANDIDATURAS", color: "blue" },
+  { value: "MATRICULAS_INSCRICOES", color: "green" },
+];
+
+const CLASSIFICATIONS_SEED: IClassification[] = [
+  { value: "PLANEAMENTO" },
+  { value: "VERIFICACAO" },
+  { value: "EXECUCAO" },
+  { value: "MELHORIA" },
+];
+
+const STATUSES_SEED: IStatus[] = [
+  { name: "FEITO" },
+  { name: "POR_FAZER" },
+  { name: "A_REALIZAR" },
+  { name: "EM_CURSO" },
+];
+
+const RESPONSIBLES_SEED: IResponsible[] = [
+  { value: "SERVICOS_ACADEMICOS" },
+  { value: "CONSELHO_PEDAGOGICO" },
+  { value: "CONSELHO_TECNICO_CIENTIFICO" },
+  { value: "DIRECAO" },
+  { value: "COORDENADORES_CURSO" },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 const eventNames = [
   "Reunião de Equipa e Vagas",
@@ -95,10 +134,10 @@ const generateEvents = (numberOfEvents: number): IEvent[] => {
     objective:
       "Garantir que a atividade anual e as suas ocorrencias ficam planeadas para o ano letivo.",
     daysBetweenOccurrences: (Math.floor(Math.random() * 90) + 1).toString(),
-    category: randomArrayItem(EVENT_CATEGORY_KEYS),
-    classification: randomArrayItem(EVENT_CLASSIFICATIONS),
-    status: randomArrayItem(EVENT_STATUSES),
-    responsible: randomArrayItem(EVENT_RESPONSIBLES),
+    category: randomArrayItem(CATEGORIES_SEED).value,
+    classification: randomArrayItem(CLASSIFICATIONS_SEED).value,
+    status: randomArrayItem(STATUSES_SEED).name,
+    responsible: randomArrayItem(RESPONSIBLES_SEED).value,
     occurrences: [
       {
         id: crypto.randomUUID(),
@@ -146,10 +185,10 @@ const generateEvents = (numberOfEvents: number): IEvent[] => {
       objective:
         "Executar e acompanhar uma etapa do planeamento academico com regras definidas.",
       daysBetweenOccurrences: (Math.floor(Math.random() * 120) + 1).toString(),
-      category: randomArrayItem(EVENT_CATEGORY_KEYS),
-      classification: randomArrayItem(EVENT_CLASSIFICATIONS),
-      status: randomArrayItem(EVENT_STATUSES),
-      responsible: randomArrayItem(EVENT_RESPONSIBLES),
+      category: randomArrayItem(CATEGORIES_SEED).value,
+      classification: randomArrayItem(CLASSIFICATIONS_SEED).value,
+      status: randomArrayItem(STATUSES_SEED).name,
+      responsible: randomArrayItem(RESPONSIBLES_SEED).value,
       occurrences: [
         {
           id: crypto.randomUUID(),
@@ -170,6 +209,9 @@ export const buildCalendarSeed = (): ICalendarDb => {
   return {
     users: structuredClone(USERS_SEED),
     events: generateEvents(80),
+    categories: structuredClone(CATEGORIES_SEED),
+    classifications: structuredClone(CLASSIFICATIONS_SEED),
+    statuses: structuredClone(STATUSES_SEED),
+    responsibles: structuredClone(RESPONSIBLES_SEED),
   };
 };
-

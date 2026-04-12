@@ -17,11 +17,11 @@ import {
   getBgColor,
   getColorClass,
   getEventCategoryLabel,
-  getEventColorByCategory,
   getEventsForMonth,
   getFirstLetters,
 } from "@/features/calendar/helpers";
 import { EventBullet } from "@/features/calendar/views/month-view/event-bullet";
+import { useTranslations } from "@/i18n/use-translations";
 
 export default function AgendaEvents() {
   const {
@@ -30,7 +30,9 @@ export default function AgendaEvents() {
     badgeVariant,
     agendaModeGroupBy,
     selectedDate,
+    getEventColor,
   } = useCalendar();
+  const { t } = useTranslations();
 
   // Transform events to occurrences
   const occurrences = events.flatMap((event) =>
@@ -71,7 +73,7 @@ export default function AgendaEvents() {
   return (
     <Command className="py-4 h-[80vh] bg-transparent">
       <div className="mb-4 mx-4">
-        <CommandInput placeholder="Escreve um comando ou pesquisa..." />
+        <CommandInput placeholder={t("calendar.views.agenda.searchPlaceholder")} />
       </div>
       <CommandList className="max-h-max px-3 border-t">
         {groupedAndSortedOccurrences.map(([date, groupedOccurrences]) => (
@@ -80,7 +82,7 @@ export default function AgendaEvents() {
             heading={
               agendaModeGroupBy === "date"
                 ? format(parseISO(date), "EEEE, MMMM d, yyyy")
-                : getEventCategoryLabel(groupedOccurrences![0].event.category)
+                : t(getEventCategoryLabel(groupedOccurrences![0].event.category))
             }
           >
             {groupedOccurrences!.map(({ event, occurrence }) => (
@@ -89,7 +91,7 @@ export default function AgendaEvents() {
                 className={cn(
                   "mb-2 p-4 border rounded-md data-[selected=true]:bg-bg transition-all data-[selected=true]:text-none hover:cursor-pointer",
                   {
-                    [getColorClass(getEventColorByCategory(event.category))]:
+                    [getColorClass(getEventColor(event.category))]:
                       badgeVariant === "colored",
                     "hover:bg-zinc-200 dark:hover:bg-gray-900":
                       badgeVariant === "dot",
@@ -101,11 +103,11 @@ export default function AgendaEvents() {
                   <div className="w-full flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
                       {badgeVariant === "dot" ? (
-                        <EventBullet color={getEventColorByCategory(event.category)} />
+                        <EventBullet color={getEventColor(event.category)} />
                       ) : (
                         <Avatar>
                           <AvatarImage src="" alt="@shadcn" />
-                          <AvatarFallback className={getBgColor(getEventColorByCategory(event.category))}>
+                          <AvatarFallback className={getBgColor(getEventColor(event.category))}>
                             {getFirstLetters(event.name)}
                           </AvatarFallback>
                         </Avatar>
@@ -150,7 +152,7 @@ export default function AgendaEvents() {
             ))}
           </CommandGroup>
         ))}
-        <CommandEmpty>Nenhum resultado encontrado.</CommandEmpty>
+        <CommandEmpty>{t("calendar.views.agenda.noEvents")}</CommandEmpty>
       </CommandList>
     </Command>
   );

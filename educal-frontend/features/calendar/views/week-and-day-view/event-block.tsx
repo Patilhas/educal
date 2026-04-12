@@ -8,7 +8,6 @@ import { DraggableEvent } from "@/features/calendar/dnd/draggable-event";
 import { ResizableEvent } from "@/features/calendar/dnd/resizable-event";
 import {
   formatTime,
-  getEventColorByCategory,
   getWeekDotFillClass,
   getWeekEventColorClass,
 } from "@/features/calendar/helpers";
@@ -26,13 +25,13 @@ interface IProps
 }
 
 export function EventBlock({ event, occurrence, className }: IProps) {
-  const { badgeVariant, use24HourFormat } = useCalendar();
+  const { badgeVariant, use24HourFormat, getEventColor } = useCalendar();
 
   const start = parseISO(occurrence.startDate);
   const end = parseISO(occurrence.endDate);
   const durationInMinutes = differenceInMinutes(end, start);
   const heightInPixels = (durationInMinutes / 60) * 96 - 8;
-  const eventColor = getEventColorByCategory(event.category);
+  const eventColor = getEventColor(event.category);
 
   const calendarWeekEventCardClasses = cn(
     calendarWeekEventCardVariants(),

@@ -1,4 +1,4 @@
-import type { IEvent } from "@/features/calendar/interfaces";
+import type { IEvent, IEventEnums } from "@/features/calendar/interfaces";
 
 interface ApiErrorPayload {
   error?: {
@@ -34,6 +34,10 @@ const request = async <T>(url: string, init?: RequestInit): Promise<T> => {
 
   const body = (await response.json()) as ApiSuccessPayload<T>;
   return body.data;
+};
+
+export const fetchEventEnums = async (): Promise<IEventEnums> => {
+  return request<IEventEnums>("/api/events/enums");
 };
 
 export const createEventRequest = async (event: IEvent) => {

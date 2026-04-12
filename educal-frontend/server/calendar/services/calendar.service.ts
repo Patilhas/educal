@@ -1,8 +1,8 @@
+import { z } from "zod";
 import type { IEvent, IOccurrence, IUser } from "@/features/calendar/interfaces";
 import {
-  createEventSchema,
+  buildEventPayloadSchema,
   patchOccurrenceSchema,
-  updateEventSchema,
 } from "@/server/calendar/schemas";
 import { calendarData } from "@/server/calendar/data/calendar.data";
 import { DomainError } from "@/server/shared/domain-error";
@@ -18,8 +18,26 @@ export class CalendarService {
     return calendarData.listEvents();
   }
 
+  async listEnums() {
+    const [categories, classifications, statuses, responsibles] =
+      await Promise.all([
+        calendarData.listCategories(),
+        calendarData.listClassifications(),
+        calendarData.listStatuses(),
+        calendarData.listResponsibles(),
+      ]);
+
+    return {
+      categories,
+      classifications: classifications.map((c) => c.value),
+      statuses: statuses.map((s) => s.name),
+      responsibles: responsibles.map((r) => r.value),
+    };
+  }
+
   async createEvent(payload: unknown): Promise<IEvent> {
-    const parsed = createEventSchema.parse(payload);
+    const schema = await buildEventPayloadSchema();
+    const parsed = schema.parse(payload);
     const user = await this.resolveUser(parsed.userId);
 
     const newEvent: IEvent = {
@@ -44,7 +62,8 @@ export class CalendarService {
   }
 
   async updateEvent(eventId: number, payload: unknown): Promise<IEvent> {
-    const parsed = updateEventSchema.parse(payload);
+    const schema = await buildEventPayloadSchema();
+    const parsed = schema.extend({ id: z.number().int().positive().optional() }).parse(payload);
 
     if (parsed.id && parsed.id !== eventId) {
       throw new DomainError("CONFLICT", 409, "O id no corpo não coincide com o da rota");

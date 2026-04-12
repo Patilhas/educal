@@ -1,10 +1,4 @@
 import { addMinutes, format, set } from "date-fns";
-import {
-  EVENT_CATEGORY_KEYS,
-  EVENT_CLASSIFICATIONS,
-  EVENT_RESPONSIBLES,
-  EVENT_STATUSES,
-} from "@/features/calendar/constants";
 import type { IEvent, IUser } from "@/features/calendar/interfaces";
 import type { TEventFormData } from "@/features/calendar/schemas";
 
@@ -67,10 +61,10 @@ export const getEventFormDefaults = (
     name: event?.name ?? "",
     objective: event?.objective ?? "",
     daysBetweenOccurrences: event?.daysBetweenOccurrences ?? "",
-    category: event?.category ?? EVENT_CATEGORY_KEYS[0],
-    classification: event?.classification ?? EVENT_CLASSIFICATIONS[0],
-    status: event?.status ?? EVENT_STATUSES[0],
-    responsible: event?.responsible ?? EVENT_RESPONSIBLES[0],
+    category: event?.category ?? "",
+    classification: event?.classification ?? "",
+    status: event?.status ?? "",
+    responsible: event?.responsible ?? "",
     occurrences:
       event?.occurrences?.map((occurrence) => ({
         id: occurrence.id,

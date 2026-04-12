@@ -29,15 +29,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  EVENT_CATEGORIES,
-  EVENT_CATEGORY_KEYS,
-  EVENT_CLASSIFICATIONS,
-  EVENT_RESPONSIBLES,
-  EVENT_STATUSES,
-} from "@/features/calendar/constants";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import { useDisclosure } from "@/features/calendar/hooks";
+import { useEventEnums } from "@/features/calendar/hooks/use-event-enums";
 import type { IEvent } from "@/features/calendar/interfaces";
 import { eventSchema, type TEventFormData } from "@/features/calendar/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -47,6 +41,7 @@ import {
   getInitialDates,
   toInputDate,
 } from "@/features/calendar/dialogs/add-edit-event-dialog-utils";
+import { useTranslations } from "@/i18n/use-translations";
 
 interface IProps {
   children: ReactNode;
@@ -61,8 +56,10 @@ export default function AddEditEventDialog({
   startTime,
   event,
 }: IProps) {
+  const { t } = useTranslations();
   const { isOpen, onClose, onToggle } = useDisclosure();
   const { addEvent, updateEvent, users } = useCalendar();
+  const enums = useEventEnums();
   const isEditing = !!event;
 
   const initialDates = useMemo(() => {
@@ -93,7 +90,7 @@ export default function AddEditEventDialog({
     try {
       const defaultUser = event?.user ?? users[0];
       if (!defaultUser) {
-        toast.error("Não existe utilizador disponível para criar o evento");
+        toast.error(t("calendar.messages.noUser"));
         return;
       }
 
@@ -106,10 +103,10 @@ export default function AddEditEventDialog({
 
       if (isEditing) {
         await updateEvent(formattedEvent);
-        toast.success("Evento atualizado com sucesso");
+        toast.success(t("calendar.messages.updateSuccess"));
       } else {
         await addEvent(formattedEvent);
-        toast.success("Evento criado com sucesso");
+        toast.success(t("calendar.messages.createSuccess"));
       }
 
       onClose();
@@ -117,7 +114,9 @@ export default function AddEditEventDialog({
     } catch (error) {
       console.error(`Error ${isEditing ? "editing" : "adding"} event:`, error);
       toast.error(
-        `Nao foi possivel ${isEditing ? "editar" : "adicionar"} o evento`,
+        isEditing
+          ? t("calendar.messages.updateError")
+          : t("calendar.messages.createError"),
       );
     }
   };
@@ -128,12 +127,12 @@ export default function AddEditEventDialog({
       <ModalContent>
         <ModalHeader>
           <ModalTitle>
-            {isEditing ? "Editar evento" : "Adicionar novo evento"}
+            {isEditing ? t("calendar.dialogs.addEditEvent.titleEdit") : t("calendar.dialogs.addEditEvent.titleAdd")}
           </ModalTitle>
           <ModalDescription>
             {isEditing
-              ? "Altere os dados do evento existente."
-              : "Crie um novo evento no calendário."}
+              ? t("calendar.dialogs.addEditEvent.descEdit")
+              : t("calendar.dialogs.addEditEvent.descAdd")}
           </ModalDescription>
         </ModalHeader>
 
@@ -148,10 +147,10 @@ export default function AddEditEventDialog({
               name="name"
               render={({ field, fieldState }) => (
                 <FormItem>
-                  <FormLabel className="required">Nome</FormLabel>
+                  <FormLabel className="required">{t("calendar.dialogs.addEditEvent.fields.name")}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Introduza o nome do evento"
+                      placeholder={t("calendar.dialogs.addEditEvent.fields.namePlaceholder")}
                       {...field}
                       className={fieldState.invalid ? "border-red-500" : ""}
                     />
@@ -166,11 +165,11 @@ export default function AddEditEventDialog({
               name="objective"
               render={({ field, fieldState }) => (
                 <FormItem>
-                  <FormLabel className="required">Objetivo</FormLabel>
+                  <FormLabel className="required">{t("calendar.dialogs.addEditEvent.fields.objective")}</FormLabel>
                   <FormControl>
                     <Textarea
                       {...field}
-                      placeholder="Descreva o objetivo do evento"
+                      placeholder={t("calendar.dialogs.addEditEvent.fields.objectivePlaceholder")}
                       className={fieldState.invalid ? "border-red-500" : ""}
                     />
                   </FormControl>
@@ -184,12 +183,12 @@ export default function AddEditEventDialog({
               name="daysBetweenOccurrences"
               render={({ field, fieldState }) => (
                 <FormItem>
-                  <FormLabel>Dias entre ocorrências</FormLabel>
+                  <FormLabel>{t("calendar.dialogs.addEditEvent.fields.daysBetween")}</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
                       inputMode="numeric"
-                      placeholder="ex.: 30"
+                      placeholder={t("calendar.dialogs.addEditEvent.fields.daysBetweenPlaceholder")}
                       className={fieldState.invalid ? "border-red-500" : ""}
                     />
                   </FormControl>
@@ -204,16 +203,16 @@ export default function AddEditEventDialog({
                 name="category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="required">Categoria</FormLabel>
+                    <FormLabel className="required">{t("calendar.dialogs.addEditEvent.fields.category")}</FormLabel>
                     <FormControl>
                       <Select value={field.value} onValueChange={field.onChange}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione a categoria" />
+                          <SelectValue placeholder={t("calendar.dialogs.addEditEvent.fields.categoryPlaceholder")} />
                         </SelectTrigger>
                         <SelectContent>
-                          {EVENT_CATEGORY_KEYS.map((category) => (
-                            <SelectItem value={category} key={category}>
-                              {EVENT_CATEGORIES[category].label}
+                          {enums.categories.map(({ value }) => (
+                            <SelectItem value={value} key={value}>
+                              {t(`calendar.categories.${value}` as never)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -229,16 +228,16 @@ export default function AddEditEventDialog({
                 name="classification"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="required">Classificação</FormLabel>
+                    <FormLabel className="required">{t("calendar.dialogs.addEditEvent.fields.classification")}</FormLabel>
                     <FormControl>
                       <Select value={field.value} onValueChange={field.onChange}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione a classificação" />
+                          <SelectValue placeholder={t("calendar.dialogs.addEditEvent.fields.classificationPlaceholder")} />
                         </SelectTrigger>
                         <SelectContent>
-                          {EVENT_CLASSIFICATIONS.map((classification) => (
-                            <SelectItem value={classification} key={classification}>
-                              {classification}
+                          {enums.classifications.map((key) => (
+                            <SelectItem value={key} key={key}>
+                              {t(`calendar.classifications.${key}` as never)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -254,16 +253,16 @@ export default function AddEditEventDialog({
                 name="status"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="required">Estado</FormLabel>
+                    <FormLabel className="required">{t("calendar.dialogs.addEditEvent.fields.status")}</FormLabel>
                     <FormControl>
                       <Select value={field.value} onValueChange={field.onChange}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione o estado" />
+                          <SelectValue placeholder={t("calendar.dialogs.addEditEvent.fields.statusPlaceholder")} />
                         </SelectTrigger>
                         <SelectContent>
-                          {EVENT_STATUSES.map((status) => (
-                            <SelectItem value={status} key={status}>
-                              {status}
+                          {enums.statuses.map((key) => (
+                            <SelectItem value={key} key={key}>
+                              {t(`calendar.statuses.${key}` as never)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -279,16 +278,16 @@ export default function AddEditEventDialog({
                 name="responsible"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="required">Responsável</FormLabel>
+                    <FormLabel className="required">{t("calendar.dialogs.addEditEvent.fields.responsible")}</FormLabel>
                     <FormControl>
                       <Select value={field.value} onValueChange={field.onChange}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione o responsável" />
+                          <SelectValue placeholder={t("calendar.dialogs.addEditEvent.fields.responsiblePlaceholder")} />
                         </SelectTrigger>
                         <SelectContent>
-                          {EVENT_RESPONSIBLES.map((responsible) => (
-                            <SelectItem value={responsible} key={responsible}>
-                              {responsible}
+                          {enums.responsibles.map((key) => (
+                            <SelectItem value={key} key={key}>
+                              {t(`calendar.responsibles.${key}` as never)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -303,7 +302,7 @@ export default function AddEditEventDialog({
 
             <div className="space-y-3 rounded-md border p-3">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">Ocorrências</p>
+                <p className="text-sm font-medium">{t("calendar.dialogs.addEditEvent.occurrences.title")}</p>
                 <Button
                   type="button"
                   variant="outline"
@@ -316,7 +315,7 @@ export default function AddEditEventDialog({
                     })
                   }
                 >
-                  Adicionar ocorrência
+                  {t("calendar.dialogs.addEditEvent.occurrences.add")}
                 </Button>
               </div>
 
@@ -324,7 +323,7 @@ export default function AddEditEventDialog({
                 <div key={occurrence.id} className="space-y-3 rounded-md border p-3">
                   <div className="flex items-center justify-between">
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Ocorrência {index + 1}
+                      {t("calendar.dialogs.addEditEvent.occurrences.occurrenceLabel")} {index + 1}
                     </p>
                     <Button
                       type="button"
@@ -332,7 +331,7 @@ export default function AddEditEventDialog({
                       disabled={fields.length === 1}
                       onClick={() => remove(index)}
                     >
-                      Remover
+                      {t("common.actions.remove")}
                     </Button>
                   </div>
 
@@ -341,11 +340,11 @@ export default function AddEditEventDialog({
                     name={`occurrences.${index}.description`}
                     render={({ field, fieldState }) => (
                       <FormItem>
-                        <FormLabel className="required">Descrição</FormLabel>
+                        <FormLabel className="required">{t("calendar.dialogs.addEditEvent.occurrences.description")}</FormLabel>
                         <FormControl>
                           <Textarea
                             {...field}
-                            placeholder="Descreva esta ocorrência"
+                            placeholder={t("calendar.dialogs.addEditEvent.occurrences.descriptionPlaceholder")}
                             className={fieldState.invalid ? "border-red-500" : ""}
                           />
                         </FormControl>
@@ -360,7 +359,7 @@ export default function AddEditEventDialog({
                       name={`occurrences.${index}.startDate`}
                       render={({ field, fieldState }) => (
                         <FormItem>
-                          <FormLabel className="required">Data de início</FormLabel>
+                          <FormLabel className="required">{t("calendar.dialogs.addEditEvent.occurrences.startDate")}</FormLabel>
                           <FormControl>
                             <Input
                               type="datetime-local"
@@ -381,7 +380,7 @@ export default function AddEditEventDialog({
                       name={`occurrences.${index}.endDate`}
                       render={({ field, fieldState }) => (
                         <FormItem>
-                          <FormLabel className="required">Data de fim</FormLabel>
+                          <FormLabel className="required">{t("calendar.dialogs.addEditEvent.occurrences.endDate")}</FormLabel>
                           <FormControl>
                             <Input
                               type="datetime-local"
@@ -406,11 +405,11 @@ export default function AddEditEventDialog({
         <ModalFooter className="flex justify-end gap-2">
           <ModalClose asChild>
             <Button type="button" variant="outline">
-              Cancelar
+              {t("common.actions.cancel")}
             </Button>
           </ModalClose>
           <Button form="event-form" type="submit">
-            {isEditing ? "Guardar alterações" : "Criar evento"}
+            {isEditing ? t("calendar.dialogs.addEditEvent.submitEdit") : t("calendar.dialogs.addEditEvent.submitAdd")}
           </Button>
         </ModalFooter>
       </ModalContent>
