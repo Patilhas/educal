@@ -54,5 +54,5 @@ Até à data, a dívida técnica foi saneada com tremendo sucesso. O código é 
 
 Como Engenheiro, concordo profundamente com a Direção da Arquitetura levada a cabo! 
 A modelização da stack "API Controller + Service -> Feature React Provider" garante coesão alta. O vosso design isolou perfeitamente os perigos.
-O _Next step_ passará apenas por implementar uma cache de data no Cliente e uma persitência rígida (SQL DB) no lado Servidor caso a universidade/instituição pretendam escalar isto com tráfego denso.
+O _Next step_ passará apenas por implementar uma cache de data no Cliente e uma persistência rígida (SQL DB) no lado Servidor caso a universidade/instituição pretendam escalar isto com tráfego denso.
 Excelente base de trabalho!
