@@ -1,5 +1,4 @@
 import { format, parseISO } from "date-fns";
-import type { FC } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Command,

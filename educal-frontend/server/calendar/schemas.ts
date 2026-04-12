@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { calendarData } from "@/server/calendar/data/calendar.data";
+import { DomainError } from "@/server/shared/domain-error";
 
 const dateLikeString = z
   .string()
@@ -34,19 +35,32 @@ export async function buildEventPayloadSchema() {
       calendarData.listResponsibles(),
     ]);
 
-  const categoryValues = categories.map((c) => c.value) as [string, ...string[]];
-  const classificationValues = classifications.map((c) => c.value) as [string, ...string[]];
-  const statusValues = statuses.map((s) => s.name) as [string, ...string[]];
-  const responsibleValues = responsibles.map((r) => r.value) as [string, ...string[]];
+  const categoryValues = categories.map((c) => c.value);
+  const classificationValues = classifications.map((c) => c.value);
+  const statusValues = statuses.map((s) => s.name);
+  const responsibleValues = responsibles.map((r) => r.value);
+
+  if (
+    categoryValues.length === 0 ||
+    classificationValues.length === 0 ||
+    statusValues.length === 0 ||
+    responsibleValues.length === 0
+  ) {
+    throw new DomainError(
+      "INTERNAL_ERROR",
+      500,
+      "Unable to build event schema: reference data (categories, classifications, statuses, or responsibles) is empty."
+    );
+  }
 
   return z.object({
     name: z.string().min(1),
     objective: z.string().min(1),
     daysBetweenOccurrences: z.string().regex(/^\d*$/),
-    category: z.enum(categoryValues),
-    classification: z.enum(classificationValues),
-    status: z.enum(statusValues),
-    responsible: z.enum(responsibleValues),
+    category: z.enum(categoryValues as [string, ...string[]]),
+    classification: z.enum(classificationValues as [string, ...string[]]),
+    status: z.enum(statusValues as [string, ...string[]]),
+    responsible: z.enum(responsibleValues as [string, ...string[]]),
     occurrences: z.array(occurrencePayloadSchema).min(1),
     userId: z.string().optional(),
   });

@@ -72,8 +72,7 @@ export default function AddEditEventDialog({
   );
 
   const form = useForm<TEventFormData>({
-    // Temporary cast: resolver typings are strict with the installed zod minor version.
-    resolver: zodResolver(eventSchema as never),
+    resolver: zodResolver(eventSchema),
     defaultValues,
   });
 
