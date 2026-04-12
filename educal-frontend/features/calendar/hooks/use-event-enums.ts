@@ -18,10 +18,14 @@ export function useEventEnums(): IEventEnums {
 
   useEffect(() => {
     if (cache) return;
-    fetchEventEnums().then((data) => {
-      cache = data;
-      setEnums(data);
-    });
+    fetchEventEnums()
+      .then((data) => {
+        cache = data;
+        setEnums(data);
+      })
+      .catch((error) => {
+        console.error("Failed to fetch event enums", error);
+      });
   }, []);
 
   return enums;
