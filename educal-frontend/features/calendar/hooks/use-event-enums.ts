@@ -12,19 +12,28 @@ const FALLBACK: IEventEnums = {
 };
 
 let cache: IEventEnums | null = null;
+let fetchPromise: Promise<IEventEnums> | null = null;
 
 export function useEventEnums(): IEventEnums {
   const [enums, setEnums] = useState<IEventEnums>(cache ?? FALLBACK);
 
   useEffect(() => {
     if (cache) return;
-    fetchEventEnums()
+    
+    if (!fetchPromise) {
+      fetchPromise = fetchEventEnums();
+    }
+
+    fetchPromise
       .then((data) => {
         cache = data;
         setEnums(data);
       })
       .catch((error) => {
         console.error("Failed to fetch event enums", error);
+        if (!cache) {
+          fetchPromise = null;
+        }
       });
   }, []);
 

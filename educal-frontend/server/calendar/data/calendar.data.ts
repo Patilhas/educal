@@ -1,5 +1,3 @@
-import { access, mkdir, readFile, stat, writeFile } from "node:fs/promises";
-import path from "node:path";
 import type {
   ICategory,
   IClassification,
@@ -13,69 +11,22 @@ import {
   type ICalendarDb,
 } from "@/server/calendar/data/calendar.seed";
 
-const CACHE_DIR = path.join(process.cwd(), "server", "calendar", "data", "cache");
-const CACHE_FILE = path.join(CACHE_DIR, "calendar-db.json");
-const CACHE_REVALIDATE_MS = 500;
-
 const clone = <T>(value: T): T => structuredClone(value);
 
+const globalForDb = globalThis as unknown as {
+  calendarDb: ICalendarDb | undefined;
+};
+
 export class CalendarData {
-  private writeQueue: Promise<void> = Promise.resolve();
-  private cachedDb: ICalendarDb | null = null;
-  private cachedFileMtimeMs = 0;
-  private lastCacheValidationAt = 0;
-
-  private async ensureCacheFile(): Promise<void> {
-    await mkdir(CACHE_DIR, { recursive: true });
-
-    try {
-      await access(CACHE_FILE);
-    } catch {
-      const seed = buildCalendarSeed();
-      await writeFile(CACHE_FILE, JSON.stringify(seed), "utf-8");
-    }
-  }
-
   private async readDb(): Promise<ICalendarDb> {
-    await this.ensureCacheFile();
-
-    // If this process is currently writing, wait so reads never see partial state.
-    await this.writeQueue;
-
-    const now = Date.now();
-    if (
-      this.cachedDb &&
-      now - this.lastCacheValidationAt < CACHE_REVALIDATE_MS
-    ) {
-      return this.cachedDb;
+    if (!globalForDb.calendarDb) {
+      globalForDb.calendarDb = buildCalendarSeed();
     }
-
-    const fileStats = await stat(CACHE_FILE);
-    if (this.cachedDb && this.cachedFileMtimeMs === fileStats.mtimeMs) {
-      this.lastCacheValidationAt = now;
-      return this.cachedDb;
-    }
-
-    const raw = await readFile(CACHE_FILE, "utf-8");
-    const parsed = JSON.parse(raw) as ICalendarDb;
-    this.cachedDb = parsed;
-    this.cachedFileMtimeMs = fileStats.mtimeMs;
-    this.lastCacheValidationAt = now;
-
-    return parsed;
+    return globalForDb.calendarDb;
   }
 
   private async persistDb(nextDb: ICalendarDb): Promise<void> {
-    this.writeQueue = this.writeQueue.then(async () => {
-      await writeFile(CACHE_FILE, JSON.stringify(nextDb), "utf-8");
-
-      const fileStats = await stat(CACHE_FILE);
-      this.cachedDb = clone(nextDb);
-      this.cachedFileMtimeMs = fileStats.mtimeMs;
-      this.lastCacheValidationAt = Date.now();
-    });
-
-    await this.writeQueue;
+    globalForDb.calendarDb = clone(nextDb);
   }
 
   // ─── Reference data ────────────────────────────────────────────────────────
