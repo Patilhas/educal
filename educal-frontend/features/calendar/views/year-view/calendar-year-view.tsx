@@ -14,7 +14,7 @@ interface IProps {
   multiDayOccurrences: { event: IEvent; occurrence: IOccurrence }[];
 }
 
-export function CalendarYearView({ singleDayOccurrences, multiDayOccurrences }: IProps) {
+export default function CalendarYearView({ singleDayOccurrences, multiDayOccurrences }: IProps) {
   const { selectedDate, setSelectedDate } = useCalendar();
   const currentYear = getYear(selectedDate);
   const allOccurrences = [...multiDayOccurrences, ...singleDayOccurrences];

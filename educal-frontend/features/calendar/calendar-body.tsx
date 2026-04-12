@@ -4,13 +4,13 @@ import { isSameDay, parseISO } from "date-fns";
 import { motion } from "framer-motion";
 import { fadeIn, transition } from "@/features/calendar/animations";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
-import { AgendaEvents } from "@/features/calendar/views/agenda-view/agenda-events";
-import { CalendarMonthView } from "@/features/calendar/views/month-view/calendar-month-view";
-import { CalendarDayView } from "@/features/calendar/views/week-and-day-view/calendar-day-view";
-import { CalendarWeekView } from "@/features/calendar/views/week-and-day-view/calendar-week-view";
-import { CalendarYearView } from "@/features/calendar/views/year-view/calendar-year-view";
+import AgendaEvents from "@/features/calendar/views/agenda-view/agenda-events";
+import CalendarMonthView from "@/features/calendar/views/month-view/calendar-month-view";
+import CalendarDayView from "@/features/calendar/views/week-and-day-view/calendar-day-view";
+import CalendarWeekView from "@/features/calendar/views/week-and-day-view/calendar-week-view";
+import CalendarYearView from "@/features/calendar/views/year-view/calendar-year-view";
 
-export function CalendarBody() {
+export default function CalendarBody() {
   const { view, events } = useCalendar();
 
   // Transform events with occurrences into flat list with occurrence data

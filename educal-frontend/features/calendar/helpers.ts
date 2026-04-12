@@ -349,12 +349,12 @@ const AGENDA_COLORED_CLASS: Record<TEventColor, string> = {
 };
 
 const MONTH_DOT_CLASS: Record<TEventColor, string> = {
-	red: "bg-bg-secondary text-t-primary [&_svg]:fill-red-600",
-	yellow: "bg-bg-secondary text-t-primary [&_svg]:fill-yellow-600",
-	green: "bg-bg-secondary text-t-primary [&_svg]:fill-green-600",
-	blue: "bg-bg-secondary text-t-primary [&_svg]:fill-blue-600",
-	orange: "bg-bg-secondary text-t-primary [&_svg]:fill-orange-600",
-	purple: "bg-bg-secondary text-t-primary [&_svg]:fill-purple-600",
+	red: "bg-secondary text-foreground [&_svg]:fill-red-600",
+	yellow: "bg-secondary text-foreground [&_svg]:fill-yellow-600",
+	green: "bg-secondary text-foreground [&_svg]:fill-green-600",
+	blue: "bg-secondary text-foreground [&_svg]:fill-blue-600",
+	orange: "bg-secondary text-foreground [&_svg]:fill-orange-600",
+	purple: "bg-secondary text-foreground [&_svg]:fill-purple-600",
 };
 
 const WEEK_COLORED_CLASS: Record<TEventColor, string> = {

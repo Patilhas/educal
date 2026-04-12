@@ -1,4 +1,4 @@
-import { AddEditEventDialog } from "@/features/calendar/dialogs/add-edit-event-dialog";
+import AddEditEventDialog from "@/features/calendar/dialogs/add-edit-event-dialog";
 import { DroppableArea } from "@/features/calendar/dnd/droppable-area";
 
 interface TimeGridDaySlotsProps {
@@ -26,7 +26,7 @@ export function TimeGridDaySlots({ day, hours }: TimeGridDaySlotsProps) {
             </AddEditEventDialog>
           </DroppableArea>
 
-          <div className="pointer-events-none absolute inset-x-0 top-1/2 border-b border-dashed border-b-tertiary"></div>
+          <div className="pointer-events-none absolute inset-x-0 top-1/2 border-b border-dashed border-border"></div>
 
           <DroppableArea
             date={day}

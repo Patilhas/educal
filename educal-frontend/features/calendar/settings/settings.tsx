@@ -22,7 +22,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 
-export function Settings() {
+export default function Settings() {
   const {
     badgeVariant,
     setBadgeVariant,

@@ -147,13 +147,13 @@ Ainda existem sinais do template original:
 2. ~~Documentar tokens visuais usados pelo calendário.~~ **Concluído**
 
 ### Prioridade média
-1. Consolidar textos e mensagens PT em todos os diálogos menos usados.
-2. Rever estilos utilitários `text-t-*` / `bg-bg-*` e documentar origem.
-3. Rever performance de renderização nas vistas com mais animação.
+1. ~~Consolidar textos e mensagens PT em todos os diálogos menos usados.~~ **Resolvido** (Traduções verificadas).
+2. ~~Rever estilos utilitários `text-t-*` / `bg-bg-*` e documentar origem.~~ **Resolvido** (Extintos, substituídos pelas _standard classes_ do Tailwind/ShadCN como `text-muted-foreground` / `bg-secondary` / `border-border`).
+3. ~~Rever performance de renderização nas vistas com mais animação.~~ **Avaliado** (Framer Motion está a atuar dentro dos trâmites aceitáveis e a renderização otimizada graças às chaves).
 
 ### Prioridade baixa
-1. Tornar os mocks determinísticos para debug e testes.
-2. Limpar eventuais ficheiros não usados, após verificação por import/search.
+1. ~~Tornar os mocks determinísticos para debug e testes.~~ **Ignorado** (Implementação revertida por ser _overkill_ face à persistência gerada pela cache `calendar-db.json` em protótipos em fase inicial sem rotinas destrutivas de testes E2E).
+2. ~~Limpar eventuais ficheiros não usados, após verificação por import/search.~~ **Resolvido** (ex: o `DeleteEventDialog` estava órfão e foi corretamente implementado; ficheiros antigos verificados).
 
 ---
 

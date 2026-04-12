@@ -15,7 +15,7 @@ import {
 	getFilterDotColorClass,
 } from "@/features/calendar/helpers";
 
-export default function FilterEvents() {
+export function FilterEvents() {
 	const { selectedCategories, filterEventsBySelectedCategories, clearFilter } =
 		useCalendar();
 

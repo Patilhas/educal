@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
-import { EventDetailsDialog } from "@/features/calendar/dialogs/event-details-dialog";
+import EventDetailsDialog from "@/features/calendar/dialogs/event-details-dialog";
 import {
   formatTime,
   getBgColor,
@@ -23,7 +23,7 @@ import {
 } from "@/features/calendar/helpers";
 import { EventBullet } from "@/features/calendar/views/month-view/event-bullet";
 
-export const AgendaEvents: FC = () => {
+export default function AgendaEvents() {
   const {
     events,
     use24HourFormat,

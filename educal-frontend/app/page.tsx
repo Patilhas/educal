@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Calendar } from "@/features/calendar/calendar";
+import Calendar from "@/features/calendar/calendar";
 import { CalendarSkeleton } from "@/features/calendar/skeletons/calendar-skeleton";
 
 export default function Page() {

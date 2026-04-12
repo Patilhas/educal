@@ -10,12 +10,12 @@ import {
   transition,
 } from "@/features/calendar/animations";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
-import { AddEditEventDialog } from "@/features/calendar/dialogs/add-edit-event-dialog";
+import AddEditEventDialog from "@/features/calendar/dialogs/add-edit-event-dialog";
 import { DateNavigator } from "@/features/calendar/header/date-navigator";
-import FilterEvents from "@/features/calendar/header/filter";
+import { FilterEvents } from "@/features/calendar/header/filter";
 import { TodayButton } from "@/features/calendar/header/today-button";
 import { UserSelect } from "@/features/calendar/header/user-select";
-import { Settings } from "@/features/calendar/settings/settings";
+import Settings from "@/features/calendar/settings/settings";
 import Views from "./view-tabs";
 
 export function CalendarHeader() {

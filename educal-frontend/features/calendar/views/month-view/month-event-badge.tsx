@@ -2,7 +2,7 @@ import { cva } from "class-variance-authority";
 import { endOfDay, isSameDay, parseISO, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
-import { EventDetailsDialog } from "@/features/calendar/dialogs/event-details-dialog";
+import EventDetailsDialog from "@/features/calendar/dialogs/event-details-dialog";
 import { DraggableEvent } from "@/features/calendar/dnd/draggable-event";
 import {
   formatTime,

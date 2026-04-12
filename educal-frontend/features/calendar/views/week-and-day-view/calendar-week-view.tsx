@@ -22,7 +22,7 @@ interface IProps {
     multiDayOccurrences: { event: IEvent; occurrence: IOccurrence }[];
 }
 
-export function CalendarWeekView({singleDayOccurrences, multiDayOccurrences}: IProps) {
+export default function CalendarWeekView({singleDayOccurrences, multiDayOccurrences}: IProps) {
     const {selectedDate, use24HourFormat} = useCalendar();
 
     const weekStart = startOfWeek(selectedDate);
@@ -70,7 +70,7 @@ export function CalendarWeekView({singleDayOccurrences, multiDayOccurrences}: IP
                             {weekDays.map((day, index) => (
                                 <motion.span
                                     key={day.toISOString()}
-                                    className="py-1 sm:py-2 text-center text-xs font-medium text-t-quaternary"
+                                    className="py-1 sm:py-2 text-center text-xs font-medium text-muted-foreground/70"
                                     initial={{opacity: 0, y: -10}}
                                     animate={{opacity: 1, y: 0}}
                                     transition={{delay: index * 0.05, ...transition}}
@@ -78,14 +78,14 @@ export function CalendarWeekView({singleDayOccurrences, multiDayOccurrences}: IP
                                     {/* Mobile: Show only day abbreviation and number */}
                                     <span className="block sm:hidden">
 									{format(day, "EEE").charAt(0)}
-                                        <span className="block font-semibold text-t-secondary text-xs">
+                                        <span className="block font-semibold text-foreground text-xs">
 										{format(day, "d")}
 									</span>
 								</span>
                                     {/* Desktop: Show full format */}
                                     <span className="hidden sm:inline">
 									{format(day, "EE")}{" "}
-                                        <span className="ml-1 font-semibold text-t-secondary">
+                                        <span className="ml-1 font-semibold text-foreground">
 										{format(day, "d")}
 									</span>
 								</span>

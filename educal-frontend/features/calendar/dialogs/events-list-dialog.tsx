@@ -16,7 +16,7 @@ import {
 } from "@/features/calendar/helpers";
 import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
 import { EventBullet } from "@/features/calendar/views/month-view/event-bullet";
-import { EventDetailsDialog } from "@/features/calendar/dialogs/event-details-dialog";
+import EventDetailsDialog from "@/features/calendar/dialogs/event-details-dialog";
 
 interface EventListDialogProps {
   date: Date;

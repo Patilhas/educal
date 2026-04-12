@@ -1,5 +1,4 @@
-import React from "react";
-import { CalendarBody } from "@/features/calendar/calendar-body";
+import CalendarBody from "@/features/calendar/calendar-body";
 import { CalendarProvider } from "@/features/calendar/contexts/calendar-context";
 import { DndProvider } from "@/features/calendar/contexts/dnd-context";
 import { CalendarHeader } from "@/features/calendar/header/calendar-header";
@@ -12,7 +11,7 @@ async function getCalendarData() {
   };
 }
 
-export async function Calendar() {
+export default async function Calendar() {
   const { events, users } = await getCalendarData();
 
   return (

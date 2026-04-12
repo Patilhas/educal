@@ -20,7 +20,7 @@ interface IProps {
 	multiDayOccurrences: { event: IEvent; occurrence: IOccurrence }[];
 }
 
-export function CalendarMonthView({ singleDayOccurrences, multiDayOccurrences }: IProps) {
+export default function CalendarMonthView({ singleDayOccurrences, multiDayOccurrences }: IProps) {
 	const { selectedDate } = useCalendar();
 
 	const allOccurrences = [...multiDayOccurrences, ...singleDayOccurrences];
@@ -48,7 +48,7 @@ export function CalendarMonthView({ singleDayOccurrences, multiDayOccurrences }:
 						animate={{ opacity: 1, y: 0 }}
 						transition={{ delay: index * 0.05, ...transition }}
 					>
-						<span className="text-xs font-medium text-t-quaternary">{day}</span>
+						<span className="text-xs font-medium text-muted-foreground/70">{day}</span>
 					</motion.div>
 				))}
 			</div>

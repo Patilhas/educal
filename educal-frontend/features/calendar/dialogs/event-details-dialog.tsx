@@ -3,7 +3,6 @@
 import { format, parseISO } from "date-fns";
 import { Calendar, Clock, Layers, List, Tag, Text, User } from "lucide-react";
 import type { ReactNode } from "react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,8 +14,9 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
-import { AddEditEventDialog } from "@/features/calendar/dialogs/add-edit-event-dialog";
-import {formatTime, getEventCategoryLabel} from "@/features/calendar/helpers";
+import AddEditEventDialog from "@/features/calendar/dialogs/add-edit-event-dialog";
+import DeleteEventDialog from "@/features/calendar/dialogs/delete-event-dialog";
+import { formatTime, getEventCategoryLabel } from "@/features/calendar/helpers";
 import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
 
 interface IProps {
@@ -25,23 +25,14 @@ interface IProps {
   children: ReactNode;
 }
 
-export function EventDetailsDialog({ event, occurrence, children }: IProps) {
-  const { use24HourFormat, removeEvent } = useCalendar();
+export default function EventDetailsDialog({ event, occurrence, children }: IProps) {
+  const { use24HourFormat } = useCalendar();
 
   // Use the provided occurrence or fall back to the first one
   const displayOccurrence = occurrence || event.occurrences[0];
-  
+
   const startDate = displayOccurrence ? parseISO(displayOccurrence.startDate) : new Date();
   const endDate = displayOccurrence ? parseISO(displayOccurrence.endDate) : new Date();
-
-  const deleteEvent = async (eventId: number) => {
-    try {
-      await removeEvent(eventId);
-      toast.success("Evento eliminado com sucesso.");
-    } catch {
-      toast.error("Erro ao eliminar evento.");
-    }
-  };
 
   return (
     <Dialog>
@@ -173,14 +164,7 @@ export function EventDetailsDialog({ event, occurrence, children }: IProps) {
           <AddEditEventDialog event={event}>
             <Button variant="outline">Editar</Button>
           </AddEditEventDialog>
-          <Button
-            variant="destructive"
-            onClick={() => {
-              void deleteEvent(event.id);
-            }}
-          >
-            Eliminar
-          </Button>
+          <DeleteEventDialog eventId={event.id} />
         </div>
         <DialogClose />
       </DialogContent>

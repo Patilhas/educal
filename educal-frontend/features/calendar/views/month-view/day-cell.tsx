@@ -15,7 +15,7 @@ import { EventBullet } from "@/features/calendar/views/month-view/event-bullet";
 import { MonthEventBadge } from "@/features/calendar/views/month-view/month-event-badge";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { AddEditEventDialog } from "@/features/calendar/dialogs/add-edit-event-dialog";
+import AddEditEventDialog from "@/features/calendar/dialogs/add-edit-event-dialog";
 
 interface IProps {
   cell: ICalendarCell;
@@ -104,7 +104,7 @@ export function DayCell({ cell, occurrences, eventPositions }: IProps) {
               "h-6 px-1 text-xs font-semibold lg:px-2",
               !currentMonth && "opacity-20",
               isToday(date) &&
-                "flex w-6 translate-x-1 items-center justify-center rounded-full bg-primary px-0 font-bold text-primary-foreground",
+              "flex w-6 translate-x-1 items-center justify-center rounded-full bg-primary px-0 font-bold text-primary-foreground",
             )}
           >
             {day}

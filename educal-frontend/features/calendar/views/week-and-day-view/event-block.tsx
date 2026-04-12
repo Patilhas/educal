@@ -3,7 +3,7 @@ import { differenceInMinutes, parseISO } from "date-fns";
 import type { HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
-import { EventDetailsDialog } from "@/features/calendar/dialogs/event-details-dialog";
+import EventDetailsDialog from "@/features/calendar/dialogs/event-details-dialog";
 import { DraggableEvent } from "@/features/calendar/dnd/draggable-event";
 import { ResizableEvent } from "@/features/calendar/dnd/resizable-event";
 import {
@@ -20,7 +20,7 @@ const calendarWeekEventCardVariants = cva(
 
 interface IProps
   extends
-    HTMLAttributes<HTMLDivElement> {
+  HTMLAttributes<HTMLDivElement> {
   event: IEvent;
   occurrence: IOccurrence;
 }

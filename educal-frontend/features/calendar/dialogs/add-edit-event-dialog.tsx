@@ -55,7 +55,7 @@ interface IProps {
   event?: IEvent;
 }
 
-export function AddEditEventDialog({
+export default function AddEditEventDialog({
   children,
   startDate,
   startTime,
