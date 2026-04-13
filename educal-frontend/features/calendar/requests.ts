@@ -8,3 +8,8 @@ export const getEvents = async () => {
 export const getUsers = async () => {
 	return await calendarService.listUsers();
 };
+
+export const getEventEnums = async () => {
+	return await calendarService.listEnums();
+};
+

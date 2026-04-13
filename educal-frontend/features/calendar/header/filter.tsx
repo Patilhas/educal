@@ -13,7 +13,6 @@ import {
 	getFilterDotColorClass,
 } from "@/features/calendar/helpers";
 import { useTranslations } from "@/i18n/use-translations";
-import { useEventEnums } from "@/features/calendar/hooks/use-event-enums";
 
 export function FilterEvents() {
 	const {
@@ -21,8 +20,8 @@ export function FilterEvents() {
 		filterEventsBySelectedCategories,
 		clearFilter,
 		getEventColor,
+		eventEnums,
 	} = useCalendar();
-	const enums = useEventEnums();
 	const { t } = useTranslations();
 
 	return (
@@ -33,7 +32,7 @@ export function FilterEvents() {
 				</Toggle>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end" className="w-[220px]">
-				{enums.categories.map(({ value }) => (
+				{eventEnums.categories.map(({ value }) => (
 					<DropdownMenuItem
 						key={value}
 						className="flex items-center gap-2 cursor-pointer"

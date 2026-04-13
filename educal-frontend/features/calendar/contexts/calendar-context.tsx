@@ -9,8 +9,7 @@ import {
   updateOccurrenceRequest,
 } from "@/features/calendar/client-requests";
 import { useLocalStorage } from "@/features/calendar/hooks";
-import { useEventEnums } from "@/features/calendar/hooks/use-event-enums";
-import type { IEvent, IUser, TEventCategory } from "@/features/calendar/interfaces";
+import type { IEvent, IEventEnums, IUser, TEventCategory } from "@/features/calendar/interfaces";
 import { getEventColorByCategory } from "@/features/calendar/helpers";
 import type { TCalendarView, TEventColor } from "@/features/calendar/types";
 
@@ -31,6 +30,7 @@ interface ICalendarContext {
   filterEventsBySelectedCategories: (category: TEventCategory) => void;
   filterEventsBySelectedUser: (userId: IUser["id"] | "all") => void;
   users: IUser[];
+  eventEnums: IEventEnums;
   events: IEvent[];
   addEvent: (event: IEvent) => Promise<void>;
   updateEvent: (event: IEvent) => Promise<void>;
@@ -66,12 +66,14 @@ export function CalendarProvider({
   children,
   users,
   events,
+  initialEventEnums,
   badge = "colored",
   view = "day",
 }: {
   children: React.ReactNode;
   users: IUser[];
   events: IEvent[];
+  initialEventEnums: IEventEnums;
   view?: TCalendarView;
   badge?: "dot" | "colored";
 }) {
@@ -104,11 +106,11 @@ export function CalendarProvider({
   const [selectedCategories, setSelectedCategories] = useState<TEventCategory[]>([]);
 
   const [allEvents, setAllEvents] = useState<IEvent[]>(events || []);
-  const enums = useEventEnums();
 
   const categoryColorMap = useMemo(
-    () => Object.fromEntries(enums.categories.map(({ value, color }) => [value, color])),
-    [enums.categories],
+    () =>
+      Object.fromEntries(initialEventEnums.categories.map(({ value, color }) => [value, color])),
+    [initialEventEnums.categories],
   );
 
   const getEventColor = useCallback(
@@ -229,6 +231,7 @@ export function CalendarProvider({
     badgeVariant,
     setBadgeVariant,
     users,
+    eventEnums: initialEventEnums,
     selectedCategories,
     filterEventsBySelectedCategories,
     filterEventsBySelectedUser,

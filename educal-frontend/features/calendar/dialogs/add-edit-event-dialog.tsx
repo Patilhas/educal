@@ -31,7 +31,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import { useDisclosure } from "@/features/calendar/hooks";
-import { useEventEnums } from "@/features/calendar/hooks/use-event-enums";
 import type { IEvent } from "@/features/calendar/interfaces";
 import { eventSchema, type TEventFormData } from "@/features/calendar/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -58,8 +57,7 @@ export default function AddEditEventDialog({
 }: IProps) {
   const { t } = useTranslations();
   const { isOpen, onClose, onToggle } = useDisclosure();
-  const { addEvent, updateEvent, users } = useCalendar();
-  const enums = useEventEnums();
+  const { addEvent, updateEvent, users, eventEnums } = useCalendar();
   const isEditing = !!event;
 
   const initialDates = useMemo(() => {
@@ -209,7 +207,7 @@ export default function AddEditEventDialog({
                           <SelectValue placeholder={t("calendar.dialogs.addEditEvent.fields.categoryPlaceholder")} />
                         </SelectTrigger>
                         <SelectContent>
-                          {enums.categories.map(({ value }) => (
+                          {eventEnums.categories.map(({ value }) => (
                             <SelectItem value={value} key={value}>
                               {t(`calendar.categories.${value}` as never)}
                             </SelectItem>
@@ -234,7 +232,7 @@ export default function AddEditEventDialog({
                           <SelectValue placeholder={t("calendar.dialogs.addEditEvent.fields.classificationPlaceholder")} />
                         </SelectTrigger>
                         <SelectContent>
-                          {enums.classifications.map((key) => (
+                          {eventEnums.classifications.map((key) => (
                             <SelectItem value={key} key={key}>
                               {t(`calendar.classifications.${key}` as never)}
                             </SelectItem>
@@ -259,7 +257,7 @@ export default function AddEditEventDialog({
                           <SelectValue placeholder={t("calendar.dialogs.addEditEvent.fields.statusPlaceholder")} />
                         </SelectTrigger>
                         <SelectContent>
-                          {enums.statuses.map((key) => (
+                          {eventEnums.statuses.map((key) => (
                             <SelectItem value={key} key={key}>
                               {t(`calendar.statuses.${key}` as never)}
                             </SelectItem>
@@ -284,7 +282,7 @@ export default function AddEditEventDialog({
                           <SelectValue placeholder={t("calendar.dialogs.addEditEvent.fields.responsiblePlaceholder")} />
                         </SelectTrigger>
                         <SelectContent>
-                          {enums.responsibles.map((key) => (
+                          {eventEnums.responsibles.map((key) => (
                             <SelectItem value={key} key={key}>
                               {t(`calendar.responsibles.${key}` as never)}
                             </SelectItem>

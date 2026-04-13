@@ -19,7 +19,7 @@ export function useEventEnums(): IEventEnums {
 
   useEffect(() => {
     if (cache) return;
-    
+
     if (!fetchPromise) {
       fetchPromise = fetchEventEnums();
     }
