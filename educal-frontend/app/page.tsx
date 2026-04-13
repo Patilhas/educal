@@ -4,10 +4,12 @@ import { CalendarSkeleton } from "@/features/calendar/skeletons/calendar-skeleto
 
 export default function Page() {
   return (
-      <main className="flex max-h-screen my-10 flex-col">
-          <Suspense fallback={<CalendarSkeleton />}>
-              <Calendar />
-          </Suspense>
+      <main className="flex h-dvh min-h-0 w-full items-center justify-center overflow-hidden">
+          <div className="h-[90dvh] w-[90vw] min-h-0 min-w-0">
+              <Suspense fallback={<CalendarSkeleton />}>
+                  <Calendar />
+              </Suspense>
+          </div>
       </main>
   )
 }

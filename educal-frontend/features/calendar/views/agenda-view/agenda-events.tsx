@@ -19,6 +19,7 @@ import {
   getEventsForMonth,
   getFirstLetters,
 } from "@/features/calendar/helpers";
+import { ACTIVE_I18N } from "@/i18n/config";
 import { EventBullet } from "@/features/calendar/views/month-view/event-bullet";
 import { useTranslations } from "@/i18n/use-translations";
 
@@ -65,16 +66,16 @@ export default function AgendaEvents() {
         return new Date(a[0]).getTime() - new Date(b[0]).getTime();
       }
 
-      return a[0].localeCompare(b[0], "pt-PT", { sensitivity: "base" });
+      return a[0].localeCompare(b[0], ACTIVE_I18N.collatorLocale, { sensitivity: "base" });
     },
   );
 
   return (
-    <Command className="py-4 h-[80vh] bg-transparent">
+    <Command className="flex h-full min-h-0 flex-col bg-transparent py-4">
       <div className="mb-4 mx-4">
         <CommandInput placeholder={t("calendar.views.agenda.searchPlaceholder")} />
       </div>
-      <CommandList className="max-h-max px-3 border-t">
+      <CommandList className="min-h-0 flex-1 border-t px-3">
         {groupedAndSortedOccurrences.map(([date, groupedOccurrences]) => (
           <CommandGroup
             key={date}

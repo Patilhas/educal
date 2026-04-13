@@ -115,9 +115,79 @@ const randomArrayItem = <T>(items: readonly T[]): T => {
   return items[Math.floor(Math.random() * items.length)];
 };
 
-const generateEvents = (numberOfEvents: number): IEvent[] => {
+const OCCURRENCE_DESCRIPTION =
+  "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt.";
+
+const EVENT_OBJECTIVES = [
+  "Garantir que a atividade anual e as suas ocorrencias ficam planeadas para o ano letivo.",
+  "Executar e acompanhar uma etapa do planeamento academico com regras definidas.",
+];
+
+const createOccurrence = (startDate: Date, endDate: Date): IEvent["occurrences"][number] => {
+  return {
+    id: crypto.randomUUID(),
+    description: OCCURRENCE_DESCRIPTION,
+    startDate: startDate.toISOString(),
+    endDate: endDate.toISOString(),
+  };
+};
+
+const createRandomOccurrence = (startRange: Date, endRange: Date): IEvent["occurrences"][number] => {
+  const occurrenceStart = new Date(
+    startRange.getTime() + Math.random() * (endRange.getTime() - startRange.getTime()),
+  );
+
+  occurrenceStart.setHours(
+    8 + Math.floor(Math.random() * 12),
+    Math.floor(Math.random() * 60),
+    0,
+    0,
+  );
+
+  const occurrenceEnd = new Date(occurrenceStart);
+  const isMultiDay = Math.random() < 0.1;
+
+  if (isMultiDay) {
+    occurrenceEnd.setDate(occurrenceStart.getDate() + Math.floor(Math.random() * 3) + 1);
+    occurrenceEnd.setHours(
+      8 + Math.floor(Math.random() * 12),
+      Math.floor(Math.random() * 60),
+      0,
+      0,
+    );
+  } else {
+    occurrenceEnd.setHours(occurrenceEnd.getHours() + Math.floor(Math.random() * 3) + 1);
+  }
+
+  return createOccurrence(occurrenceStart, occurrenceEnd);
+};
+
+const createEvent = (
+  id: number,
+  occurrences: IEvent["occurrences"],
+): IEvent => {
+  return {
+    id,
+    name: randomArrayItem(eventNames),
+    objective: randomArrayItem(EVENT_OBJECTIVES),
+    daysBetweenOccurrences: (Math.floor(Math.random() * 120) + 1).toString(),
+    category: randomArrayItem(CATEGORIES_SEED).value,
+    classification: randomArrayItem(CLASSIFICATIONS_SEED).value,
+    status: randomArrayItem(STATUSES_SEED).name,
+    responsible: randomArrayItem(RESPONSIBLES_SEED).value,
+    occurrences,
+    user: randomArrayItem(USERS_SEED),
+  };
+};
+
+const generateEvents = (totalOccurrencesTarget: number): IEvent[] => {
+  if (totalOccurrencesTarget <= 0) {
+    return [];
+  }
+
   const result: IEvent[] = [];
   let currentId = 1;
+  let generatedOccurrences = 0;
 
   const now = new Date();
   const startRange = new Date(now);
@@ -128,78 +198,32 @@ const generateEvents = (numberOfEvents: number): IEvent[] => {
   const fixedOccurrenceStart = new Date(now.getTime() - 30 * 60000);
   const fixedOccurrenceEnd = new Date(now.getTime() + 30 * 60000);
 
-  result.push({
-    id: currentId++,
-    name: randomArrayItem(eventNames),
-    objective:
-      "Garantir que a atividade anual e as suas ocorrencias ficam planeadas para o ano letivo.",
-    daysBetweenOccurrences: (Math.floor(Math.random() * 90) + 1).toString(),
-    category: randomArrayItem(CATEGORIES_SEED).value,
-    classification: randomArrayItem(CLASSIFICATIONS_SEED).value,
-    status: randomArrayItem(STATUSES_SEED).name,
-    responsible: randomArrayItem(RESPONSIBLES_SEED).value,
-    occurrences: [
-      {
-        id: crypto.randomUUID(),
-        description:
-          "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt.",
-        startDate: fixedOccurrenceStart.toISOString(),
-        endDate: fixedOccurrenceEnd.toISOString(),
-      },
-    ],
-    user: randomArrayItem(USERS_SEED),
-  });
+  const firstEventOccurrences: IEvent["occurrences"] = [
+    createOccurrence(fixedOccurrenceStart, fixedOccurrenceEnd),
+  ];
+  generatedOccurrences += 1;
 
-  for (let index = 0; index < numberOfEvents - 1; index++) {
-    const isMultiDay = Math.random() < 0.1;
+  if (generatedOccurrences < totalOccurrencesTarget && Math.random() < 0.5) {
+    firstEventOccurrences.push(createRandomOccurrence(startRange, endRange));
+    generatedOccurrences += 1;
+  }
 
-    const occurrenceStart = new Date(
-      startRange.getTime() + Math.random() * (endRange.getTime() - startRange.getTime()),
-    );
-    occurrenceStart.setHours(
-      8 + Math.floor(Math.random() * 12),
-      Math.floor(Math.random() * 60),
-      0,
-      0,
+  result.push(createEvent(currentId++, firstEventOccurrences));
+
+  while (generatedOccurrences < totalOccurrencesTarget) {
+    const remainingOccurrences = totalOccurrencesTarget - generatedOccurrences;
+    const occurrencesCountForEvent = Math.min(
+      remainingOccurrences,
+      Math.random() < 0.5 ? 2 : 1,
     );
 
-    const occurrenceEnd = new Date(occurrenceStart);
+    const occurrences: IEvent["occurrences"] = Array.from(
+      { length: occurrencesCountForEvent },
+      () => createRandomOccurrence(startRange, endRange),
+    );
 
-    if (isMultiDay) {
-      occurrenceEnd.setDate(occurrenceStart.getDate() + Math.floor(Math.random() * 4) + 1);
-      occurrenceEnd.setHours(
-        8 + Math.floor(Math.random() * 12),
-        Math.floor(Math.random() * 60),
-        0,
-        0,
-      );
-    } else {
-      occurrenceEnd.setHours(
-        occurrenceEnd.getHours() + Math.floor(Math.random() * 3) + 1,
-      );
-    }
-
-    result.push({
-      id: currentId++,
-      name: randomArrayItem(eventNames),
-      objective:
-        "Executar e acompanhar uma etapa do planeamento academico com regras definidas.",
-      daysBetweenOccurrences: (Math.floor(Math.random() * 120) + 1).toString(),
-      category: randomArrayItem(CATEGORIES_SEED).value,
-      classification: randomArrayItem(CLASSIFICATIONS_SEED).value,
-      status: randomArrayItem(STATUSES_SEED).name,
-      responsible: randomArrayItem(RESPONSIBLES_SEED).value,
-      occurrences: [
-        {
-          id: crypto.randomUUID(),
-          description:
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt.",
-          startDate: occurrenceStart.toISOString(),
-          endDate: occurrenceEnd.toISOString(),
-        },
-      ],
-      user: randomArrayItem(USERS_SEED),
-    });
+    result.push(createEvent(currentId++, occurrences));
+    generatedOccurrences += occurrencesCountForEvent;
   }
 
   return result;
@@ -208,7 +232,7 @@ const generateEvents = (numberOfEvents: number): IEvent[] => {
 export const buildCalendarSeed = (): ICalendarDb => {
   return {
     users: structuredClone(USERS_SEED),
-    events: generateEvents(80),
+    events: generateEvents(50),
     categories: structuredClone(CATEGORIES_SEED),
     classifications: structuredClone(CLASSIFICATIONS_SEED),
     statuses: structuredClone(STATUSES_SEED),

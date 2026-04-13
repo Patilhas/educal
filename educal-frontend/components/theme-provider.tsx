@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { ThemeProvider as NextThemesProvider } from "next-themes"
-import "@/lib/date-fns"
 
 export function ThemeProvider({
   children,

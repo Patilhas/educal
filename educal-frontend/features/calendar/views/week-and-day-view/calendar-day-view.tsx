@@ -79,9 +79,9 @@ export default function CalendarDayView({ singleDayOccurrences, multiDayOccurren
   const groupedOccurrences = groupOccurrences(dayOccurrences);
 
   return (
-    <div className="flex">
-      <div className="flex flex-1 flex-col">
-        <div>
+    <div className="flex h-full min-h-0">
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="shrink-0">
           <DayViewMultiDayEventsRow
             selectedDate={selectedDate}
             multiDayOccurrences={multiDayOccurrences}
@@ -99,7 +99,7 @@ export default function CalendarDayView({ singleDayOccurrences, multiDayOccurren
           </div>
         </div>
 
-        <ScrollArea className="h-[800px]" type="always" ref={scrollAreaRef}>
+        <ScrollArea className="h-full min-h-0 flex-1" type="always" ref={scrollAreaRef}>
           <div className="flex">
             {/* Hours column */}
             <TimeGridHoursColumn
@@ -124,19 +124,18 @@ export default function CalendarDayView({ singleDayOccurrences, multiDayOccurren
         </ScrollArea>
       </div>
 
-      <div className="hidden w-72 divide-y border-l md:block">
+      <div className="hidden min-h-0 w-72 divide-y border-l md:flex md:flex-col">
         <DayPicker
           className="mx-auto w-fit"
           mode="single"
           selected={selectedDate}
           onSelect={(date) => date && setSelectedDate(date)}
-          initialFocus
         />
 
-        <div className="flex-1 space-y-3">
+        <div className="flex min-h-0 flex-1 flex-col space-y-3">
           {currentOccurrences.length > 0 ? (
             <div className="flex items-start gap-2 px-4 pt-4">
-              <span className="relative mt-[5px] flex size-2.5">
+              <span className="relative mt-1.25 flex size-2.5">
                 <span className="absolute inline-flex size-full animate-ping rounded-full bg-green-400 opacity-75"></span>
                 <span className="relative inline-flex size-2.5 rounded-full bg-green-600"></span>
               </span>
@@ -152,7 +151,7 @@ export default function CalendarDayView({ singleDayOccurrences, multiDayOccurren
           )}
 
           {currentOccurrences.length > 0 && (
-            <ScrollArea className="h-[422px] px-4" type="always">
+            <ScrollArea className="min-h-0 flex-1 px-4" type="always">
               <div className="space-y-6 pb-4">
                 {currentOccurrences.map(({ event, occurrence }) => {
                   const user = users.find((user) => user.id === event.user.id);

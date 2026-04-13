@@ -3,8 +3,9 @@
 import {ChevronLeft, ChevronRight} from "lucide-react";
 import {DayPicker as ReactDayPicker, getDefaultClassNames,} from "react-day-picker";
 import {buttonVariants} from "@/components/ui/button";
+import { ACTIVE_I18N } from "@/i18n/config";
 import {cn} from "@/lib/utils";
-import {DEFAULT_LOCALE} from "@/lib/date-fns";
+import React from "react";
 
 export type DayPickerProps = React.ComponentProps<typeof ReactDayPicker>;
 
@@ -19,7 +20,7 @@ function DayPicker({
   return (
     <ReactDayPicker
       showOutsideDays={showOutsideDays}
-      locale={props.locale ?? DEFAULT_LOCALE}
+      locale={props.locale ?? ACTIVE_I18N.dateFnsLocale}
       className={cn("p-3", className)}
       classNames={{
         root: cn("w-fit", defaultClassNames.root),

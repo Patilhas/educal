@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ZodError } from "zod";
+import { z, ZodError } from "zod";
 import { DomainError } from "@/server/shared/domain-error";
 
 export function ok<T>(data: T, status = 200) {
@@ -26,7 +26,7 @@ export function fail(error: unknown) {
         error: {
           code: "VALIDATION_ERROR",
           message: "Dados inválidos",
-          details: error.flatten(),
+          details: z.treeifyError(error)
         },
       },
       { status: 400 },

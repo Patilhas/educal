@@ -14,7 +14,7 @@ import {
 
 const clone = <T>(value: T): T => structuredClone(value);
 
-const REDIS_KEY = 'calendar-db';
+const REDIS_KEY = process.env.UPSTASH_REDIS_FILE_NAME || 'calendar-db';
 const CACHE_REVALIDATE_MS = 500;
 
 export class CalendarData {
@@ -47,7 +47,7 @@ export class CalendarData {
         }
 
         const parsed = await this.redis.get(REDIS_KEY) as ICalendarDb;
-        if (!parsed) throw new Error('calendar-db not found in Redis after ensureCacheFile');
+        if (!parsed) throw new Error(`${REDIS_KEY} not found in Redis after ensureCacheFile`);
 
         this.cachedDb = parsed;
         this.lastCacheValidationAt = now;

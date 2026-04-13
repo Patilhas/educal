@@ -158,7 +158,9 @@ export function getOccurrenceBlockStyle(
 	return { top: `${top}%`, width: `${width}%`, left: `${left}%` };
 }
 
-export function getCalendarCells(selectedDate: Date): ICalendarCell[] {
+export function getCalendarCells(
+	selectedDate: Date,
+): ICalendarCell[] {
 	const year = selectedDate.getFullYear();
 	const month = selectedDate.getMonth();
 
@@ -179,8 +181,10 @@ export function getCalendarCells(selectedDate: Date): ICalendarCell[] {
 		date: new Date(year, month, i + 1),
 	}));
 
+	const trailingCellsCount = (7 - (totalDays % 7)) % 7;
+
 	const nextMonthCells = Array.from(
-		{ length: (7 - (totalDays % 7)) % 7 },
+		{ length: trailingCellsCount },
 		(_, i) => ({
 			day: i + 1,
 			currentMonth: false,

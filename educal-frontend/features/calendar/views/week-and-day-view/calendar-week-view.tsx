@@ -31,6 +31,7 @@ export default function CalendarWeekView({singleDayOccurrences, multiDayOccurren
 
     return (
         <motion.div
+            className="flex h-full min-h-0 flex-col"
             initial="initial"
             animate="animate"
             exit="exit"
@@ -48,10 +49,10 @@ export default function CalendarWeekView({singleDayOccurrences, multiDayOccurren
             </motion.div>
 
             <motion.div
-                className="flex-col sm:flex"
+                className="min-h-0 flex-1 flex-col sm:flex"
                 variants={staggerContainer}
             >
-                <div>
+                <div className="shrink-0">
                     <WeekViewMultiDayEventsRow
                         selectedDate={selectedDate}
                         multiDayOccurrences={multiDayOccurrences}
@@ -96,7 +97,7 @@ export default function CalendarWeekView({singleDayOccurrences, multiDayOccurren
 
                 </div>
 
-                <ScrollArea className="h-[736px]" type="always">
+                <ScrollArea className="h-full min-h-0 flex-1" type="always">
                     <div className="flex">
                         {/* Hours column */}
                         <TimeGridHoursColumn
