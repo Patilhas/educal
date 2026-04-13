@@ -2,17 +2,19 @@ import { useCallback } from "react";
 import { pt } from "./pt";
 import type { Dictionary, TranslationKey } from "./types";
 
+type TranslationNode = string | string[] | { [key: string]: TranslationNode };
+
 export function useTranslations() {
-  const dictionary = pt;
+  const dictionary: Dictionary = pt;
 
   const t = useCallback(
     (key: TranslationKey, variables?: Record<string, string | number>) => {
       const keys = key.split(".");
-      let result: any = dictionary;
+      let result: TranslationNode = dictionary as TranslationNode;
 
       for (const k of keys) {
         if (result && typeof result === "object" && k in result) {
-          result = result[k];
+          result = (result as Record<string, TranslationNode>)[k];
         } else {
           console.warn(`Translation key not found: ${key}`);
           return key;
