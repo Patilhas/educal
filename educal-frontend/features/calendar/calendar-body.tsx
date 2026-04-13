@@ -71,6 +71,7 @@ export default function CalendarBody() {
         )}
         {view === "agenda" && (
           <motion.div
+            className="h-full min-h-0"
             key="agenda"
             initial="initial"
             animate="animate"

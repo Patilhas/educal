@@ -70,11 +70,11 @@ export default function AgendaEvents() {
   );
 
   return (
-    <Command className="py-4 h-[80vh] bg-transparent">
+    <Command className="flex h-full min-h-0 flex-col bg-transparent py-4">
       <div className="mb-4 mx-4">
         <CommandInput placeholder={t("calendar.views.agenda.searchPlaceholder")} />
       </div>
-      <CommandList className="max-h-max px-3 border-t">
+      <CommandList className="min-h-0 flex-1 border-t px-3">
         {groupedAndSortedOccurrences.map(([date, groupedOccurrences]) => (
           <CommandGroup
             key={date}

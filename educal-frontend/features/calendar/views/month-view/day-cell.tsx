@@ -47,7 +47,7 @@ export function DayCell({ cell, occurrences, eventPositions }: IProps) {
         return (
           <motion.div
             key={`empty-${position}`}
-            className="lg:flex-1"
+            className="hidden h-6.5 lg:block"
             initial={false}
             animate={false}
           />
@@ -61,7 +61,7 @@ export function DayCell({ cell, occurrences, eventPositions }: IProps) {
       return (
         <motion.div
           key={`event-${item.occurrence.id}-${position}`}
-          className="lg:flex-1"
+          className="shrink-0"
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: position * 0.1, ...transition }}
