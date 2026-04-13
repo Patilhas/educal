@@ -18,7 +18,7 @@ interface IProps {
   multiDayOccurrences: { event: IEvent; occurrence: IOccurrence }[];
 }
 
-export function CalendarDayView({ singleDayOccurrences, multiDayOccurrences }: IProps) {
+export default function CalendarDayView({ singleDayOccurrences, multiDayOccurrences }: IProps) {
   const { selectedDate, setSelectedDate, users, use24HourFormat } =
     useCalendar();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -90,9 +90,9 @@ export function CalendarDayView({ singleDayOccurrences, multiDayOccurrences }: I
           {/* Day header */}
           <div className="relative z-20 flex border-b">
             <div className="w-18"></div>
-            <span className="flex-1 border-l py-2 text-center text-xs font-medium text-t-quaternary">
+            <span className="flex-1 border-l py-2 text-center text-xs font-medium text-muted-foreground/70">
               {format(selectedDate, "EE")}{" "}
-              <span className="font-semibold text-t-secondary">
+              <span className="font-semibold text-foreground">
                 {format(selectedDate, "d")}
               </span>
             </span>
@@ -141,12 +141,12 @@ export function CalendarDayView({ singleDayOccurrences, multiDayOccurrences }: I
                 <span className="relative inline-flex size-2.5 rounded-full bg-green-600"></span>
               </span>
 
-              <p className="text-sm font-semibold text-t-secondary">
+              <p className="text-sm font-semibold text-foreground">
                 A acontecer
               </p>
             </div>
           ) : (
-            <p className="p-4 text-center text-sm italic text-t-tertiary">
+            <p className="p-4 text-center text-sm italic text-muted-foreground">
               Nenhum evento a acontecer no momento
             </p>
           )}
@@ -165,23 +165,23 @@ export function CalendarDayView({ singleDayOccurrences, multiDayOccurrences }: I
 
                       {user && (
                         <div className="flex items-center gap-1.5">
-                          <User className="size-4 text-t-quinary" />
-                          <span className="text-sm text-t-tertiary">
+                          <User className="size-4 text-muted-foreground/50" />
+                          <span className="text-sm text-muted-foreground">
                             {user.name}
                           </span>
                         </div>
                       )}
 
                       <div className="flex items-center gap-1.5">
-                        <Calendar className="size-4 text-t-quinary" />
-                        <span className="text-sm text-t-tertiary">
+                        <Calendar className="size-4 text-muted-foreground/50" />
+                        <span className="text-sm text-muted-foreground">
                           {format(new Date(occurrence.startDate), "MMM d, yyyy")}
                         </span>
                       </div>
 
                       <div className="flex items-center gap-1.5">
-                        <Clock className="size-4 text-t-quinary" />
-                        <span className="text-sm text-t-tertiary">
+                        <Clock className="size-4 text-muted-foreground/50" />
+                        <span className="text-sm text-muted-foreground">
                           {format(
                             parseISO(occurrence.startDate),
                             use24HourFormat ? "HH:mm" : "hh:mm a",

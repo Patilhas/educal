@@ -21,8 +21,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
+import { useTranslations } from "@/i18n/use-translations";
 
-export function Settings() {
+export default function Settings() {
   const {
     badgeVariant,
     setBadgeVariant,
@@ -32,6 +33,7 @@ export function Settings() {
     setAgendaModeGroupBy,
   } = useCalendar();
   const { resolvedTheme, setTheme } = useTheme();
+  const { t } = useTranslations();
 
   const isDarkMode = resolvedTheme === "dark";
   const isDotVariant = badgeVariant === "dot";
@@ -44,11 +46,11 @@ export function Settings() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56">
-        <DropdownMenuLabel>Definições do Calendário</DropdownMenuLabel>
+        <DropdownMenuLabel>{t("calendar.settings.title")}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem>
-            Usar modo escuro
+            {t("calendar.settings.darkMode")}
             <DropdownMenuShortcut>
               <Switch
                 icon={
@@ -67,7 +69,7 @@ export function Settings() {
           </DropdownMenuItem>
 
           <DropdownMenuItem>
-            Usar emblema circular
+            {t("calendar.settings.dotVariant")}
             <DropdownMenuShortcut>
               <Switch
                 icon={
@@ -85,7 +87,7 @@ export function Settings() {
             </DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuItem>
-            Usar formato 24h
+            {t("calendar.settings.format24h")}
             <DropdownMenuShortcut>
               <Switch
                 icon={
@@ -140,15 +142,15 @@ export function Settings() {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuLabel>Agrupar agenda por</DropdownMenuLabel>
+          <DropdownMenuLabel>{t("calendar.settings.groupBy")}</DropdownMenuLabel>
           <DropdownMenuRadioGroup
             value={agendaModeGroupBy}
             onValueChange={(value) =>
               setAgendaModeGroupBy(value as "date" | "category")
             }
           >
-            <DropdownMenuRadioItem value="date">Data</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="category">Categoria</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="date">{t("calendar.settings.groupByDate")}</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="category">{t("calendar.settings.groupByCategory")}</DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
         </DropdownMenuGroup>
       </DropdownMenuContent>

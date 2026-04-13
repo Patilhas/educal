@@ -28,7 +28,7 @@ export function TimeGridHoursColumn({
           >
             <div className="absolute -top-3 right-2 flex h-6 items-center">
               {index !== 0 && (
-                <span className="text-xs text-t-quaternary">
+                <span className="text-xs text-muted-foreground/70">
                   {format(hourDate, use24HourFormat ? "HH:00" : "h a")}
                 </span>
               )}

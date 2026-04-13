@@ -1,12 +1,5 @@
 import { addMinutes, format, set } from "date-fns";
-import {
-  EVENT_CATEGORY_KEYS,
-  EVENT_CLASSIFICATIONS,
-  EVENT_RESPONSIBLES,
-  EVENT_STATUSES,
-} from "@/features/calendar/constants";
-import { USERS_MOCK } from "@/features/calendar/mocks";
-import type { IEvent } from "@/features/calendar/interfaces";
+import type { IEvent, IUser } from "@/features/calendar/interfaces";
 import type { TEventFormData } from "@/features/calendar/schemas";
 
 interface InitialDateParams {
@@ -19,6 +12,7 @@ interface EventFromFormParams {
   values: TEventFormData;
   isEditing: boolean;
   event?: IEvent;
+  defaultUser: IUser;
 }
 
 export const toNumericId = (seed: string): number => {
@@ -67,10 +61,10 @@ export const getEventFormDefaults = (
     name: event?.name ?? "",
     objective: event?.objective ?? "",
     daysBetweenOccurrences: event?.daysBetweenOccurrences ?? "",
-    category: event?.category ?? EVENT_CATEGORY_KEYS[0],
-    classification: event?.classification ?? EVENT_CLASSIFICATIONS[0],
-    status: event?.status ?? EVENT_STATUSES[0],
-    responsible: event?.responsible ?? EVENT_RESPONSIBLES[0],
+    category: event?.category ?? "",
+    classification: event?.classification ?? "",
+    status: event?.status ?? "",
+    responsible: event?.responsible ?? "",
     occurrences:
       event?.occurrences?.map((occurrence) => ({
         id: occurrence.id,
@@ -97,6 +91,7 @@ export const formatEventFromForm = ({
   values,
   isEditing,
   event,
+  defaultUser,
 }: EventFromFormParams): IEvent => {
   const sortedOccurrences = [...values.occurrences].sort(
     (a, b) => a.startDate.getTime() - b.startDate.getTime(),
@@ -121,7 +116,7 @@ export const formatEventFromForm = ({
       startDate: format(occurrence.startDate, "yyyy-MM-dd'T'HH:mm:ss"),
       endDate: format(occurrence.endDate, "yyyy-MM-dd'T'HH:mm:ss"),
     })),
-    user: isEditing && event ? event.user : USERS_MOCK[0],
+    user: isEditing && event ? event.user : defaultUser,
   };
 };
 

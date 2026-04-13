@@ -8,14 +8,15 @@ import { cn } from "@/lib/utils";
 import { transition } from "@/features/calendar/animations";
 import { EventListDialog } from "@/features/calendar/dialogs/events-list-dialog";
 import { DroppableArea } from "@/features/calendar/dnd/droppable-area";
-import { getEventColorByCategory, getMonthCellEvents } from "@/features/calendar/helpers";
+import { getMonthCellEvents } from "@/features/calendar/helpers";
+import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import { useMediaQuery } from "@/features/calendar/hooks";
 import type { ICalendarCell, IEvent, IOccurrence } from "@/features/calendar/interfaces";
 import { EventBullet } from "@/features/calendar/views/month-view/event-bullet";
 import { MonthEventBadge } from "@/features/calendar/views/month-view/month-event-badge";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { AddEditEventDialog } from "@/features/calendar/dialogs/add-edit-event-dialog";
+import AddEditEventDialog from "@/features/calendar/dialogs/add-edit-event-dialog";
 
 interface IProps {
   cell: ICalendarCell;
@@ -29,6 +30,7 @@ const MAX_VISIBLE_EVENTS = 3;
 export function DayCell({ cell, occurrences, eventPositions }: IProps) {
   const { day, currentMonth, date } = cell;
   const isMobile = useMediaQuery("(max-width: 768px)");
+  const { getEventColor } = useCalendar();
 
   const { cellOccurrences, currentCellMonth } = useMemo(() => {
     const cellOccurrences = getMonthCellEvents(date, occurrences, eventPositions);
@@ -67,7 +69,7 @@ export function DayCell({ cell, occurrences, eventPositions }: IProps) {
           {showBullet && (
             <EventBullet
               className="lg:hidden"
-              color={getEventColorByCategory(item.event.category)}
+              color={getEventColor(item.event.category)}
             />
           )}
           <MonthEventBadge
@@ -79,7 +81,7 @@ export function DayCell({ cell, occurrences, eventPositions }: IProps) {
         </motion.div>
       );
     },
-    [cellOccurrences, currentCellMonth, date],
+    [cellOccurrences, currentCellMonth, date, getEventColor],
   );
 
   const showMoreCount = cellOccurrences.length - MAX_VISIBLE_EVENTS;
@@ -104,7 +106,7 @@ export function DayCell({ cell, occurrences, eventPositions }: IProps) {
               "h-6 px-1 text-xs font-semibold lg:px-2",
               !currentMonth && "opacity-20",
               isToday(date) &&
-                "flex w-6 translate-x-1 items-center justify-center rounded-full bg-primary px-0 font-bold text-primary-foreground",
+              "flex w-6 translate-x-1 items-center justify-center rounded-full bg-primary px-0 font-bold text-primary-foreground",
             )}
           >
             {day}

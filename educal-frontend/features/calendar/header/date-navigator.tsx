@@ -15,6 +15,7 @@ import {
 
 import type { IEvent } from "@/features/calendar/interfaces";
 import type { TCalendarView } from "@/features/calendar/types";
+import { useTranslations } from "@/i18n/use-translations";
 
 interface IProps {
   view: TCalendarView;
@@ -26,6 +27,7 @@ const MotionBadge = motion.create(Badge);
 
 export function DateNavigator({ view, events }: IProps) {
   const { selectedDate, setSelectedDate } = useCalendar();
+  const { t } = useTranslations();
 
   const month = formatDate(selectedDate, "MMMM");
   const year = selectedDate.getFullYear();
@@ -60,7 +62,7 @@ export function DateNavigator({ view, events }: IProps) {
             exit={{ scale: 0.8, opacity: 0 }}
             transition={transition}
           >
-            {eventCount} eventos
+          {t("calendar.eventCount", { count: eventCount })}
           </MotionBadge>
         </AnimatePresence>
       </div>

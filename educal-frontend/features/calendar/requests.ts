@@ -1,12 +1,15 @@
-import {
-	CALENDAR_ITEMS_MOCK,
-	USERS_MOCK,
-} from "@/features/calendar/mocks";
+import "server-only";
+import { calendarService } from "@/server/calendar/services/calendar.service";
 
 export const getEvents = async () => {
-	return CALENDAR_ITEMS_MOCK;
+	return await calendarService.listEvents();
 };
 
 export const getUsers = async () => {
-	return USERS_MOCK;
+	return await calendarService.listUsers();
 };
+
+export const getEventEnums = async () => {
+	return await calendarService.listEnums();
+};
+

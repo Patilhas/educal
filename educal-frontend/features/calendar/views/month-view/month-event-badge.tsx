@@ -2,11 +2,10 @@ import { cva } from "class-variance-authority";
 import { endOfDay, isSameDay, parseISO, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
-import { EventDetailsDialog } from "@/features/calendar/dialogs/event-details-dialog";
+import EventDetailsDialog from "@/features/calendar/dialogs/event-details-dialog";
 import { DraggableEvent } from "@/features/calendar/dnd/draggable-event";
 import {
   formatTime,
-  getEventColorByCategory,
   getMonthEventColorClass,
 } from "@/features/calendar/helpers";
 import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
@@ -46,7 +45,7 @@ export function MonthEventBadge({
   className,
   position: propPosition,
 }: IProps) {
-  const { badgeVariant, use24HourFormat } = useCalendar();
+  const { badgeVariant, use24HourFormat, getEventColor } = useCalendar();
 
   const occurrenceStart = startOfDay(parseISO(occurrence.startDate));
   const occurrenceEnd = endOfDay(parseISO(occurrence.endDate));
@@ -71,7 +70,7 @@ export function MonthEventBadge({
 
   const renderBadgeText = ["first", "none"].includes(position);
   const renderBadgeTime = ["last", "none"].includes(position);
-  const eventColor = getEventColorByCategory(event.category);
+  const eventColor = getEventColor(event.category);
 
   const eventBadgeClasses = cn(
     eventBadgeVariants({ multiDayPosition: position }),

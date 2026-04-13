@@ -34,7 +34,7 @@ export function ResizableEvent({
   children,
   className,
 }: ResizableEventBlockProps) {
-  const { updateEvent, use24HourFormat } = useCalendar();
+  const { updateOccurrence, use24HourFormat } = useCalendar();
 
   const [isResizing, setIsResizing] = useState(false);
   const [resizePreview, setResizePreview] = useState<{
@@ -112,27 +112,18 @@ export function ResizableEvent({
 
   const handleResizeStop = useCallback(() => {
     if (pendingResizeRange) {
-      const updatedEvent = {
-        ...event,
-        occurrences: event.occurrences.map((occ) => {
-          if (occ.id === occurrence.id) {
-            return {
-              ...occ,
-              startDate: pendingResizeRange.startDate,
-              endDate: pendingResizeRange.endDate,
-            };
-          }
-          return occ;
-        }),
-      };
-
-      updateEvent(updatedEvent);
+      void updateOccurrence({
+        eventId: event.id,
+        occurrenceId: occurrence.id,
+        startDate: pendingResizeRange.startDate,
+        endDate: pendingResizeRange.endDate,
+      });
     }
 
     setIsResizing(false);
     setResizePreview(null);
     setPendingResizeRange(null);
-  }, [event, occurrence, pendingResizeRange, updateEvent]);
+  }, [event.id, occurrence.id, pendingResizeRange, updateOccurrence]);
 
   const resizeConfig = useMemo(
     () => ({

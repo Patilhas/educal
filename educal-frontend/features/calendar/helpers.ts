@@ -30,11 +30,11 @@ import type {
 	IEvent,
 	IOccurrence,
 } from "@/features/calendar/interfaces";
-import { EVENT_CATEGORIES } from "@/features/calendar/constants";
 import type {
 	TCalendarView,
 	TEventColor,
 } from "@/features/calendar/types";
+import { TranslationKey } from "@/i18n/types";
 
 const FORMAT_STRING = "MMM d, yyyy";
 
@@ -98,7 +98,7 @@ export function getEventsCount(
 	};
 
 	const compareFn = compareFns[view];
-	
+
 	// Count occurrences instead of events
 	let count = 0;
 	for (const event of events) {
@@ -323,16 +323,25 @@ export const getEventsForMonth = (occurrences: { event: IEvent; occurrence: IOcc
 	});
 };
 
+/**
+ * Returns the TEventColor for a given category key.
+ * @param category  — the raw DB key (e.g. "TFM")
+ * @param colorMap  — map built from IEventEnums.categories, e.g. { TFM: "purple", ... }
+ */
 export const getEventColorByCategory = (
-	category: keyof typeof EVENT_CATEGORIES,
+	category: string,
+	colorMap: Record<string, string>,
 ): TEventColor => {
-	return EVENT_CATEGORIES[category]?.color ?? "blue";
+	return (colorMap[category] as TEventColor) ?? "blue";
 };
 
+/**
+ * Returns the translation key for a category.
+ */
 export const getEventCategoryLabel = (
-	category: keyof typeof EVENT_CATEGORIES,
-): string => {
-	return EVENT_CATEGORIES[category]?.label ?? category;
+	category: string,
+): TranslationKey => {
+	return `calendar.categories.${category}` as TranslationKey;
 };
 
 const AGENDA_COLORED_CLASS: Record<TEventColor, string> = {
@@ -349,12 +358,12 @@ const AGENDA_COLORED_CLASS: Record<TEventColor, string> = {
 };
 
 const MONTH_DOT_CLASS: Record<TEventColor, string> = {
-	red: "bg-bg-secondary text-t-primary [&_svg]:fill-red-600",
-	yellow: "bg-bg-secondary text-t-primary [&_svg]:fill-yellow-600",
-	green: "bg-bg-secondary text-t-primary [&_svg]:fill-green-600",
-	blue: "bg-bg-secondary text-t-primary [&_svg]:fill-blue-600",
-	orange: "bg-bg-secondary text-t-primary [&_svg]:fill-orange-600",
-	purple: "bg-bg-secondary text-t-primary [&_svg]:fill-purple-600",
+	red: "bg-secondary text-foreground [&_svg]:fill-red-600",
+	yellow: "bg-secondary text-foreground [&_svg]:fill-yellow-600",
+	green: "bg-secondary text-foreground [&_svg]:fill-green-600",
+	blue: "bg-secondary text-foreground [&_svg]:fill-blue-600",
+	orange: "bg-secondary text-foreground [&_svg]:fill-orange-600",
+	purple: "bg-secondary text-foreground [&_svg]:fill-purple-600",
 };
 
 const WEEK_COLORED_CLASS: Record<TEventColor, string> = {

@@ -30,7 +30,7 @@ const DragDropContext = createContext<DragDropContextType | undefined>(
 );
 
 export function DndProvider({ children }: DndProviderProps) {
-  const { updateEvent } = useCalendar();
+  const { updateOccurrence } = useCalendar();
   const [dragState, setDragState] = useState<{
     draggedOccurrence: { event: IEvent; occurrence: IOccurrence } | null;
     isDragging: boolean;
@@ -109,29 +109,20 @@ export function DndProvider({ children }: DndProviderProps) {
 
   // Default occurrence update handler
   const handleOccurrenceUpdate = useCallback(
-    (event: IEvent, occurrence: IOccurrence, newStartDate: Date, newEndDate: Date) => {
+    async (event: IEvent, occurrence: IOccurrence, newStartDate: Date, newEndDate: Date) => {
       try {
-        // Update only the specific occurrence in the event's occurrences array
-        const updatedEvent = {
-          ...event,
-          occurrences: event.occurrences.map((occ) => {
-            if (occ.id === occurrence.id) {
-              return {
-                ...occ,
-                startDate: newStartDate.toISOString(),
-                endDate: newEndDate.toISOString(),
-              };
-            }
-            return occ;
-          }),
-        };
-        updateEvent(updatedEvent);
+        await updateOccurrence({
+          eventId: event.id,
+          occurrenceId: occurrence.id,
+          startDate: newStartDate.toISOString(),
+          endDate: newEndDate.toISOString(),
+        });
         toast.success("Ocorrência atualizada com sucesso");
       } catch {
         toast.error("Não foi possível atualizar a ocorrência");
       }
     },
-    [updateEvent],
+    [updateOccurrence],
   );
 
   // Set default callback

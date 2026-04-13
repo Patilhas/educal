@@ -3,12 +3,11 @@ import { differenceInMinutes, parseISO } from "date-fns";
 import type { HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
-import { EventDetailsDialog } from "@/features/calendar/dialogs/event-details-dialog";
+import EventDetailsDialog from "@/features/calendar/dialogs/event-details-dialog";
 import { DraggableEvent } from "@/features/calendar/dnd/draggable-event";
 import { ResizableEvent } from "@/features/calendar/dnd/resizable-event";
 import {
   formatTime,
-  getEventColorByCategory,
   getWeekDotFillClass,
   getWeekEventColorClass,
 } from "@/features/calendar/helpers";
@@ -20,19 +19,19 @@ const calendarWeekEventCardVariants = cva(
 
 interface IProps
   extends
-    HTMLAttributes<HTMLDivElement> {
+  HTMLAttributes<HTMLDivElement> {
   event: IEvent;
   occurrence: IOccurrence;
 }
 
 export function EventBlock({ event, occurrence, className }: IProps) {
-  const { badgeVariant, use24HourFormat } = useCalendar();
+  const { badgeVariant, use24HourFormat, getEventColor } = useCalendar();
 
   const start = parseISO(occurrence.startDate);
   const end = parseISO(occurrence.endDate);
   const durationInMinutes = differenceInMinutes(end, start);
   const heightInPixels = (durationInMinutes / 60) * 96 - 8;
-  const eventColor = getEventColorByCategory(event.category);
+  const eventColor = getEventColor(event.category);
 
   const calendarWeekEventCardClasses = cn(
     calendarWeekEventCardVariants(),

@@ -1,10 +1,4 @@
 import { z } from "zod";
-import {
-  EVENT_CATEGORY_KEYS,
-  EVENT_CLASSIFICATIONS,
-  EVENT_RESPONSIBLES,
-  EVENT_STATUSES,
-} from "@/features/calendar/constants";
 
 export const occurrenceSchema = z
   .object({
@@ -22,10 +16,10 @@ export const eventSchema = z.object({
   name: z.string().min(1, "O nome do evento é obrigatório"),
   objective: z.string().min(1, "O objetivo é obrigatório"),
   daysBetweenOccurrences: z.string().regex(/^\d*$/, "Use apenas números"),
-  category: z.enum(EVENT_CATEGORY_KEYS),
-  classification: z.enum(EVENT_CLASSIFICATIONS),
-  status: z.enum(EVENT_STATUSES),
-  responsible: z.enum(EVENT_RESPONSIBLES),
+  category: z.string().min(1, "Selecione uma categoria"),
+  classification: z.string().min(1, "Selecione uma classificação"),
+  status: z.string().min(1, "Selecione um estado"),
+  responsible: z.string().min(1, "Selecione um responsável"),
   occurrences: z
 	.array(occurrenceSchema)
   .min(1, "Pelo menos uma ocorrência é obrigatória"),
