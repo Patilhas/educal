@@ -1,3 +1,5 @@
+"use client"
+
 import { useCallback } from "react";
 import { ACTIVE_I18N } from "./config";
 import type { Dictionary, TranslationKey } from "./types";

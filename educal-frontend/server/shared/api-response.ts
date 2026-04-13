@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import z, { ZodError } from "zod";
+import { z, ZodError } from "zod";
 import { DomainError } from "@/server/shared/domain-error";
 
 export function ok<T>(data: T, status = 200) {

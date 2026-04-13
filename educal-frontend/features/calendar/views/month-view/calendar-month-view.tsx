@@ -25,7 +25,13 @@ export default function CalendarMonthView({ singleDayOccurrences, multiDayOccurr
 
 	const allOccurrences = [...multiDayOccurrences, ...singleDayOccurrences];
 
-	const cells = useMemo(() => getCalendarCells(selectedDate, 5), [selectedDate]);
+	const cells = useMemo(() => getCalendarCells(selectedDate), [selectedDate]);
+	const rowClassName = useMemo(() => {
+		const rowsCount = Math.ceil(cells.length / 7);
+		if (rowsCount <= 4) return "grid-rows-4";
+		if (rowsCount === 5) return "grid-rows-5";
+		return "grid-rows-6";
+	}, [cells.length]);
 
 	const eventPositions = useMemo(
 		() =>
@@ -58,7 +64,7 @@ export default function CalendarMonthView({ singleDayOccurrences, multiDayOccurr
 				))}
 			</div>
 
-			<div className="grid min-h-0 flex-1 grid-cols-7 grid-rows-5 overflow-hidden">
+			<div className={`grid min-h-0 flex-1 grid-cols-7 overflow-hidden ${rowClassName}`}>
 				{cells.map((cell) => (
 					<DayCell
 						key={cell.date.toISOString()}

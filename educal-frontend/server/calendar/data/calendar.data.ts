@@ -47,7 +47,7 @@ export class CalendarData {
         }
 
         const parsed = await this.redis.get(REDIS_KEY) as ICalendarDb;
-        if (!parsed) throw new Error('calendar-db not found in Redis after ensureCacheFile');
+        if (!parsed) throw new Error(`${REDIS_KEY} not found in Redis after ensureCacheFile`);
 
         this.cachedDb = parsed;
         this.lastCacheValidationAt = now;

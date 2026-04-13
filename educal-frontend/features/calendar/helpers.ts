@@ -160,7 +160,6 @@ export function getOccurrenceBlockStyle(
 
 export function getCalendarCells(
 	selectedDate: Date,
-	fixedWeekRows?: number,
 ): ICalendarCell[] {
 	const year = selectedDate.getFullYear();
 	const month = selectedDate.getMonth();
@@ -182,11 +181,7 @@ export function getCalendarCells(
 		date: new Date(year, month, i + 1),
 	}));
 
-	const targetCells = fixedWeekRows ? fixedWeekRows * 7 : undefined;
-	const defaultTrailingCellsCount = (7 - (totalDays % 7)) % 7;
-	const trailingCellsCount = targetCells
-		? Math.max(0, targetCells - totalDays)
-		: defaultTrailingCellsCount;
+	const trailingCellsCount = (7 - (totalDays % 7)) % 7;
 
 	const nextMonthCells = Array.from(
 		{ length: trailingCellsCount },
@@ -197,13 +192,7 @@ export function getCalendarCells(
 		}),
 	);
 
-	const cells = [...prevMonthCells, ...currentMonthCells, ...nextMonthCells];
-
-	if (!targetCells) {
-		return cells;
-	}
-
-	return cells.slice(0, targetCells);
+	return [...prevMonthCells, ...currentMonthCells, ...nextMonthCells];
 }
 
 export function calculateMonthEventPositions(
