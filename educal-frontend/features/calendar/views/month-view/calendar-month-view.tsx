@@ -25,7 +25,7 @@ export default function CalendarMonthView({ singleDayOccurrences, multiDayOccurr
 
 	const allOccurrences = [...multiDayOccurrences, ...singleDayOccurrences];
 
-	const cells = useMemo(() => getCalendarCells(selectedDate), [selectedDate]);
+	const cells = useMemo(() => getCalendarCells(selectedDate, 5), [selectedDate]);
 
 	const eventPositions = useMemo(
 		() =>
@@ -38,8 +38,13 @@ export default function CalendarMonthView({ singleDayOccurrences, multiDayOccurr
 	);
 
 	return (
-		<motion.div initial="initial" animate="animate" variants={staggerContainer}>
-			<div className="grid grid-cols-7">
+		<motion.div
+			className="flex h-full min-h-0 flex-col"
+			initial="initial"
+			animate="animate"
+			variants={staggerContainer}
+		>
+			<div className="grid shrink-0 grid-cols-7">
 				{WEEK_DAYS.map((day, index) => (
 					<motion.div
 						key={day}
@@ -53,7 +58,7 @@ export default function CalendarMonthView({ singleDayOccurrences, multiDayOccurr
 				))}
 			</div>
 
-			<div className="grid grid-cols-7 overflow-hidden">
+			<div className="grid min-h-0 flex-1 grid-cols-7 grid-rows-5 overflow-hidden">
 				{cells.map((cell) => (
 					<DayCell
 						key={cell.date.toISOString()}

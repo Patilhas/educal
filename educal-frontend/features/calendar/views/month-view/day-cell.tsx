@@ -93,14 +93,14 @@ export function DayCell({ cell, occurrences, eventPositions }: IProps) {
     () => (
       <motion.div
         className={cn(
-          "flex h-full lg:min-h-40 flex-col gap-1 border-l border-t",
+          "flex h-full min-h-0 flex-col gap-1 border-l border-t",
           isSunday(date) && "border-l-0",
         )}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={transition}
       >
-        <DroppableArea date={date} className="w-full h-full py-2">
+        <DroppableArea date={date} className="flex h-full min-h-0 w-full flex-col py-2">
           <motion.span
             className={cn(
               "h-6 px-1 text-xs font-semibold lg:px-2",
@@ -114,7 +114,7 @@ export function DayCell({ cell, occurrences, eventPositions }: IProps) {
 
           <motion.div
             className={cn(
-              "flex h-fit gap-1 px-2 mt-1 lg:h-[94px] lg:flex-col lg:gap-2 lg:px-0",
+              "mt-1 flex min-h-0 flex-1 gap-1 px-2 lg:flex-col lg:gap-2 lg:px-0",
               !currentMonth && "opacity-50",
             )}
           >

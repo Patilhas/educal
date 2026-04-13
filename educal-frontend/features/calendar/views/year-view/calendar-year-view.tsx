@@ -20,13 +20,13 @@ export default function CalendarYearView({ singleDayOccurrences, multiDayOccurre
   const allOccurrences = [...multiDayOccurrences, ...singleDayOccurrences];
 
   return (
-    <div className="flex flex-col h-full  overflow-y-auto p-4  sm:p-6">
+    <div className="flex h-full min-h-0 flex-col p-4 sm:p-6">
       {/* Year grid */}
       <motion.div
         initial="initial"
         animate="animate"
         variants={staggerContainer}
-        className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 auto-rows-fr"
+        className="grid h-full min-h-0 auto-rows-fr grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
       >
         {[...Array(12)].map((_, monthIndex) => {
           const monthDate = new Date(currentYear, monthIndex, 1);
@@ -36,7 +36,7 @@ export default function CalendarYearView({ singleDayOccurrences, multiDayOccurre
           return (
             <motion.div
               key={month}
-              className="flex flex-col border border-border rounded-lg shadow-sm overflow-hidden"
+              className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-border shadow-sm"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: monthIndex * 0.05, ...transition }}
@@ -62,7 +62,7 @@ export default function CalendarYearView({ singleDayOccurrences, multiDayOccurre
                 ))}
               </div>
 
-              <div className="grid grid-cols-7 gap-0.5 p-1.5 flex-grow text-xs">
+              <div className="grid min-h-0 flex-1 grid-cols-7 gap-0.5 p-1.5 text-xs">
                 {cells.map((cell) => {
                   const isCurrentMonth = isSameMonth(cell.date, monthDate);
                   const isToday = isSameDay(cell.date, new Date());
@@ -84,7 +84,7 @@ export default function CalendarYearView({ singleDayOccurrences, multiDayOccurre
                     <div
                       key={cell.date.toISOString()}
                       className={cn(
-                        "flex flex-col items-center justify-start p-1 min-h-[2rem] relative",
+                        "relative flex min-h-8 flex-col items-center justify-start p-1",
                         !isCurrentMonth && "text-muted-foreground/40",
                         hasOccurrences && isCurrentMonth
                           ? "cursor-pointer hover:bg-accent/20 hover:rounded-md"

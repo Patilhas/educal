@@ -24,7 +24,7 @@ export default async function Calendar() {
   return (
     <CalendarProvider events={events} users={users} view="month" initialEventEnums={eventEnums}>
       <DndProvider>
-        <div className="w-full border rounded-xl">
+        <div className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-xl border">
           <CalendarHeader />
           <CalendarBody />
         </div>
