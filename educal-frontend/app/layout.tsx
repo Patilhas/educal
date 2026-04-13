@@ -4,6 +4,7 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@/lib/utils";
 import React from "react";
+import {Toaster} from "sonner";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'})
 
@@ -25,6 +26,7 @@ export default function RootLayout({
     >
       <body>
         <ThemeProvider>{children}</ThemeProvider>
+        <Toaster richColors closeButton/>
       </body>
     </html>
   )

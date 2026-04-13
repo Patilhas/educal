@@ -1,11 +1,11 @@
 import { useCallback } from "react";
-import { pt } from "./pt";
+import { ACTIVE_I18N } from "./config";
 import type { Dictionary, TranslationKey } from "./types";
 
 type TranslationNode = string | string[] | { [key: string]: TranslationNode };
 
 export function useTranslations() {
-  const dictionary: Dictionary = pt;
+  const dictionary: Dictionary = ACTIVE_I18N.dictionary;
 
   const t = useCallback(
     (key: TranslationKey, variables?: Record<string, string | number>) => {

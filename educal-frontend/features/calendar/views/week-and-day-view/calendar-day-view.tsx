@@ -130,7 +130,6 @@ export default function CalendarDayView({ singleDayOccurrences, multiDayOccurren
           mode="single"
           selected={selectedDate}
           onSelect={(date) => date && setSelectedDate(date)}
-          initialFocus
         />
 
         <div className="flex min-h-0 flex-1 flex-col space-y-3">

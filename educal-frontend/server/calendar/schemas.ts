@@ -71,5 +71,3 @@ export const patchOccurrenceSchema = z.object({
   startDate: dateLikeString.optional(),
   endDate: dateLikeString.optional(),
 });
-
-export type TPatchOccurrencePayload = z.infer<typeof patchOccurrenceSchema>;
