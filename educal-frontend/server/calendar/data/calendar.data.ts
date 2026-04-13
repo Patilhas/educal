@@ -14,7 +14,7 @@ import {
 
 const clone = <T>(value: T): T => structuredClone(value);
 
-const REDIS_KEY = 'calendar-db';
+const REDIS_KEY = process.env.UPSTASH_REDIS_FILE_NAME || 'calendar-db';
 const CACHE_REVALIDATE_MS = 500;
 
 export class CalendarData {
