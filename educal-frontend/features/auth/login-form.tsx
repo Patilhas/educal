@@ -33,7 +33,7 @@ export function LoginForm() {
     setError(null);
 
     try {
-      await requestJson<{ user: unknown }>("/api/auth/loginaaa", {
+      await requestJson<{ user: unknown }>("/api/auth/login", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(values),
