@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -14,10 +15,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { loginFormSchema, type TLoginFormValues } from "@/features/auth/schemas";
+import { createLoginFormSchema, type TLoginFormValues } from "@/features/auth/schemas";
 import { requestJson } from "@/lib/api-client";
+import { useTranslations } from "@/i18n";
 
 export function LoginForm() {
+  const { t } = useTranslations();
+  const loginFormSchema = useMemo(() => createLoginFormSchema(t), [t]);
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const form = useForm<TLoginFormValues>({
@@ -37,12 +41,16 @@ export function LoginForm() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(values),
-      }, "Não foi possível autenticar.");
+      }, t("common.auth.login.errors.loginFailed"));
 
       router.replace("/");
       router.refresh();
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Erro ao fazer login.");
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : t("common.auth.login.errors.requestFailed"),
+      );
     }
   };
 
@@ -57,7 +65,7 @@ export function LoginForm() {
           name="email"
           render={({ field, fieldState }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>{t("common.auth.login.fields.email")}</FormLabel>
               <FormControl>
                 <Input
                   type="email"
@@ -76,7 +84,7 @@ export function LoginForm() {
           name="password"
           render={({ field, fieldState }) => (
             <FormItem>
-              <FormLabel>Password</FormLabel>
+              <FormLabel>{t("common.auth.login.fields.password")}</FormLabel>
               <FormControl>
                 <Input
                   type="password"
@@ -101,7 +109,7 @@ export function LoginForm() {
                   checked={field.value}
                   onChange={(event) => field.onChange(event.target.checked)}
                 />
-                Manter sessão iniciada
+                {t("common.auth.login.staySignedIn")}
               </label>
             </FormItem>
           )}
@@ -110,7 +118,9 @@ export function LoginForm() {
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
         <Button className="w-full" type="submit" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? "A entrar..." : "Entrar"}
+          {form.formState.isSubmitting
+            ? t("common.auth.login.submitting")
+            : t("common.auth.login.submit")}
         </Button>
       </form>
     </Form>

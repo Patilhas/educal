@@ -1,3 +1,5 @@
+import { translate } from "@/i18n/translate";
+
 interface ApiSuccessPayload<T> {
   data: T;
 }
@@ -67,8 +69,8 @@ export const getApiErrorMessage = async (
 
   const statusFallbackMessage =
     response.status === 404
-      ? "Endpoint não encontrado"
-      : "Falha ao comunicar com o backend";
+      ? translate("common.api.errors.endpointNotFound")
+      : translate("common.api.errors.backendCommunicationFailed");
 
   return getMessageFromPayload(payload) ?? fallbackMessage ?? statusFallbackMessage;
 };
@@ -92,7 +94,7 @@ export const requestJson = async <T>(
 
   const payload = (await readResponseBody(response)) as ApiSuccessPayload<T> | null;
   if (!payload || !isRecord(payload) || !("data" in payload)) {
-    throw new Error("Resposta inválida do servidor");
+    throw new Error(translate("common.api.errors.invalidServerResponse"));
   }
 
   return payload.data;

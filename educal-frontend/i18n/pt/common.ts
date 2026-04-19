@@ -1,4 +1,21 @@
 export const common = {
+  auth: {
+    login: {
+      fields: {
+        email: "Email",
+        password: "Password",
+      },
+      staySignedIn: "Manter sessão iniciada",
+      submit: "Entrar",
+      submitting: "A entrar...",
+      errors: {
+        loginFailed: "Não foi possível autenticar.",
+        requestFailed: "Erro ao fazer login.",
+        invalidEmail: "Email inválido",
+        invalidPassword: "A password deve ter pelo menos 8 caracteres",
+      },
+    },
+  },
   actions: {
     add: "Adicionar",
     edit: "Editar",
@@ -18,5 +35,13 @@ export const common = {
   errors: {
     generic: "Ocorreu um erro inesperado.",
     network: "Falha ao comunicar com o servidor.",
+    format: "Erro ao formatar",
+  },
+  api: {
+    errors: {
+      endpointNotFound: "Endpoint não encontrado",
+      backendCommunicationFailed: "Falha ao comunicar com o backend",
+      invalidServerResponse: "Resposta inválida do servidor",
+    },
   },
 };

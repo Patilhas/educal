@@ -32,7 +32,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import { useDisclosure } from "@/features/calendar/hooks";
 import type { IEvent } from "@/features/calendar/interfaces";
-import { eventSchema, type TEventFormData } from "@/features/calendar/schemas";
+import { createEventSchema, type TEventFormData } from "@/features/calendar/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   formatEventFromForm,
@@ -59,6 +59,7 @@ export default function AddEditEventDialog({
   const { isOpen, onClose, onToggle } = useDisclosure();
   const { addEvent, updateEvent, users, eventEnums } = useCalendar();
   const isEditing = !!event;
+  const eventSchema = useMemo(() => createEventSchema(t), [t]);
 
   const initialDates = useMemo(() => {
     return getInitialDates({ event, startDate, startTime });

@@ -1,11 +1,13 @@
 import { z } from "zod";
+import type { TranslationKey } from "@/i18n";
 
-export const loginFormSchema = z.object({
-  email: z.string().email("E-mail inválido"),
-  password: z.string().min(8, "A password deve ter pelo menos 8 caracteres"),
-  staySignedIn: z.boolean(),
-});
+type Translator = (key: TranslationKey, variables?: Record<string, string | number>) => string;
 
-export type TLoginFormValues = z.infer<typeof loginFormSchema>;
+export const createLoginFormSchema = (t: Translator) =>
+  z.object({
+    email: z.string().email(t("common.auth.login.errors.invalidEmail")),
+    password: z.string().min(8, t("common.auth.login.errors.invalidPassword")),
+    staySignedIn: z.boolean(),
+  });
 
-
+export type TLoginFormValues = z.infer<ReturnType<typeof createLoginFormSchema>>;
