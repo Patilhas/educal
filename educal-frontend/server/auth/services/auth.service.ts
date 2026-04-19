@@ -52,10 +52,14 @@ export class AuthService {
     }
 
     const nowIso = new Date().toISOString();
-    await authData.pruneExpiredSessions(nowIso);
 
     const session = await authData.findSessionByToken(token);
-    if (!session || session.expiresAt <= nowIso) {
+    if (!session) {
+      return null;
+    }
+
+    if (session.expiresAt <= nowIso) {
+      await authData.deleteSession(token);
       return null;
     }
 

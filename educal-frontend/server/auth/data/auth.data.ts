@@ -114,20 +114,6 @@ export class AuthData {
       sessions: db.sessions.filter((session) => session.token !== token),
     });
   }
-
-  async pruneExpiredSessions(nowIso: string): Promise<void> {
-    const db = await this.readDb();
-    const nextSessions = db.sessions.filter((session) => session.expiresAt > nowIso);
-
-    if (nextSessions.length === db.sessions.length) {
-      return;
-    }
-
-    await this.persistDb({
-      ...db,
-      sessions: nextSessions,
-    });
-  }
 }
 
 export const authData = new AuthData();
