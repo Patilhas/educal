@@ -1,5 +1,6 @@
 import { authController } from "@/server/auth/controllers/auth.controller";
-import { withApiAuth } from "@/server/auth/middleware";
+import { withOptionalApiAuth } from "@/server/auth/middleware";
 
-export const POST = withApiAuth(async (request) => authController.logout(request));
+export const POST = withOptionalApiAuth(async (request) => authController.logout(request));
+
 

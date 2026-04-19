@@ -184,7 +184,7 @@ export class CalendarService {
   private ensureCanManageEvents(role: IUser["role"]) {
     if (!canManageCalendarEvents(role)) {
       throw new DomainError(
-        "VALIDATION_ERROR",
+        "FORBIDDEN",
         403,
         "É necessário ter pelo menos o role editor para alterar eventos",
       );

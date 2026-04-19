@@ -3,26 +3,24 @@ import { CalendarProvider } from "@/features/calendar/contexts/calendar-context"
 import { DndProvider } from "@/features/calendar/contexts/dnd-context";
 import { CalendarHeader } from "@/features/calendar/header/calendar-header";
 import { getEventEnums, getEvents, getUsers } from "@/features/calendar/requests";
-import { getCurrentUser } from "@/server/auth/session";
+import type { IUser } from "@/features/calendar/interfaces";
 
 async function getCalendarData() {
-  const [events, users, eventEnums, currentUser] = await Promise.all([
+  const [events, users, eventEnums] = await Promise.all([
     getEvents(),
     getUsers(),
     getEventEnums(),
-    getCurrentUser(),
   ]);
 
   return {
     events,
     users,
     eventEnums,
-    currentUser,
   };
 }
 
-export default async function Calendar() {
-  const { events, users, eventEnums, currentUser } = await getCalendarData();
+export default async function Calendar({ currentUser }: { currentUser: IUser }) {
+  const { events, users, eventEnums } = await getCalendarData();
 
   return (
     <CalendarProvider
@@ -39,5 +37,5 @@ export default async function Calendar() {
         </div>
       </DndProvider>
     </CalendarProvider>
-  );
+  )
 }

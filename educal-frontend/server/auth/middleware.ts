@@ -31,3 +31,16 @@ export const withApiAuthContext = <TContext>(
   };
 };
 
+export const withOptionalApiAuth = (
+  handler: (request: Request | IRequestWithAuth) => Promise<Response>,
+) => {
+  return async (request: Request) => {
+    try {
+      const auth = await requireAuthFromRequest(request);
+      return await handler(attachAuthToRequest(request, auth));
+    } catch (error) {
+      // Best-effort: auth failed, but continue with unauthenticated request
+      return await handler(request);
+    }
+  };
+};
