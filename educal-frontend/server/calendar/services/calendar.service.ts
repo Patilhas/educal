@@ -5,15 +5,12 @@ import {
   patchOccurrenceSchema,
 } from "@/server/calendar/schemas";
 import { calendarData } from "@/server/calendar/data/calendar.data";
+import type { IRequestWithAuth } from "@/server/auth/session";
 import { DomainError } from "@/server/shared/domain-error";
 
 const toIsoString = (dateValue: string) => new Date(dateValue).toISOString();
 
 export class CalendarService {
-  async listUsers(): Promise<IUser[]> {
-    return calendarData.listUsers();
-  }
-
   async listEvents(): Promise<IEvent[]> {
     return calendarData.listEvents();
   }
@@ -35,10 +32,9 @@ export class CalendarService {
     };
   }
 
-  async createEvent(payload: unknown): Promise<IEvent> {
+  async createEvent(request: IRequestWithAuth, payload: unknown): Promise<IEvent> {
     const schema = await buildEventPayloadSchema();
     const parsed = schema.parse(payload);
-    const user = await this.resolveUser(parsed.userId);
 
     const newEvent: IEvent = {
       id: await this.generateNextEventId(),
@@ -55,7 +51,7 @@ export class CalendarService {
         startDate: toIsoString(occurrence.startDate),
         endDate: toIsoString(occurrence.endDate),
       })),
-      user,
+      user: this.toEventUser(request.auth.user),
     };
 
     return calendarData.insertEvent(newEvent);
@@ -74,7 +70,6 @@ export class CalendarService {
       throw new DomainError("NOT_FOUND", 404, "Evento não encontrado");
     }
 
-    const user = await this.resolveUser(parsed.userId ?? existing.user.id);
     const updatedEvent: IEvent = {
       id: eventId,
       name: parsed.name,
@@ -90,7 +85,7 @@ export class CalendarService {
         startDate: toIsoString(occurrence.startDate),
         endDate: toIsoString(occurrence.endDate),
       })),
-      user,
+      user: existing.user,
     };
 
     const saved = await calendarData.replaceEvent(eventId, updatedEvent);
@@ -163,19 +158,12 @@ export class CalendarService {
     return saved;
   }
 
-  private async resolveUser(userId?: string): Promise<IUser> {
-    const users = await calendarData.listUsers();
-    const user = users.find((item) => item.id === userId) ?? users[0];
-
-    if (!user) {
-      throw new DomainError(
-        "INTERNAL_ERROR",
-        500,
-        "Nenhum utilizador disponível para associar ao evento",
-      );
-    }
-
-    return user;
+  private toEventUser(user: IUser): IEvent["user"] {
+    return {
+      id: user.id,
+      name: user.name,
+      picturePath: user.picturePath,
+    };
   }
 
   private async generateNextEventId() {

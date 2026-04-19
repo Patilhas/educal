@@ -25,7 +25,7 @@ Apesar disso, ainda há bastante dívida técnica e vários sinais de evolução
 ## 2) Overview da UI e funcionalidades
 
 ### Estrutura geral
-- `app/page.tsx` monta o calendário principal.
+- `app/(protected)/page.tsx` monta o calendário principal.
 - `app/layout.tsx` aplica tema, fontes e estilos globais.
 - `features/calendar/calendar.tsx` é o ponto de entrada da feature.
 - `features/calendar/calendar-body.tsx` decide qual vista renderizar.

@@ -1,6 +1,7 @@
 import { calendarService } from "@/server/calendar/services/calendar.service";
 import { fail, ok, readJson } from "@/server/shared/api-response";
 import { DomainError } from "@/server/shared/domain-error";
+import type { IRequestWithAuth } from "@/server/auth/session";
 
 const parseEventId = (rawValue: string) => {
   const value = Number(rawValue);
@@ -20,14 +21,6 @@ export const calendarController = {
     }
   },
 
-  async listUsers() {
-    try {
-      return ok(await calendarService.listUsers());
-    } catch (error) {
-      return fail(error);
-    }
-  },
-
   async listEvents() {
     try {
       return ok(await calendarService.listEvents());
@@ -36,10 +29,10 @@ export const calendarController = {
     }
   },
 
-  async createEvent(request: Request) {
+  async createEvent(request: IRequestWithAuth) {
     try {
       const payload = await readJson(request);
-      return ok(await calendarService.createEvent(payload), 201);
+      return ok(await calendarService.createEvent(request, payload), 201);
     } catch (error) {
       return fail(error);
     }

@@ -2,6 +2,7 @@ export type TEventCategory = string;
 export type TEventClassification = string;
 export type TEventStatus = string;
 export type TEventResponsible = string;
+export type TUserRole = "viewer" | "editor" | "admin";
 
 // ─── Reference entities (DB table rows) ─────────────────────────────────────
 
@@ -28,7 +29,10 @@ export interface IUser {
   id: string;
   name: string;
   picturePath: string | null;
+  role: TUserRole;
 }
+
+export type IEventUser = Pick<IUser, "id" | "name" | "picturePath">;
 
 export interface IOccurrence {
   id: string;
@@ -47,7 +51,7 @@ export interface IEvent {
   status: TEventStatus;
   responsible: TEventResponsible;
   occurrences: IOccurrence[];
-  user: IUser;
+  user: IEventUser;
 }
 
 export interface ICalendarCell {
