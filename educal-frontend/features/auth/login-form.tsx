@@ -37,7 +37,7 @@ export function LoginForm() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(values),
-      }, "Nao foi possivel autenticar.");
+      }, "Não foi possível autenticar.");
 
       router.replace("/");
       router.refresh();
@@ -101,7 +101,7 @@ export function LoginForm() {
                   checked={field.value}
                   onChange={(event) => field.onChange(event.target.checked)}
                 />
-                Manter sessao iniciada
+                Manter sessão iniciada
               </label>
             </FormItem>
           )}

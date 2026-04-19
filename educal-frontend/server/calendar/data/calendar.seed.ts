@@ -5,7 +5,7 @@ import type {
   IResponsible,
   IStatus,
 } from "@/features/calendar/interfaces";
-import {USERS_SEED} from "@/server/auth/data/auth.seed";
+import { AUTH_PUBLIC_USERS_SEED } from "@/server/auth/data/auth.seed";
 
 export interface ICalendarDb {
   events: IEvent[];
@@ -158,7 +158,7 @@ const createEvent = (
     status: randomArrayItem(STATUSES_SEED).name,
     responsible: randomArrayItem(RESPONSIBLES_SEED).value,
     occurrences,
-    user: randomArrayItem(USERS_SEED),
+    user: randomArrayItem(AUTH_PUBLIC_USERS_SEED),
   };
 };
 

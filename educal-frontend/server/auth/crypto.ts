@@ -15,6 +15,7 @@ export const verifyPassword = (password: string, encodedHash: string): boolean =
   }
 
   const computedHash = crypto.scryptSync(password, salt, 64).toString("hex");
+  if (computedHash.length !== storedHash.length) return false;
   return crypto.timingSafeEqual(Buffer.from(storedHash, "hex"), Buffer.from(computedHash, "hex"));
 };
 

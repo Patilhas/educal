@@ -67,7 +67,7 @@ export const getApiErrorMessage = async (
 
   const statusFallbackMessage =
     response.status === 404
-      ? "Endpoint nao encontrado"
+      ? "Endpoint não encontrado"
       : "Falha ao comunicar com o backend";
 
   return getMessageFromPayload(payload) ?? fallbackMessage ?? statusFallbackMessage;
@@ -92,7 +92,7 @@ export const requestJson = async <T>(
 
   const payload = (await readResponseBody(response)) as ApiSuccessPayload<T> | null;
   if (!payload || !isRecord(payload) || !("data" in payload)) {
-    throw new Error("Resposta invalida do servidor");
+    throw new Error("Resposta inválida do servidor");
   }
 
   return payload.data;

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const loginFormSchema = z.object({
-  email: z.string().email("Email invalido"),
+  email: z.string().email("E-mail inválido"),
   password: z.string().min(8, "A password deve ter pelo menos 8 caracteres"),
   staySignedIn: z.boolean(),
 });
