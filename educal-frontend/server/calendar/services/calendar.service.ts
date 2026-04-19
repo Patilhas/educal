@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { canManageCalendarEvents } from "@/features/calendar/interfaces";
 import type { IEvent, IOccurrence, IUser } from "@/features/calendar/interfaces";
 import {
   buildEventPayloadSchema,
@@ -33,6 +34,7 @@ export class CalendarService {
   }
 
   async createEvent(request: IRequestWithAuth, payload: unknown): Promise<IEvent> {
+    this.ensureCanManageEvents(request.auth.user.role);
     const schema = await buildEventPayloadSchema();
     const parsed = schema.parse(payload);
 
@@ -57,7 +59,8 @@ export class CalendarService {
     return calendarData.insertEvent(newEvent);
   }
 
-  async updateEvent(eventId: number, payload: unknown): Promise<IEvent> {
+  async updateEvent(request: IRequestWithAuth, eventId: number, payload: unknown): Promise<IEvent> {
+    this.ensureCanManageEvents(request.auth.user.role);
     const schema = await buildEventPayloadSchema();
     const parsed = schema.extend({ id: z.number().int().positive().optional() }).parse(payload);
 
@@ -96,7 +99,8 @@ export class CalendarService {
     return saved;
   }
 
-  async deleteEvent(eventId: number): Promise<void> {
+  async deleteEvent(request: IRequestWithAuth, eventId: number): Promise<void> {
+    this.ensureCanManageEvents(request.auth.user.role);
     const removed = await calendarData.deleteEvent(eventId);
     if (!removed) {
       throw new DomainError("NOT_FOUND", 404, "Evento não encontrado");
@@ -104,10 +108,12 @@ export class CalendarService {
   }
 
   async updateOccurrence(
+    request: IRequestWithAuth,
     eventId: number,
     occurrenceId: string,
     payload: unknown,
   ): Promise<IEvent> {
+    this.ensureCanManageEvents(request.auth.user.role);
     const parsed = patchOccurrenceSchema.parse(payload);
 
     if (!parsed.startDate && !parsed.endDate && !parsed.description) {
@@ -173,6 +179,16 @@ export class CalendarService {
     }
 
     return Math.max(...events.map((event) => event.id)) + 1;
+  }
+
+  private ensureCanManageEvents(role: IUser["role"]) {
+    if (!canManageCalendarEvents(role)) {
+      throw new DomainError(
+        "VALIDATION_ERROR",
+        403,
+        "É necessário ter pelo menos o role editor para alterar eventos",
+      );
+    }
   }
 }
 

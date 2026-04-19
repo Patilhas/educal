@@ -1,6 +1,6 @@
-import type { IUser } from "@/features/calendar/interfaces";
+import type { IUser, TUserRole } from "@/features/calendar/interfaces";
 
-export type UserRole = "viewer" | "editor" | "admin";
+export type UserRole = TUserRole;
 
 export interface AuthUserRecord {
   id: string;
@@ -29,5 +29,4 @@ export const toCalendarUser = (user: AuthUserRecord): IUser => ({
   picturePath: user.picturePath,
   role: user.role,
 });
-
 

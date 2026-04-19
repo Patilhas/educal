@@ -4,6 +4,20 @@ export type TEventStatus = string;
 export type TEventResponsible = string;
 export type TUserRole = "viewer" | "editor" | "admin";
 
+const USER_ROLE_HIERARCHY: Record<TUserRole, number> = {
+  viewer: 0,
+  editor: 1,
+  admin: 2,
+};
+
+export function hasRoleAtLeast(role: TUserRole, minimumRole: TUserRole) {
+  return USER_ROLE_HIERARCHY[role] >= USER_ROLE_HIERARCHY[minimumRole];
+}
+
+export function canManageCalendarEvents(role: TUserRole) {
+  return hasRoleAtLeast(role, "editor");
+}
+
 // ─── Reference entities (DB table rows) ─────────────────────────────────────
 
 export interface ICategory {

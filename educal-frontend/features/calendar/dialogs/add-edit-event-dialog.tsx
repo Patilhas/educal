@@ -57,7 +57,7 @@ export default function AddEditEventDialog({
 }: IProps) {
   const { t } = useTranslations();
   const { isOpen, onClose, onToggle } = useDisclosure();
-  const { addEvent, updateEvent, users, eventEnums } = useCalendar();
+  const { addEvent, updateEvent, users, eventEnums, canEditEvents } = useCalendar();
   const isEditing = !!event;
   const eventSchema = useMemo(() => createEventSchema(t), [t]);
 
@@ -118,6 +118,10 @@ export default function AddEditEventDialog({
       );
     }
   };
+
+  if (!canEditEvents) {
+    return <>{children}</>;
+  }
 
   return (
     <Modal open={isOpen} onOpenChange={onToggle} modal={false}>

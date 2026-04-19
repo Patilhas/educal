@@ -32,7 +32,7 @@ const DragDropContext = createContext<DragDropContextType | undefined>(
 
 export function DndProvider({ children }: DndProviderProps) {
   const { t } = useTranslations();
-  const { updateOccurrence } = useCalendar();
+  const { updateOccurrence, canEditEvents } = useCalendar();
   const [dragState, setDragState] = useState<{
     draggedOccurrence: { event: IEvent; occurrence: IOccurrence } | null;
     isDragging: boolean;
@@ -82,6 +82,8 @@ export function DndProvider({ children }: DndProviderProps) {
 
   const handleEventDrop = useCallback(
     (targetDate: Date, hour?: number, minute?: number) => {
+      if (!canEditEvents) return;
+
       const { draggedOccurrence } = dragState;
       if (!draggedOccurrence) return;
 
@@ -106,7 +108,7 @@ export function DndProvider({ children }: DndProviderProps) {
       }
       endDrag();
     },
-    [dragState, calculateNewDates, isSamePosition, endDrag],
+    [canEditEvents, dragState, calculateNewDates, isSamePosition, endDrag],
   );
 
   // Default occurrence update handler

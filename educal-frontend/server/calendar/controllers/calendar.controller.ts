@@ -38,20 +38,20 @@ export const calendarController = {
     }
   },
 
-  async updateEvent(request: Request, eventIdValue: string) {
+  async updateEvent(request: IRequestWithAuth, eventIdValue: string) {
     try {
       const eventId = parseEventId(eventIdValue);
       const payload = await readJson(request);
-      return ok(await calendarService.updateEvent(eventId, payload));
+      return ok(await calendarService.updateEvent(request, eventId, payload));
     } catch (error) {
       return fail(error);
     }
   },
 
-  async deleteEvent(eventIdValue: string) {
+  async deleteEvent(request: IRequestWithAuth, eventIdValue: string) {
     try {
       const eventId = parseEventId(eventIdValue);
-      await calendarService.deleteEvent(eventId);
+      await calendarService.deleteEvent(request, eventId);
       return ok({ deleted: true });
     } catch (error) {
       return fail(error);
@@ -59,14 +59,14 @@ export const calendarController = {
   },
 
   async patchOccurrence(
-    request: Request,
+    request: IRequestWithAuth,
     eventIdValue: string,
     occurrenceId: string,
   ) {
     try {
       const eventId = parseEventId(eventIdValue);
       const payload = await readJson(request);
-      return ok(await calendarService.updateOccurrence(eventId, occurrenceId, payload));
+      return ok(await calendarService.updateOccurrence(request, eventId, occurrenceId, payload));
     } catch (error) {
       return fail(error);
     }
