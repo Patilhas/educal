@@ -15,6 +15,11 @@ export const common = {
         invalidPassword: "A password deve ter pelo menos 8 caracteres",
       },
     },
+    logout: {
+      errors: {
+        requestFailed: "Não foi possível terminar sessão.",
+      },
+    },
   },
   actions: {
     add: "Adicionar",
@@ -26,6 +31,7 @@ export const common = {
     remove: "Remover",
     confirm: "Confirmar",
     close: "Fechar",
+    logout: "Terminar sessão",
   },
   status: {
     success: "Sucesso",

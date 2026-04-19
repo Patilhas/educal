@@ -47,8 +47,11 @@ export const authController = {
       response.cookies.set({
         name: AUTH_SESSION_COOKIE_NAME,
         value: "",
-        maxAge: 0,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
         path: "/",
+        expires: new Date(0),
       });
 
       return response;
