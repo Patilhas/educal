@@ -10,6 +10,7 @@ import {
 } from "@/features/calendar/client-requests";
 import { useLocalStorage } from "@/features/calendar/hooks";
 import type { IEvent, IEventEnums, IUser, TEventCategory } from "@/features/calendar/interfaces";
+import { canManageCalendarEvents } from "@/features/calendar/interfaces";
 import { getEventColorByCategory } from "@/features/calendar/helpers";
 import type { TCalendarView, TEventColor } from "@/features/calendar/types";
 
@@ -30,6 +31,8 @@ interface ICalendarContext {
   filterEventsBySelectedCategories: (category: TEventCategory) => void;
   filterEventsBySelectedUser: (userId: IUser["id"] | "all") => void;
   users: IUser[];
+  currentUser: IUser | null;
+  canEditEvents: boolean;
   eventEnums: IEventEnums;
   events: IEvent[];
   addEvent: (event: IEvent) => Promise<void>;
@@ -65,6 +68,7 @@ const CalendarContext = createContext<ICalendarContext | null>(null);
 export function CalendarProvider({
   children,
   users,
+  currentUser,
   events,
   initialEventEnums,
   badge = "colored",
@@ -72,6 +76,7 @@ export function CalendarProvider({
 }: {
   children: React.ReactNode;
   users: IUser[];
+  currentUser: IUser | null;
   events: IEvent[];
   initialEventEnums: IEventEnums;
   view?: TCalendarView;
@@ -106,6 +111,7 @@ export function CalendarProvider({
   const [selectedCategories, setSelectedCategories] = useState<TEventCategory[]>([]);
 
   const [allEvents, setAllEvents] = useState<IEvent[]>(events || []);
+  const canEditEvents = currentUser ? canManageCalendarEvents(currentUser.role) : false;
 
   const categoryColorMap = useMemo(
     () =>
@@ -231,6 +237,8 @@ export function CalendarProvider({
     badgeVariant,
     setBadgeVariant,
     users,
+    currentUser,
+    canEditEvents,
     eventEnums: initialEventEnums,
     selectedCategories,
     filterEventsBySelectedCategories,

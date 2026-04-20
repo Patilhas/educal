@@ -1,4 +1,5 @@
 import React, { type ReactNode } from "react";
+import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import { useDragDrop } from "@/features/calendar/contexts/dnd-context";
 
 interface DroppableAreaProps {
@@ -17,6 +18,11 @@ export function DroppableArea({
   className,
 }: DroppableAreaProps) {
   const { handleEventDrop, isDragging } = useDragDrop();
+  const { canEditEvents } = useCalendar();
+
+  if (!canEditEvents) {
+    return <div className={className}>{children}</div>;
+  }
 
   return (
     <div

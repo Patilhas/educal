@@ -62,6 +62,7 @@ erDiagram
     }
 
     USER ||--o{ CALENDAR : "created_by"
+    USER ||--o{ AUTH_SESSION : "authenticates"
     USER ||--o{ CALENDAR_VACATION : "created_by"
     USER ||--o{ EVENT : "created_by"
     USER ||--o{ RULE : "created_by"
@@ -73,8 +74,15 @@ erDiagram
     USER ||--o{ STATUS : "created_by"
     USER {
         string name
+        string role
         string email
-        string password
+        string password_hash
+    }
+
+    AUTH_SESSION {
+        string token
+        datetime created_at
+        datetime expires_at
     }
 
 https://mermaid.live/edit#pako:eNqlVduO2jAQ_ZXIz4AKhAB5S7NphcRllYSVWiFFJhnAFbEjx9ldCvx7nQu3hA1I9Zs958yMPWfGe-SzAJCOgL8QvOY4XNAFVeQyjbE1fTFs5XBoNg97xXqzpq6iKwu0wfEC3Qed9t6bYRruaDYtE3IvBXpmmnPbtqamVQuz52OrGti1fs7sXxmGfZXd2HCc0Y9RkUod1HENd-5UIQGsCIUvYKX8S1jbcl5nU2f0XWZf8cshjhiNyXILyorxE6d8-5QzMUZjz7Umr2N554ycxHmUUg32-T5dseCErhXs4wBC4ns7wDy3Hsu0S6mqfIpDuBwGWIAgIUgr5sJLt3eMQIMr0zlcfqdHIYpDtvwDviDvVUuAd7G3BPEBQD3mJ5wD9eVr3AbLFFON9Y63STmv6yo9xzhL70n4rQgfkS4quFJXlRRA7HMSCcLo_xUoXYQKhTJBVsTHqUeveGUpzEoZb9VYTYyDTyICVMQXk4BPofiMCnlc8lc0VJ0uzti5Y9mnrjiLPu0Hn4O8T-Atd6c-uge9nUn1nEuj1uPOo-kB7EpkzyRcCOwJ6K24HhNKI-vBK1RHTz2hqGYN8MkBACEm28pphOP4g_Gg0AVqoDUnAdIFT6CBQuCSJbcoC7JAYgPSNSpGM062Ik0lpUWY_mYsPDE5S9YbpK_wNpa7JEq7o_gNzxDZNcBNllCB9GHmAel79In0Zqfb6qnd_nCgqprW63X63QbaIb2t9lqapqmDgab2Ve3bUD020N8sarvV7nXabbWjDTua2pWUBoKACMYn-Wec_cnHfw20Qxc

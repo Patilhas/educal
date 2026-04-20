@@ -1,5 +1,5 @@
 import { addMinutes, format, set } from "date-fns";
-import type { IEvent, IUser } from "@/features/calendar/interfaces";
+import type { IEvent } from "@/features/calendar/interfaces";
 import type { TEventFormData } from "@/features/calendar/schemas";
 
 interface InitialDateParams {
@@ -12,7 +12,7 @@ interface EventFromFormParams {
   values: TEventFormData;
   isEditing: boolean;
   event?: IEvent;
-  defaultUser: IUser;
+  defaultUser: IEvent["user"];
 }
 
 export const toNumericId = (seed: string): number => {

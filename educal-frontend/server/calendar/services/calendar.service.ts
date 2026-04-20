@@ -1,19 +1,17 @@
 import { z } from "zod";
+import { canManageCalendarEvents } from "@/features/calendar/interfaces";
 import type { IEvent, IOccurrence, IUser } from "@/features/calendar/interfaces";
 import {
   buildEventPayloadSchema,
   patchOccurrenceSchema,
 } from "@/server/calendar/schemas";
 import { calendarData } from "@/server/calendar/data/calendar.data";
+import type { IRequestWithAuth } from "@/server/auth/session";
 import { DomainError } from "@/server/shared/domain-error";
 
 const toIsoString = (dateValue: string) => new Date(dateValue).toISOString();
 
 export class CalendarService {
-  async listUsers(): Promise<IUser[]> {
-    return calendarData.listUsers();
-  }
-
   async listEvents(): Promise<IEvent[]> {
     return calendarData.listEvents();
   }
@@ -35,10 +33,10 @@ export class CalendarService {
     };
   }
 
-  async createEvent(payload: unknown): Promise<IEvent> {
+  async createEvent(request: IRequestWithAuth, payload: unknown): Promise<IEvent> {
+    this.ensureCanManageEvents(request.auth.user.role);
     const schema = await buildEventPayloadSchema();
     const parsed = schema.parse(payload);
-    const user = await this.resolveUser(parsed.userId);
 
     const newEvent: IEvent = {
       id: await this.generateNextEventId(),
@@ -55,13 +53,14 @@ export class CalendarService {
         startDate: toIsoString(occurrence.startDate),
         endDate: toIsoString(occurrence.endDate),
       })),
-      user,
+      user: this.toEventUser(request.auth.user),
     };
 
     return calendarData.insertEvent(newEvent);
   }
 
-  async updateEvent(eventId: number, payload: unknown): Promise<IEvent> {
+  async updateEvent(request: IRequestWithAuth, eventId: number, payload: unknown): Promise<IEvent> {
+    this.ensureCanManageEvents(request.auth.user.role);
     const schema = await buildEventPayloadSchema();
     const parsed = schema.extend({ id: z.number().int().positive().optional() }).parse(payload);
 
@@ -74,7 +73,6 @@ export class CalendarService {
       throw new DomainError("NOT_FOUND", 404, "Evento não encontrado");
     }
 
-    const user = await this.resolveUser(parsed.userId ?? existing.user.id);
     const updatedEvent: IEvent = {
       id: eventId,
       name: parsed.name,
@@ -90,7 +88,7 @@ export class CalendarService {
         startDate: toIsoString(occurrence.startDate),
         endDate: toIsoString(occurrence.endDate),
       })),
-      user,
+      user: existing.user,
     };
 
     const saved = await calendarData.replaceEvent(eventId, updatedEvent);
@@ -101,7 +99,8 @@ export class CalendarService {
     return saved;
   }
 
-  async deleteEvent(eventId: number): Promise<void> {
+  async deleteEvent(request: IRequestWithAuth, eventId: number): Promise<void> {
+    this.ensureCanManageEvents(request.auth.user.role);
     const removed = await calendarData.deleteEvent(eventId);
     if (!removed) {
       throw new DomainError("NOT_FOUND", 404, "Evento não encontrado");
@@ -109,10 +108,12 @@ export class CalendarService {
   }
 
   async updateOccurrence(
+    request: IRequestWithAuth,
     eventId: number,
     occurrenceId: string,
     payload: unknown,
   ): Promise<IEvent> {
+    this.ensureCanManageEvents(request.auth.user.role);
     const parsed = patchOccurrenceSchema.parse(payload);
 
     if (!parsed.startDate && !parsed.endDate && !parsed.description) {
@@ -163,19 +164,12 @@ export class CalendarService {
     return saved;
   }
 
-  private async resolveUser(userId?: string): Promise<IUser> {
-    const users = await calendarData.listUsers();
-    const user = users.find((item) => item.id === userId) ?? users[0];
-
-    if (!user) {
-      throw new DomainError(
-        "INTERNAL_ERROR",
-        500,
-        "Nenhum utilizador disponível para associar ao evento",
-      );
-    }
-
-    return user;
+  private toEventUser(user: IUser): IEvent["user"] {
+    return {
+      id: user.id,
+      name: user.name,
+      picturePath: user.picturePath,
+    };
   }
 
   private async generateNextEventId() {
@@ -185,6 +179,16 @@ export class CalendarService {
     }
 
     return Math.max(...events.map((event) => event.id)) + 1;
+  }
+
+  private ensureCanManageEvents(role: IUser["role"]) {
+    if (!canManageCalendarEvents(role)) {
+      throw new DomainError(
+        "FORBIDDEN",
+        403,
+        "É necessário ter pelo menos o role editor para alterar eventos",
+      );
+    }
   }
 }
 

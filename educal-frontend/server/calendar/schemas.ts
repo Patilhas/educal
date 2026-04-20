@@ -62,7 +62,6 @@ export async function buildEventPayloadSchema() {
     status: z.enum(statusValues as [string, ...string[]]),
     responsible: z.enum(responsibleValues as [string, ...string[]]),
     occurrences: z.array(occurrencePayloadSchema).min(1),
-    userId: z.string().optional(),
   });
 }
 

@@ -2,6 +2,21 @@ export type TEventCategory = string;
 export type TEventClassification = string;
 export type TEventStatus = string;
 export type TEventResponsible = string;
+export type TUserRole = "viewer" | "editor" | "admin";
+
+const USER_ROLE_HIERARCHY: Record<TUserRole, number> = {
+  viewer: 0,
+  editor: 1,
+  admin: 2,
+};
+
+export function hasRoleAtLeast(role: TUserRole, minimumRole: TUserRole) {
+  return USER_ROLE_HIERARCHY[role] >= USER_ROLE_HIERARCHY[minimumRole];
+}
+
+export function canManageCalendarEvents(role: TUserRole) {
+  return hasRoleAtLeast(role, "editor");
+}
 
 // ─── Reference entities (DB table rows) ─────────────────────────────────────
 
@@ -28,7 +43,10 @@ export interface IUser {
   id: string;
   name: string;
   picturePath: string | null;
+  role: TUserRole;
 }
+
+export type IEventUser = Pick<IUser, "id" | "name" | "picturePath">;
 
 export interface IOccurrence {
   id: string;
@@ -47,7 +65,7 @@ export interface IEvent {
   status: TEventStatus;
   responsible: TEventResponsible;
   occurrences: IOccurrence[];
-  user: IUser;
+  user: IEventUser;
 }
 
 export interface ICalendarCell {

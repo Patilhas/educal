@@ -1,5 +1,6 @@
-import { calendarController } from "@/server/calendar/controllers/calendar.controller";
+import { authController } from "@/server/auth/controllers/auth.controller";
+import { withApiAuth } from "@/server/auth/middleware";
 
-export async function GET() {
-  return calendarController.listUsers();
-}
+export const GET = withApiAuth(async () => {
+  return authController.listUsers();
+});

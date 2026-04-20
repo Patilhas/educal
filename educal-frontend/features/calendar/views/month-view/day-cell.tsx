@@ -27,10 +27,12 @@ interface IProps {
 
 const MAX_VISIBLE_EVENTS = 3;
 
+type TMonthCellEvent = ReturnType<typeof getMonthCellEvents>[number];
+
 export function DayCell({ cell, occurrences, eventPositions }: IProps) {
   const { day, currentMonth, date } = cell;
   const isMobile = useMediaQuery("(max-width: 768px)");
-  const { getEventColor } = useCalendar();
+  const { getEventColor, canEditEvents } = useCalendar();
 
   const { cellOccurrences, currentCellMonth } = useMemo(() => {
     const cellOccurrences = getMonthCellEvents(date, occurrences, eventPositions);
@@ -42,7 +44,7 @@ export function DayCell({ cell, occurrences, eventPositions }: IProps) {
 
   const renderEventAtPosition = useCallback(
     (position: number) => {
-      const item = cellOccurrences.find((e) => e.position === position);
+      const item = cellOccurrences.find((item: TMonthCellEvent) => item.position === position);
       if (!item) {
         return (
           <motion.div
@@ -89,87 +91,74 @@ export function DayCell({ cell, occurrences, eventPositions }: IProps) {
   const showMobileMore = isMobile && currentMonth && showMoreCount > 0;
   const showDesktopMore = !isMobile && currentMonth && showMoreCount > 0;
 
-  const cellContent = useMemo(
-    () => (
-      <motion.div
-        className={cn(
-          "flex h-full min-h-0 flex-col gap-1 border-l border-t",
-          isSunday(date) && "border-l-0",
-        )}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={transition}
-      >
-        <DroppableArea date={date} className="flex h-full min-h-0 w-full flex-col py-2">
-          <motion.span
-            className={cn(
-              "h-6 px-1 text-xs font-semibold lg:px-2",
-              !currentMonth && "opacity-20",
-              isToday(date) &&
+  const cellContent = (
+    <motion.div
+      className={cn(
+        "flex h-full min-h-0 flex-col gap-1 border-l border-t",
+        isSunday(date) && "border-l-0",
+      )}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={transition}
+    >
+      <DroppableArea date={date} className="flex h-full min-h-0 w-full flex-col py-2">
+        <motion.span
+          className={cn(
+            "h-6 px-1 text-xs font-semibold lg:px-2",
+            !currentMonth && "opacity-20",
+            isToday(date) &&
               "flex w-6 translate-x-1 items-center justify-center rounded-full bg-primary px-0 font-bold text-primary-foreground",
-            )}
-          >
-            {day}
-          </motion.span>
+          )}
+        >
+          {day}
+        </motion.span>
 
+        <motion.div
+          className={cn(
+            "mt-1 flex min-h-0 flex-1 gap-1 px-2 lg:flex-col lg:gap-2 lg:px-0",
+            !currentMonth && "opacity-50",
+          )}
+        >
+          {cellOccurrences.length === 0 && !isMobile && canEditEvents ? (
+            <div className="w-full h-full flex justify-center items-center group">
+              <AddEditEventDialog startDate={date}>
+                <Button
+                  variant="ghost"
+                  className="border opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span className="max-sm:hidden">Adicionar Evento</span>
+                </Button>
+              </AddEditEventDialog>
+            </div>
+          ) : (
+            [0, 1, 2].map(renderEventAtPosition)
+          )}
+        </motion.div>
+
+        {showMobileMore && (
+          <div className="flex justify-end items-end mx-2">
+            <span className="text-[0.6rem] font-semibold text-accent-foreground">
+              +{showMoreCount}
+            </span>
+          </div>
+        )}
+
+        {showDesktopMore && (
           <motion.div
             className={cn(
-              "mt-1 flex min-h-0 flex-1 gap-1 px-2 lg:flex-col lg:gap-2 lg:px-0",
+              "h-4.5 px-1.5 my-2 text-end text-xs font-semibold text-muted-foreground",
               !currentMonth && "opacity-50",
             )}
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, ...transition }}
           >
-            {cellOccurrences.length === 0 && !isMobile ? (
-              <div className="w-full h-full flex justify-center items-center group">
-                <AddEditEventDialog startDate={date}>
-                  <Button
-                    variant="ghost"
-                    className="border opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span className="max-sm:hidden">Adicionar Evento</span>
-                  </Button>
-                </AddEditEventDialog>
-              </div>
-            ) : (
-              [0, 1, 2].map(renderEventAtPosition)
-            )}
+            <EventListDialog date={date} occurrences={cellOccurrences} />
           </motion.div>
-
-          {showMobileMore && (
-            <div className="flex justify-end items-end mx-2">
-              <span className="text-[0.6rem] font-semibold text-accent-foreground">
-                +{showMoreCount}
-              </span>
-            </div>
-          )}
-
-          {showDesktopMore && (
-            <motion.div
-              className={cn(
-                "h-4.5 px-1.5 my-2 text-end text-xs font-semibold text-muted-foreground",
-                !currentMonth && "opacity-50",
-              )}
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, ...transition }}
-            >
-              <EventListDialog date={date} occurrences={cellOccurrences} />
-            </motion.div>
-          )}
-        </DroppableArea>
-      </motion.div>
-    ),
-    [
-      date,
-      day,
-      currentMonth,
-      cellOccurrences,
-      showMobileMore,
-      showDesktopMore,
-      showMoreCount,
-      renderEventAtPosition,
-      isMobile,
-    ],
+        )}
+      </DroppableArea>
+    </motion.div>
   );
 
   if (isMobile && currentMonth) {

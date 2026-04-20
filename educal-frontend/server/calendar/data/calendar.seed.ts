@@ -1,37 +1,19 @@
-import type { IEvent, IUser } from "@/features/calendar/interfaces";
+import type { IEvent } from "@/features/calendar/interfaces";
 import type {
   ICategory,
   IClassification,
   IResponsible,
   IStatus,
 } from "@/features/calendar/interfaces";
+import { AUTH_PUBLIC_USERS_SEED } from "@/server/auth/data/auth.seed";
 
 export interface ICalendarDb {
-  users: IUser[];
   events: IEvent[];
   categories: ICategory[];
   classifications: IClassification[];
   statuses: IStatus[];
   responsibles: IResponsible[];
 }
-
-const USERS_SEED: IUser[] = [
-  {
-    id: "f3b035ac-49f7-4e92-a715-35680bf63175",
-    name: "Daniel Santos",
-    picturePath: null,
-  },
-  {
-    id: "3e36ea6e-78f3-40dd-ab8c-a6c737c3c422",
-    name: "Filipe Freitas",
-    picturePath: null,
-  },
-  {
-    id: "a7aff6bd-a50a-4d6a-ab57-76f76bb27cf5",
-    name: "Sandra Ferreira",
-    picturePath: null,
-  },
-];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Reference data — these represent DB table rows, not code constants.
@@ -176,7 +158,7 @@ const createEvent = (
     status: randomArrayItem(STATUSES_SEED).name,
     responsible: randomArrayItem(RESPONSIBLES_SEED).value,
     occurrences,
-    user: randomArrayItem(USERS_SEED),
+    user: randomArrayItem(AUTH_PUBLIC_USERS_SEED),
   };
 };
 
@@ -231,7 +213,6 @@ const generateEvents = (totalOccurrencesTarget: number): IEvent[] => {
 
 export const buildCalendarSeed = (): ICalendarDb => {
   return {
-    users: structuredClone(USERS_SEED),
     events: generateEvents(50),
     categories: structuredClone(CATEGORIES_SEED),
     classifications: structuredClone(CLASSIFICATIONS_SEED),

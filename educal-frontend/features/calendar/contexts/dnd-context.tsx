@@ -12,6 +12,7 @@ import React, {
 import { toast } from "sonner";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
+import { useTranslations } from "@/i18n";
 
 interface DragDropContextType {
   draggedOccurrence: { event: IEvent; occurrence: IOccurrence } | null;
@@ -30,7 +31,8 @@ const DragDropContext = createContext<DragDropContextType | undefined>(
 );
 
 export function DndProvider({ children }: DndProviderProps) {
-  const { updateOccurrence } = useCalendar();
+  const { t } = useTranslations();
+  const { updateOccurrence, canEditEvents } = useCalendar();
   const [dragState, setDragState] = useState<{
     draggedOccurrence: { event: IEvent; occurrence: IOccurrence } | null;
     isDragging: boolean;
@@ -80,6 +82,8 @@ export function DndProvider({ children }: DndProviderProps) {
 
   const handleEventDrop = useCallback(
     (targetDate: Date, hour?: number, minute?: number) => {
+      if (!canEditEvents) return;
+
       const { draggedOccurrence } = dragState;
       if (!draggedOccurrence) return;
 
@@ -104,7 +108,7 @@ export function DndProvider({ children }: DndProviderProps) {
       }
       endDrag();
     },
-    [dragState, calculateNewDates, isSamePosition, endDrag],
+    [canEditEvents, dragState, calculateNewDates, isSamePosition, endDrag],
   );
 
   // Default occurrence update handler
@@ -117,12 +121,12 @@ export function DndProvider({ children }: DndProviderProps) {
           startDate: newStartDate.toISOString(),
           endDate: newEndDate.toISOString(),
         });
-        toast.success("Ocorrência atualizada com sucesso");
+        toast.success(t("calendar.messages.occurrenceUpdateSuccess"));
       } catch {
-        toast.error("Não foi possível atualizar a ocorrência");
+        toast.error(t("calendar.messages.occurrenceUpdateError"));
       }
     },
-    [updateOccurrence],
+    [t, updateOccurrence],
   );
 
   // Set default callback
