@@ -5,7 +5,7 @@ import {
   parseISO,
   startOfDay,
 } from "date-fns";
-import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
+import type { IEvent, IOccurrence } from "@/shared/calendar/types";
 import { MonthEventBadge } from "@/features/calendar/views/month-view/month-event-badge";
 
 interface IProps {

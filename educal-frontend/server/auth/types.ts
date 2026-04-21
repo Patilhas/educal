@@ -1,15 +1,4 @@
-import type { IUser, TUserRole } from "@/features/calendar/interfaces";
-
-export type UserRole = TUserRole;
-
-export interface AuthUserRecord {
-  id: string;
-  name: string;
-  picturePath: string | null;
-  role: UserRole;
-  email: string;
-  passwordHash: string;
-}
+import type { IUser, IUserStored, IUserWithEmail } from "@/shared/user/types";
 
 export interface AuthSessionRecord {
   token: string;
@@ -19,14 +8,22 @@ export interface AuthSessionRecord {
 }
 
 export interface AuthDb {
-  users: AuthUserRecord[];
+  users: IUserStored[];
   sessions: AuthSessionRecord[];
 }
 
-export const toCalendarUser = (user: AuthUserRecord): IUser => ({
+export const toCalendarUser = (user: IUserStored): IUser => ({
   id: user.id,
   name: user.name,
   picturePath: user.picturePath,
   role: user.role,
+});
+
+export const toUserWithEmail = (user: IUserStored): IUserWithEmail => ({
+  id: user.id,
+  name: user.name,
+  picturePath: user.picturePath,
+  role: user.role,
+  email: user.email,
 });
 

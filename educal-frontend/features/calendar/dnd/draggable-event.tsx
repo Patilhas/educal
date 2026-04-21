@@ -3,7 +3,7 @@ import type React from "react";
 import type { ReactNode } from "react";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import { useDragDrop } from "@/features/calendar/contexts/dnd-context";
-import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
+import type { IEvent, IOccurrence } from "@/shared/calendar/types";
 
 interface DraggableEventProps {
   event: IEvent;

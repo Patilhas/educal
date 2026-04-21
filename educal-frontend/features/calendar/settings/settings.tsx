@@ -1,13 +1,10 @@
 import {
   DotIcon,
-  LogOutIcon,
   MoonIcon,
   PaletteIcon,
   SettingsIcon,
   SunMediumIcon,
 } from "lucide-react";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,11 +21,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
-import { requestJson } from "@/lib/api-client";
 import { useTranslations } from "@/i18n/use-translations";
 
 export default function Settings() {
-  const router = useRouter();
   const {
     badgeVariant,
     setBadgeVariant,
@@ -43,22 +38,6 @@ export default function Settings() {
   const isDarkMode = resolvedTheme === "dark";
   const isDotVariant = badgeVariant === "dot";
 
-  const handleLogout = async () => {
-    try {
-      await requestJson<{ loggedOut: boolean }>(
-        "/api/auth/logout",
-        { method: "POST" },
-        t("common.auth.logout.errors.requestFailed"),
-      );
-
-      router.replace("/login");
-      router.refresh();
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : t("common.auth.logout.errors.requestFailed");
-      toast.error(message);
-    }
-  };
 
   return (
     <DropdownMenu>
@@ -174,15 +153,9 @@ export default function Settings() {
             <DropdownMenuRadioItem value="date">{t("calendar.settings.groupByDate")}</DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="category">{t("calendar.settings.groupByCategory")}</DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={handleLogout}>
-          {t("common.actions.logout")}
-          <DropdownMenuShortcut>
-            <LogOutIcon className="h-4 w-4" />
-          </DropdownMenuShortcut>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
+         </DropdownMenuGroup>
+         <DropdownMenuSeparator />
+       </DropdownMenuContent>
+     </DropdownMenu>
+   );
+ }

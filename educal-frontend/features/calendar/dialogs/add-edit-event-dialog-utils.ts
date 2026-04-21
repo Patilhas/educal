@@ -1,5 +1,5 @@
 import { addMinutes, format, set } from "date-fns";
-import type { IEvent } from "@/features/calendar/interfaces";
+import type { IEvent } from "@/shared/calendar/types";
 import type { TEventFormData } from "@/features/calendar/schemas";
 
 interface InitialDateParams {

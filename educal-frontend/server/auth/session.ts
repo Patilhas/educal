@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import type { IUser } from "@/features/calendar/interfaces";
+import type { IUser } from "@/shared/user/types";
 import { AUTH_SESSION_COOKIE_NAME } from "@/server/auth/config";
 import { authService } from "@/server/auth/services/auth.service";
 import { DomainError } from "@/server/shared/domain-error";

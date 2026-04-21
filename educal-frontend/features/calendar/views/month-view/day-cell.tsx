@@ -11,7 +11,7 @@ import { DroppableArea } from "@/features/calendar/dnd/droppable-area";
 import { getMonthCellEvents } from "@/features/calendar/helpers";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import { useMediaQuery } from "@/features/calendar/hooks";
-import type { ICalendarCell, IEvent, IOccurrence } from "@/features/calendar/interfaces";
+import type { ICalendarCell, IEvent, IOccurrence } from "@/shared/calendar/types";
 import { EventBullet } from "@/features/calendar/views/month-view/event-bullet";
 import { MonthEventBadge } from "@/features/calendar/views/month-view/month-event-badge";
 import { Button } from "@/components/ui/button";

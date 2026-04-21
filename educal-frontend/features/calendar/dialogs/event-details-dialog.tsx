@@ -17,7 +17,7 @@ import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import AddEditEventDialog from "@/features/calendar/dialogs/add-edit-event-dialog";
 import DeleteEventDialog from "@/features/calendar/dialogs/delete-event-dialog";
 import { formatTime, getEventCategoryLabel } from "@/features/calendar/helpers";
-import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
+import type { IEvent, IOccurrence } from "@/shared/calendar/types";
 import { useTranslations } from "@/i18n/use-translations";
 
 interface IProps {

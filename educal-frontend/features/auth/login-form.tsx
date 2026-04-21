@@ -41,7 +41,7 @@ export function LoginForm() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(values),
-      }, t("common.auth.login.errors.loginFailed"));
+      }, t("auth.login.errors.loginFailed"));
 
       router.replace("/");
       router.refresh();
@@ -49,7 +49,7 @@ export function LoginForm() {
       setError(
         requestError instanceof Error
           ? requestError.message
-          : t("common.auth.login.errors.requestFailed"),
+          : t("auth.login.errors.requestFailed"),
       );
     }
   };
@@ -65,7 +65,7 @@ export function LoginForm() {
           name="email"
           render={({ field, fieldState }) => (
             <FormItem>
-              <FormLabel>{t("common.auth.login.fields.email")}</FormLabel>
+              <FormLabel>{t("auth.login.fields.email")}</FormLabel>
               <FormControl>
                 <Input
                   type="email"
@@ -84,7 +84,7 @@ export function LoginForm() {
           name="password"
           render={({ field, fieldState }) => (
             <FormItem>
-              <FormLabel>{t("common.auth.login.fields.password")}</FormLabel>
+              <FormLabel>{t("auth.login.fields.password")}</FormLabel>
               <FormControl>
                 <Input
                   type="password"
@@ -109,7 +109,7 @@ export function LoginForm() {
                   checked={field.value}
                   onChange={(event) => field.onChange(event.target.checked)}
                 />
-                {t("common.auth.login.staySignedIn")}
+                {t("auth.login.staySignedIn")}
               </label>
             </FormItem>
           )}
@@ -119,8 +119,8 @@ export function LoginForm() {
 
         <Button className="w-full" type="submit" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting
-            ? t("common.auth.login.submitting")
-            : t("common.auth.login.submit")}
+            ? t("auth.login.submitting")
+            : t("auth.login.submit")}
         </Button>
       </form>
     </Form>

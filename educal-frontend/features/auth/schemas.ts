@@ -5,8 +5,8 @@ type Translator = (key: TranslationKey, variables?: Record<string, string | numb
 
 export const createLoginFormSchema = (t: Translator) =>
   z.object({
-    email: z.string().email(t("common.auth.login.errors.invalidEmail")),
-    password: z.string().min(8, t("common.auth.login.errors.invalidPassword")),
+    email: z.string().email(t("auth.login.errors.invalidEmail")),
+    password: z.string().min(8, t("auth.login.errors.invalidPassword")),
     staySignedIn: z.boolean(),
   });
 

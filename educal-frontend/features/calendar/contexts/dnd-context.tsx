@@ -11,7 +11,7 @@ import React, {
 } from "react";
 import { toast } from "sonner";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
-import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
+import type { IEvent, IOccurrence } from "@/shared/calendar/types";
 import { useTranslations } from "@/i18n";
 
 interface DragDropContextType {

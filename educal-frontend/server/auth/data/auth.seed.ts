@@ -1,15 +1,8 @@
 import { hashPassword, normalizeEmail } from "@/server/auth/crypto";
-import type { AuthDb, AuthUserRecord, UserRole } from "@/server/auth/types";
-import type { IEventUser } from "@/features/calendar/interfaces";
+import type { IUser, IUserStored } from "@/shared/user/types";
+import type { AuthDb } from "@/server/auth/types";
 
-interface SeedUserInput {
-  id: string;
-  name: string;
-  picturePath: string | null;
-  role: UserRole;
-  email: string;
-  password: string;
-}
+type SeedUserInput = Omit<IUserStored, "passwordHash"> & { password: string };
 
 const AUTH_USERS_CREDENTIALS_SEED: SeedUserInput[] = [
   {
@@ -38,15 +31,16 @@ const AUTH_USERS_CREDENTIALS_SEED: SeedUserInput[] = [
   },
 ];
 
-export const AUTH_PUBLIC_USERS_SEED: IEventUser[] = AUTH_USERS_CREDENTIALS_SEED.map(
-  ({ id, name, picturePath }) => ({
+export const AUTH_PUBLIC_USERS_SEED: IUser[] = AUTH_USERS_CREDENTIALS_SEED.map(
+  ({ id, name, picturePath, role }) => ({
     id,
     name,
     picturePath,
-  }),
-);
+    role
+  })
+)
 
-const toStoredUser = (user: SeedUserInput): AuthUserRecord => ({
+const toStoredUser = (user: SeedUserInput): IUserStored => ({
   id: user.id,
   name: user.name,
   picturePath: user.picturePath,
