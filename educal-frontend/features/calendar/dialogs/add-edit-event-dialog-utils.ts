@@ -1,4 +1,4 @@
-﻿import { addMinutes, format, set } from "date-fns";
+import { addMinutes, format, set } from "date-fns";
 import type { IEvent } from "@/shared/calendar/types";
 import type { TEventFormData } from "@/features/calendar/schemas";
 

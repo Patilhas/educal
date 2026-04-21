@@ -125,7 +125,7 @@ export function UserManagement({ initialUsers, currentUserId }: UserManagementPr
     }
 
     if (Object.keys(candidatePayload).length === 0) {
-      toast.info("Sem alteracoes para guardar.");
+      toast.info(t("users.management.edit.noChanges"))
       return;
     }
 

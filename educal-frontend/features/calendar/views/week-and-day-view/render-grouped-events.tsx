@@ -1,4 +1,4 @@
-﻿import { areIntervalsOverlapping, parseISO } from "date-fns";
+import { areIntervalsOverlapping, parseISO } from "date-fns";
 import { getOccurrenceBlockStyle } from "@/features/calendar/helpers";
 import type { IEvent, IOccurrence } from "@/shared/calendar/types";
 import { EventBlock } from "@/features/calendar/views/week-and-day-view/event-block";

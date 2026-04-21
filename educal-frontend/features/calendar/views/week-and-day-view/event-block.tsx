@@ -1,4 +1,4 @@
-﻿import { cva } from "class-variance-authority";
+import { cva } from "class-variance-authority";
 import { differenceInMinutes, parseISO } from "date-fns";
 import type { HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";

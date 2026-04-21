@@ -1,4 +1,4 @@
-﻿import {
+import {
 	addDays,
 	differenceInDays,
 	endOfWeek,

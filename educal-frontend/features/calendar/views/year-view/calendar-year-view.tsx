@@ -1,4 +1,4 @@
-﻿import { endOfDay, formatDate, getYear, isSameDay, isSameMonth, parseISO, startOfDay } from "date-fns";
+import { endOfDay, formatDate, getYear, isSameDay, isSameMonth, parseISO, startOfDay } from "date-fns";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { staggerContainer, transition } from "@/features/calendar/animations";

@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import Link from "next/link";
 import { toast } from "sonner";
@@ -26,8 +26,8 @@ export function MainNavbar({ currentUser, activePath }: MainNavbarProps) {
       : []),
   ]
 
-  const getRoleLabel = (role: string) => {
-    return t(`common.roles.${role as TUserRole}`);
+  const getRoleLabel = (role: TUserRole) => {
+    return t(`common.roles.${role}`);
   };
 
   const handleLogout = async () => {

@@ -1,4 +1,4 @@
-﻿import CalendarBody from "@/features/calendar/calendar-body";
+import CalendarBody from "@/features/calendar/calendar-body";
 import { CalendarProvider } from "@/features/calendar/contexts/calendar-context";
 import { DndProvider } from "@/features/calendar/contexts/dnd-context";
 import { CalendarHeader } from "@/features/calendar/header/calendar-header";

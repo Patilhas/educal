@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { format, parseISO } from "date-fns";
 import { Calendar, Clock, Layers, List, Tag, Text, User } from "lucide-react";

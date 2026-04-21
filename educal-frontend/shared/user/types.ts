@@ -15,13 +15,11 @@ export type IUserStored = IUserWithEmail & {
   passwordHash: string;
 };
 
-export type IUserCreatePayload = Pick<IUserWithEmail, "name" | "email" | "role" | "picturePath"> & {
+export type IUserCreatePayload = Omit<IUserWithEmail, "id"> & {
   password: string;
 };
 
-export type IUserUpdatePayload = Partial<
-  Pick<IUserWithEmail, "name" | "email" | "role" | "picturePath">
-> & {
+export type IUserUpdatePayload = Partial<Omit<IUserWithEmail, "id">> & {
   password?: string;
 };
 

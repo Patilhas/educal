@@ -1,4 +1,4 @@
-﻿import { motion } from "framer-motion";
+import { motion } from "framer-motion";
 import type React from "react";
 import type { ReactNode } from "react";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";

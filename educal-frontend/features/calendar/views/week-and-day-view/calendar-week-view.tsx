@@ -1,4 +1,4 @@
-﻿import {addDays, format, isSameDay, parseISO, startOfWeek} from "date-fns";
+import {addDays, format, isSameDay, parseISO, startOfWeek} from "date-fns";
 import {motion} from "framer-motion";
 import {ScrollArea} from "@/components/ui/scroll-area";
 import {

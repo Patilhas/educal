@@ -1,4 +1,4 @@
-﻿import { format, isWithinInterval, parseISO } from "date-fns";
+import { format, isWithinInterval, parseISO } from "date-fns";
 import { Calendar, Clock, User } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { DayPicker } from "@/components/ui/day-picker";

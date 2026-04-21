@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { isToday, startOfDay, isSunday, isSameMonth } from "date-fns";
 import { motion } from "framer-motion";
