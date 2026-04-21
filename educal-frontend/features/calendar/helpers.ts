@@ -1,4 +1,4 @@
-import {
+﻿import {
 	addDays,
 	addMonths,
 	addWeeks,
@@ -29,7 +29,7 @@ import type {
 	ICalendarCell,
 	IEvent,
 	IOccurrence,
-} from "@/features/calendar/interfaces";
+} from "@/shared/calendar/types";
 import type {
 	TCalendarView,
 	TEventColor,

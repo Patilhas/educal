@@ -4,6 +4,7 @@ import { fail, ok, readJson } from "@/server/shared/api-response";
 import type { IRequestWithAuth } from "@/server/auth/session";
 import { getSessionTokenFromRequest } from "@/server/auth/session";
 import { NextResponse } from "next/server";
+import { DomainError } from "@/server/shared/domain-error";
 
 const clearSessionCookie = (response: NextResponse) => {
   response.cookies.set({
@@ -17,10 +18,48 @@ const clearSessionCookie = (response: NextResponse) => {
   });
 };
 
+const parseUserId = (rawUserId: string) => {
+  const userId = rawUserId.trim();
+  if (!userId) {
+    throw new DomainError("VALIDATION_ERROR", 400, "userId inválido");
+  }
+
+  return userId;
+};
+
 export const authController = {
-  async listUsers() {
+  async listUsers(request: IRequestWithAuth) {
     try {
-      return ok(await authService.listCalendarUsers());
+      return ok(await authService.listUsers(request.auth.user));
+    } catch (error) {
+      return fail(error);
+    }
+  },
+
+  async createUser(request: IRequestWithAuth) {
+    try {
+      const payload = await readJson(request);
+      return ok(await authService.createUser(request.auth.user, payload), 201);
+    } catch (error) {
+      return fail(error);
+    }
+  },
+
+  async updateUser(request: IRequestWithAuth, rawUserId: string) {
+    try {
+      const userId = parseUserId(rawUserId);
+      const payload = await readJson(request);
+      return ok(await authService.updateUser(request.auth.user, userId, payload));
+    } catch (error) {
+      return fail(error);
+    }
+  },
+
+  async deleteUser(request: IRequestWithAuth, rawUserId: string) {
+    try {
+      const userId = parseUserId(rawUserId);
+      await authService.deleteUser(request.auth.user, userId);
+      return ok({ deleted: true });
     } catch (error) {
       return fail(error);
     }
@@ -69,7 +108,7 @@ export const authController = {
       const response = ok({ loggedOut: true });
       clearSessionCookie(response);
       return response;
-    } catch (error) {
+    } catch {
       // Even if session deletion fails, clear the cookie
       const response = ok({ loggedOut: true });
       clearSessionCookie(response);

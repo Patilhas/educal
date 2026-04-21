@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import type React from "react";
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
@@ -9,8 +9,9 @@ import {
   updateOccurrenceRequest,
 } from "@/features/calendar/client-requests";
 import { useLocalStorage } from "@/features/calendar/hooks";
-import type { IEvent, IEventEnums, IUser, TEventCategory } from "@/features/calendar/interfaces";
-import { canManageCalendarEvents } from "@/features/calendar/interfaces";
+import type { IEvent, IEventEnums, TEventCategory } from "@/shared/calendar/types";
+import type { IUser } from "@/shared/user/types";
+import { canManageCalendarEvents } from "@/shared/user/roles";
 import { getEventColorByCategory } from "@/features/calendar/helpers";
 import type { TCalendarView, TEventColor } from "@/features/calendar/types";
 

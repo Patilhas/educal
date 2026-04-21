@@ -1,9 +1,9 @@
-import CalendarBody from "@/features/calendar/calendar-body";
+﻿import CalendarBody from "@/features/calendar/calendar-body";
 import { CalendarProvider } from "@/features/calendar/contexts/calendar-context";
 import { DndProvider } from "@/features/calendar/contexts/dnd-context";
 import { CalendarHeader } from "@/features/calendar/header/calendar-header";
 import { getEventEnums, getEvents, getUsers } from "@/features/calendar/requests";
-import type { IUser } from "@/features/calendar/interfaces";
+import type { IUser } from "@/shared/user/types";
 
 async function getCalendarData() {
   const [events, users, eventEnums] = await Promise.all([

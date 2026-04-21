@@ -1,4 +1,4 @@
-import type { IEvent, IEventEnums } from "@/features/calendar/interfaces";
+﻿import type { IEvent, IEventEnums } from "@/shared/calendar/types";
 import { requestJson } from "@/lib/api-client";
 
 export const fetchEventEnums = async (): Promise<IEventEnums> => {

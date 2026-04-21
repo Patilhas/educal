@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { canManageCalendarEvents } from "@/features/calendar/interfaces";
-import type { IEvent, IOccurrence, IUser } from "@/features/calendar/interfaces";
+import { canManageCalendarEvents } from "@/shared/user/roles";
+import type { IEvent, IOccurrence } from "@/shared/calendar/types";
+import type { IUser } from "@/shared/user/types";
 import {
   buildEventPayloadSchema,
   patchOccurrenceSchema,
@@ -53,7 +54,7 @@ export class CalendarService {
         startDate: toIsoString(occurrence.startDate),
         endDate: toIsoString(occurrence.endDate),
       })),
-      user: this.toEventUser(request.auth.user),
+      user: request.auth.user,
     };
 
     return calendarData.insertEvent(newEvent);
@@ -162,14 +163,6 @@ export class CalendarService {
     }
 
     return saved;
-  }
-
-  private toEventUser(user: IUser): IEvent["user"] {
-    return {
-      id: user.id,
-      name: user.name,
-      picturePath: user.picturePath,
-    };
   }
 
   private async generateNextEventId() {

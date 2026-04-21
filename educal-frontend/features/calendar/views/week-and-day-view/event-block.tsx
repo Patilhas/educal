@@ -1,4 +1,4 @@
-import { cva } from "class-variance-authority";
+﻿import { cva } from "class-variance-authority";
 import { differenceInMinutes, parseISO } from "date-fns";
 import type { HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
@@ -11,7 +11,7 @@ import {
   getWeekDotFillClass,
   getWeekEventColorClass,
 } from "@/features/calendar/helpers";
-import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
+import type { IEvent, IOccurrence } from "@/shared/calendar/types";
 
 const calendarWeekEventCardVariants = cva(
   "flex select-none flex-col gap-0.5 truncate whitespace-nowrap rounded-md border px-2 py-1.5 text-xs focus-visible:outline-offset-2",

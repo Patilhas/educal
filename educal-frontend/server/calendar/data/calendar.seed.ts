@@ -1,10 +1,10 @@
-import type { IEvent } from "@/features/calendar/interfaces";
+import type { IEvent } from "@/shared/calendar/types";
 import type {
   ICategory,
   IClassification,
   IResponsible,
   IStatus,
-} from "@/features/calendar/interfaces";
+} from "@/shared/calendar/types";
 import { AUTH_PUBLIC_USERS_SEED } from "@/server/auth/data/auth.seed";
 
 export interface ICalendarDb {

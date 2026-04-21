@@ -1,4 +1,4 @@
-import { cva } from "class-variance-authority";
+﻿import { cva } from "class-variance-authority";
 import { endOfDay, isSameDay, parseISO, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
@@ -8,7 +8,7 @@ import {
   formatTime,
   getMonthEventColorClass,
 } from "@/features/calendar/helpers";
-import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
+import type { IEvent, IOccurrence } from "@/shared/calendar/types";
 import { EventBullet } from "@/features/calendar/views/month-view/event-bullet";
 
 const eventBadgeVariants = cva(

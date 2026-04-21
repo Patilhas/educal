@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useMemo } from "react";
+﻿import { type ReactNode, useEffect, useMemo } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import { useDisclosure } from "@/features/calendar/hooks";
-import type { IEvent } from "@/features/calendar/interfaces";
+import type { IEvent } from "@/shared/calendar/types";
 import { createEventSchema, type TEventFormData } from "@/features/calendar/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {

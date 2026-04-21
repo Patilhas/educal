@@ -5,7 +5,7 @@ import type {
     IEvent,
     IResponsible,
   IStatus,
-} from "@/features/calendar/interfaces";
+} from "@/shared/calendar/types";
 import {
     buildCalendarSeed,
     type ICalendarDb,

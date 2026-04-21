@@ -1,11 +1,11 @@
-import { endOfDay, formatDate, getYear, isSameDay, isSameMonth, parseISO, startOfDay } from "date-fns";
+﻿import { endOfDay, formatDate, getYear, isSameDay, isSameMonth, parseISO, startOfDay } from "date-fns";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { staggerContainer, transition } from "@/features/calendar/animations";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import { EventListDialog } from "@/features/calendar/dialogs/events-list-dialog";
 import { getCalendarCells } from "@/features/calendar/helpers";
-import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
+import type { IEvent, IOccurrence } from "@/shared/calendar/types";
 import { EventBullet } from "@/features/calendar/views/month-view/event-bullet";
 import { WEEK_DAYS } from "@/features/calendar/constants";
 

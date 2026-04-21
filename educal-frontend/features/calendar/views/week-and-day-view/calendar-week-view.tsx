@@ -1,4 +1,4 @@
-import {addDays, format, isSameDay, parseISO, startOfWeek} from "date-fns";
+﻿import {addDays, format, isSameDay, parseISO, startOfWeek} from "date-fns";
 import {motion} from "framer-motion";
 import {ScrollArea} from "@/components/ui/scroll-area";
 import {
@@ -8,7 +8,7 @@ import {
 } from "@/features/calendar/animations";
 import {useCalendar} from "@/features/calendar/contexts/calendar-context";
 import {groupOccurrences} from "@/features/calendar/helpers";
-import type {IEvent, IOccurrence} from "@/features/calendar/interfaces";
+import type {IEvent, IOccurrence} from "@/shared/calendar/types";
 import {CalendarTimeline} from "@/features/calendar/views/week-and-day-view/calendar-time-line";
 import {RenderGroupedEvents} from "@/features/calendar/views/week-and-day-view/render-grouped-events";
 import { TimeGridDaySlots } from "@/features/calendar/views/week-and-day-view/time-grid-day-slots";

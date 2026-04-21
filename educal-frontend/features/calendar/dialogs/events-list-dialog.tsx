@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+﻿import { format } from "date-fns";
 import type { ReactNode } from "react";
 import {
   Modal,
@@ -13,7 +13,7 @@ import {
   formatTime,
   getColorClass,
 } from "@/features/calendar/helpers";
-import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
+import type { IEvent, IOccurrence } from "@/shared/calendar/types";
 import { EventBullet } from "@/features/calendar/views/month-view/event-bullet";
 import EventDetailsDialog from "@/features/calendar/dialogs/event-details-dialog";
 import { useTranslations } from "@/i18n/use-translations";

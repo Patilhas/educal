@@ -1,10 +1,15 @@
 import crypto from "node:crypto";
-import type { IUser } from "@/features/calendar/interfaces";
+import type { IUser, IUserWithEmail } from "@/shared/user/types";
+import { hasRoleAtLeast } from "@/shared/user/roles";
+import {
+  createUserPayloadSchema,
+  updateUserPayloadSchema,
+} from "@/shared/user/schemas";
 import { authData } from "@/server/auth/data/auth.data";
-import { normalizeEmail, verifyPassword } from "@/server/auth/crypto";
+import { hashPassword, normalizeEmail, verifyPassword } from "@/server/auth/crypto";
 import { loginPayloadSchema } from "@/server/auth/schemas";
 import { DomainError } from "@/server/shared/domain-error";
-import { toCalendarUser } from "@/server/auth/types";
+import { toCalendarUser, toUserWithEmail } from "@/server/auth/types";
 
 const STAY_SIGNED_IN_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24;
@@ -76,13 +81,118 @@ export class AuthService {
     return users.map(toCalendarUser);
   }
 
-  async findCalendarUserById(userId?: string): Promise<IUser | null> {
-    if (!userId) {
-      return null;
+  async listUsers(requestUser: IUser): Promise<IUserWithEmail[]> {
+    this.ensureAdmin(requestUser);
+    const users = await authData.listUsers();
+    return users.map(toUserWithEmail);
+  }
+
+  async createUser(requestUser: IUser, payload: unknown): Promise<IUserWithEmail> {
+    this.ensureAdmin(requestUser);
+    const parsed = createUserPayloadSchema.parse(payload);
+    const normalizedEmail = normalizeEmail(parsed.email);
+
+    const existingByEmail = await authData.findUserByEmail(normalizedEmail);
+    if (existingByEmail) {
+      throw new DomainError("CONFLICT", 409, "Já existe um utilizador com esse email");
     }
 
-    const user = await authData.findUserById(userId);
-    return user ? toCalendarUser(user) : null;
+    const created = await authData.insertUser({
+      id: crypto.randomUUID(),
+      name: parsed.name,
+      picturePath: parsed.picturePath ?? null,
+      role: parsed.role,
+      email: normalizedEmail,
+      passwordHash: hashPassword(parsed.password),
+    });
+
+    return toUserWithEmail(created);
+  }
+
+  async updateUser(
+    requestUser: IUser,
+    userId: string,
+    payload: unknown,
+  ): Promise<IUserWithEmail> {
+    this.ensureAdmin(requestUser);
+
+    const existing = await authData.findUserById(userId);
+    if (!existing) {
+      throw new DomainError("NOT_FOUND", 404, "Utilizador não encontrado");
+    }
+
+    const parsed = updateUserPayloadSchema.parse(payload);
+    const nextRole = parsed.role ?? existing.role;
+
+    if (requestUser.id === userId && parsed.role && parsed.role !== "admin") {
+      throw new DomainError("FORBIDDEN", 403, "Não pode remover o seu próprio role de admin");
+    }
+
+    if (existing.role === "admin" && nextRole !== "admin") {
+      const adminCount = await authData.countUsersByRole("admin");
+      if (adminCount <= 1) {
+        throw new DomainError("CONFLICT", 409, "Tem de existir pelo menos um admin no sistema");
+      }
+    }
+
+    let normalizedEmail: string | undefined;
+    if (parsed.email) {
+      normalizedEmail = normalizeEmail(parsed.email);
+      if (normalizedEmail !== existing.email) {
+        const otherUserWithEmail = await authData.findUserByEmail(normalizedEmail);
+        if (otherUserWithEmail && otherUserWithEmail.id !== userId) {
+          throw new DomainError("CONFLICT", 409, "Já existe um utilizador com esse email");
+        }
+      }
+    }
+
+    const updated = await authData.updateUser(userId, {
+      ...(parsed.name ? { name: parsed.name } : {}),
+      ...(typeof parsed.picturePath !== "undefined" ? { picturePath: parsed.picturePath } : {}),
+      ...(normalizedEmail ? { email: normalizedEmail } : {}),
+      ...(parsed.role ? { role: parsed.role } : {}),
+      ...(parsed.password ? { passwordHash: hashPassword(parsed.password) } : {}),
+    });
+
+    if (!updated) {
+      throw new DomainError("NOT_FOUND", 404, "Utilizador não encontrado");
+    }
+
+    return toUserWithEmail(updated);
+  }
+
+  async deleteUser(requestUser: IUser, userId: string): Promise<void> {
+    this.ensureAdmin(requestUser);
+
+    if (requestUser.id === userId) {
+      throw new DomainError("FORBIDDEN", 403, "Não pode apagar o seu próprio utilizador");
+    }
+
+    const existing = await authData.findUserById(userId);
+    if (!existing) {
+      throw new DomainError("NOT_FOUND", 404, "Utilizador não encontrado");
+    }
+
+    if (existing.role === "admin") {
+      const adminCount = await authData.countUsersByRole("admin");
+      if (adminCount <= 1) {
+        throw new DomainError("CONFLICT", 409, "Tem de existir pelo menos um admin no sistema");
+      }
+    }
+
+    const deleted = await authData.deleteUser(userId);
+    if (!deleted) {
+      throw new DomainError("NOT_FOUND", 404, "Utilizador não encontrado");
+    }
+
+    await authData.deleteSessionsByUserId(userId);
+  }
+
+
+  private ensureAdmin(user: IUser) {
+    if (!hasRoleAtLeast(user.role, "admin")) {
+      throw new DomainError("FORBIDDEN", 403, "Apenas administradores podem gerir utilizadores");
+    }
   }
 }
 

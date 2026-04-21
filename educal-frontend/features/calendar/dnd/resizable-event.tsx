@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   addMinutes,
@@ -15,7 +15,7 @@ import { useCallback, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 
-import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
+import type { IEvent, IOccurrence } from "@/shared/calendar/types";
 
 interface ResizableEventBlockProps {
   event: IEvent;

@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+﻿import { motion } from "framer-motion";
 import { useMemo } from "react";
 import {
 	staggerContainer,
@@ -11,7 +11,7 @@ import {
 	getCalendarCells,
 } from "@/features/calendar/helpers";
 
-import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
+import type { IEvent, IOccurrence } from "@/shared/calendar/types";
 import { DayCell } from "@/features/calendar/views/month-view/day-cell";
 import {WEEK_DAYS} from "@/features/calendar/constants";
 

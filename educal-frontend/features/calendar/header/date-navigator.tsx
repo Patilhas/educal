@@ -1,4 +1,4 @@
-import { formatDate } from "date-fns";
+﻿import { formatDate } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo } from "react";
@@ -13,7 +13,7 @@ import {
   rangeText,
 } from "@/features/calendar/helpers";
 
-import type { IEvent } from "@/features/calendar/interfaces";
+import type { IEvent } from "@/shared/calendar/types";
 import type { TCalendarView } from "@/features/calendar/types";
 import { useTranslations } from "@/i18n/use-translations";
 
