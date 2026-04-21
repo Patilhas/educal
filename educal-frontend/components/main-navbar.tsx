@@ -1,6 +1,14 @@
-﻿import Link from "next/link";
-import type { IUser } from "@/shared/user/types";
+﻿"use client"
+
+import Link from "next/link";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { LogOutIcon } from "lucide-react";
+import type { IUser, TUserRole } from "@/shared/user/types"
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { requestJson } from "@/lib/api-client";
+import { useTranslations } from "@/i18n/use-translations";
 
 interface MainNavbarProps {
   currentUser: IUser;
@@ -8,12 +16,36 @@ interface MainNavbarProps {
 }
 
 export function MainNavbar({ currentUser, activePath }: MainNavbarProps) {
+  const router = useRouter();
+  const { t } = useTranslations();
+
   const links = [
-    { href: "/" as const, label: "Calendario" },
+    { href: "/" as const, label: t("common.navBar.calendar") },
     ...(currentUser.role === "admin"
-      ? ([{ href: "/admin/users" as const, label: "Utilizadores" }] as const)
+      ? ([{ href: "/admin/users" as const, label: t("common.navBar.users") }] as const)
       : []),
-  ];
+  ]
+
+  const getRoleLabel = (role: string) => {
+    return t(`common.roles.${role as TUserRole}`);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await requestJson<{ loggedOut: boolean }>(
+        "/api/auth/logout",
+        { method: "POST" },
+        t("auth.logout.errors.requestFailed"),
+      );
+
+      router.replace("/login");
+      router.refresh();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : t("auth.logout.errors.requestFailed");
+      toast.error(message);
+    }
+  };
 
   return (
     <nav className="flex items-center justify-between rounded-xl border bg-background px-4 py-3 shadow-sm">
@@ -37,9 +69,19 @@ export function MainNavbar({ currentUser, activePath }: MainNavbarProps) {
         })}
       </div>
 
-      <div className="text-right text-sm">
-        <p className="font-medium">{currentUser.name}</p>
-        <p className="text-xs text-muted-foreground">Role: {currentUser.role}</p>
+      <div className="flex items-center gap-3">
+        <div className="text-right text-sm">
+          <p className="font-medium">{currentUser.name}</p>
+          <p className="text-xs text-muted-foreground">{getRoleLabel(currentUser.role)}</p>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleLogout}
+          title={t("common.actions.logout")}
+        >
+          <LogOutIcon className="h-4 w-4" />
+        </Button>
       </div>
     </nav>
   );

@@ -51,9 +51,9 @@ export function UserManagement({ initialUsers, currentUserId }: UserManagementPr
   const [busyUserId, setBusyUserId] = useState<string | null>(null);
 
   const roleOptions: Array<{ value: TUserRole; label: string }> = [
-    { value: "viewer", label: t("common.users.management.roles.viewer") },
-    { value: "editor", label: t("common.users.management.roles.editor") },
-    { value: "admin", label: t("common.users.management.roles.admin") },
+    { value: "viewer", label: t("common.roles.viewer") },
+    { value: "editor", label: t("common.roles.editor") },
+    { value: "admin", label: t("common.roles.admin") },
   ];
 
   const createForm = useForm<TCreateUserFormValues>({
@@ -82,13 +82,13 @@ export function UserManagement({ initialUsers, currentUserId }: UserManagementPr
       const createdUser = await createUserRequest(payload);
       setUsers((current) => sortUsers([...current, createdUser]));
       createForm.reset(EMPTY_CREATE_FORM);
-      toast.success(t("common.users.management.create.success"));
+      toast.success(t("users.management.create.success"));
     } catch (error) {
-      toast.error(getMessageFromError(error, t("common.users.management.create.error")));
+      toast.error(getMessageFromError(error, t("users.management.create.error")));
     }
   }, () => {
     const firstMessage = Object.values(createForm.formState.errors)[0]?.message;
-    toast.error(firstMessage || t("common.users.management.create.validation"));
+    toast.error(firstMessage || t("users.management.create.validation"));
   });
 
   const handleStartEdit = (user: IUserWithEmail) => {
@@ -132,7 +132,7 @@ export function UserManagement({ initialUsers, currentUserId }: UserManagementPr
     const parsedPayload = updateUserPayloadSchema.safeParse(candidatePayload);
     if (!parsedPayload.success) {
       toast.error(
-        getValidationMessage(parsedPayload.error.issues, t("common.users.management.edit.validation")),
+        getValidationMessage(parsedPayload.error.issues, t("users.management.edit.validation")),
       );
       return;
     }
@@ -147,19 +147,19 @@ export function UserManagement({ initialUsers, currentUserId }: UserManagementPr
         sortUsers(current.map((candidate) => (candidate.id === updated.id ? updated : candidate))),
       );
       resetEditing();
-      toast.success(t("common.users.management.edit.success"));
+      toast.success(t("users.management.edit.success"));
     } catch (error) {
-      toast.error(getMessageFromError(error, t("common.users.management.edit.error")));
+      toast.error(getMessageFromError(error, t("users.management.edit.error")));
     } finally {
       setBusyUserId(null);
     }
   }, () => {
     const firstMessage = Object.values(editForm.formState.errors)[0]?.message;
-    toast.error(firstMessage || t("common.users.management.edit.validation"));
+    toast.error(firstMessage || t("users.management.edit.validation"));
   });
 
   const handleDeleteUser = async (user: IUserWithEmail) => {
-    if (!window.confirm(t("common.users.management.delete.confirmation", { name: user.name }))) {
+    if (!window.confirm(t("users.management.delete.confirmation", { name: user.name }))) {
       return;
     }
 
@@ -171,9 +171,9 @@ export function UserManagement({ initialUsers, currentUserId }: UserManagementPr
       if (editingUserId === user.id) {
         resetEditing();
       }
-      toast.success(t("common.users.management.delete.success"));
+      toast.success(t("users.management.delete.success"));
     } catch (error) {
-      toast.error(getMessageFromError(error, t("common.users.management.delete.error")));
+      toast.error(getMessageFromError(error, t("users.management.delete.error")));
     } finally {
       setBusyUserId(null);
     }
@@ -182,30 +182,30 @@ export function UserManagement({ initialUsers, currentUserId }: UserManagementPr
   return (
     <section className="space-y-6 rounded-xl border bg-background p-4 shadow-sm">
       <header className="space-y-1">
-        <h1 className="text-xl font-semibold">{t("common.users.management.title")}</h1>
+        <h1 className="text-xl font-semibold">{t("users.management.title")}</h1>
         <p className="text-sm text-muted-foreground">
-          {t("common.users.management.description")}
+          {t("users.management.description")}
         </p>
       </header>
 
       <form className="grid gap-3 rounded-lg border p-4 md:grid-cols-2 xl:grid-cols-5" onSubmit={handleCreateUser}>
         <div className="space-y-1">
           <label className="text-sm font-medium" htmlFor="create-user-name">
-            {t("common.users.management.create.fields.name")}
+            {t("users.management.create.fields.name")}
           </label>
           <Input id="create-user-name" {...createForm.register("name")} />
         </div>
 
         <div className="space-y-1">
           <label className="text-sm font-medium" htmlFor="create-user-email">
-            {t("common.users.management.create.fields.email")}
+            {t("users.management.create.fields.email")}
           </label>
           <Input id="create-user-email" type="email" {...createForm.register("email")} />
         </div>
 
         <div className="space-y-1">
           <label className="text-sm font-medium" htmlFor="create-user-role">
-            {t("common.users.management.create.fields.role")}
+            {t("users.management.create.fields.role")}
           </label>
           <select
             id="create-user-role"
@@ -222,21 +222,21 @@ export function UserManagement({ initialUsers, currentUserId }: UserManagementPr
 
         <div className="space-y-1">
           <label className="text-sm font-medium" htmlFor="create-user-picture-path">
-            {t("common.users.management.create.fields.picturePath")}
+            {t("users.management.create.fields.picturePath")}
           </label>
-          <Input id="create-user-picture-path" placeholder={t("common.users.management.create.fields.picturePlaceholder")} {...createForm.register("picturePath")} />
+          <Input id="create-user-picture-path" placeholder={t("users.management.create.fields.picturePlaceholder")} {...createForm.register("picturePath")} />
         </div>
 
         <div className="space-y-1">
           <label className="text-sm font-medium" htmlFor="create-user-password">
-            {t("common.users.management.create.fields.password")}
+            {t("users.management.create.fields.password")}
           </label>
           <Input id="create-user-password" type="password" {...createForm.register("password")} />
         </div>
 
         <div className="md:col-span-2 xl:col-span-5">
           <Button type="submit" disabled={createForm.formState.isSubmitting}>
-            {createForm.formState.isSubmitting ? t("common.users.management.create.submitting") : t("common.users.management.create.submit")}
+            {createForm.formState.isSubmitting ? t("users.management.create.submitting") : t("users.management.create.submit")}
           </Button>
         </div>
       </form>
@@ -245,11 +245,11 @@ export function UserManagement({ initialUsers, currentUserId }: UserManagementPr
         <table className="w-full min-w-190 text-left text-sm">
           <thead className="bg-muted/60">
             <tr>
-              <th className="px-3 py-2 font-medium">{t("common.users.management.table.headers.name")}</th>
-              <th className="px-3 py-2 font-medium">{t("common.users.management.table.headers.email")}</th>
-              <th className="px-3 py-2 font-medium">{t("common.users.management.table.headers.role")}</th>
-              <th className="px-3 py-2 font-medium">{t("common.users.management.table.headers.picture")}</th>
-              <th className="px-3 py-2 font-medium">{t("common.users.management.table.headers.actions")}</th>
+              <th className="px-3 py-2 font-medium">{t("users.management.table.headers.name")}</th>
+              <th className="px-3 py-2 font-medium">{t("users.management.table.headers.email")}</th>
+              <th className="px-3 py-2 font-medium">{t("users.management.table.headers.role")}</th>
+              <th className="px-3 py-2 font-medium">{t("users.management.table.headers.picture")}</th>
+              <th className="px-3 py-2 font-medium">{t("users.management.table.headers.actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -262,7 +262,7 @@ export function UserManagement({ initialUsers, currentUserId }: UserManagementPr
                   <td className="px-3 py-2">{user.name}</td>
                   <td className="px-3 py-2">{user.email}</td>
                   <td className="px-3 py-2">{user.role}</td>
-                  <td className="px-3 py-2">{user.picturePath ?? t("common.users.management.table.emptyPicture")}</td>
+                  <td className="px-3 py-2">{user.picturePath ?? t("users.management.table.emptyPicture")}</td>
                   <td className="px-3 py-2">
                     <div className="flex flex-wrap gap-2">
                       <Button
@@ -285,7 +285,7 @@ export function UserManagement({ initialUsers, currentUserId }: UserManagementPr
                       </Button>
                     </div>
                     {isSelf ? (
-                      <p className="mt-1 text-xs text-muted-foreground">{t("common.users.management.cannotDeleteSelf")}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{t("users.management.cannotDeleteSelf")}</p>
                     ) : null}
                   </td>
                 </tr>
@@ -297,25 +297,25 @@ export function UserManagement({ initialUsers, currentUserId }: UserManagementPr
 
       {editingUser ? (
         <section className="space-y-3 rounded-lg border p-4">
-          <h2 className="font-medium">{t("common.users.management.editing", { name: editingUser.name })}</h2>
+          <h2 className="font-medium">{t("users.management.editing", { name: editingUser.name })}</h2>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
             <div className="space-y-1">
               <label className="text-sm font-medium" htmlFor="edit-user-name">
-                {t("common.users.management.edit.fields.name")}
+                {t("users.management.edit.fields.name")}
               </label>
               <Input id="edit-user-name" {...editForm.register("name")} />
             </div>
 
             <div className="space-y-1">
               <label className="text-sm font-medium" htmlFor="edit-user-email">
-                {t("common.users.management.edit.fields.email")}
+                {t("users.management.edit.fields.email")}
               </label>
               <Input id="edit-user-email" type="email" {...editForm.register("email")} />
             </div>
 
             <div className="space-y-1">
               <label className="text-sm font-medium" htmlFor="edit-user-role">
-                {t("common.users.management.edit.fields.role")}
+                {t("users.management.edit.fields.role")}
               </label>
               <select
                 id="edit-user-role"
@@ -332,19 +332,19 @@ export function UserManagement({ initialUsers, currentUserId }: UserManagementPr
 
             <div className="space-y-1">
               <label className="text-sm font-medium" htmlFor="edit-user-picture-path">
-                {t("common.users.management.edit.fields.picturePath")}
+                {t("users.management.edit.fields.picturePath")}
               </label>
-              <Input id="edit-user-picture-path" placeholder={t("common.users.management.edit.fields.picturePlaceholder")} {...editForm.register("picturePath")} />
+              <Input id="edit-user-picture-path" placeholder={t("users.management.edit.fields.picturePlaceholder")} {...editForm.register("picturePath")} />
             </div>
 
             <div className="space-y-1">
               <label className="text-sm font-medium" htmlFor="edit-user-password">
-                {t("common.users.management.edit.fields.password")}
+                {t("users.management.edit.fields.password")}
               </label>
               <Input
                 id="edit-user-password"
                 type="password"
-                placeholder={t("common.users.management.edit.fields.passwordPlaceholder")}
+                placeholder={t("users.management.edit.fields.passwordPlaceholder")}
                 {...editForm.register("password")}
               />
             </div>

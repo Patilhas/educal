@@ -4,13 +4,12 @@ import { pt as ptDateFns } from "date-fns/locale";
 import { z } from "zod"
 import { pt } from "./pt";
 import type { Dictionary } from "./types";
-import { $ZodErrorMap } from "zod/v4/core"
 
 interface I18nConfig {
   dictionary: Dictionary;
   dateFnsLocale: Locale;
   collatorLocale: string;
-  zodLocale: () => { localeError: $ZodErrorMap }
+  zodLocale: () => ReturnType<typeof z.locales.pt>;
 }
 
 const I18N_CONFIG = {
