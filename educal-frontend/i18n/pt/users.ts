@@ -55,4 +55,4 @@ export const users = {
     editing: "Editar: {name}",
     cannotDeleteSelf: "Não pode apagar a sua própria conta.",
   },
-}
+};
