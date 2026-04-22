@@ -65,7 +65,6 @@ function UserFormFields<TValues extends UserFormBaseValues>({
   mode,
 }: UserFormFieldsProps<TValues>) {
   const { t } = useTranslations();
-  const idPrefix = mode === "create" ? "create-user" : "edit-user";
 
   const roleOptions: Array<{ value: TUserRole; label: string }> = [
     { value: "viewer", label: t("common.roles.viewer") },
@@ -86,7 +85,7 @@ function UserFormFields<TValues extends UserFormBaseValues>({
                 : t("users.management.edit.fields.name")}
             </FormLabel>
             <FormControl>
-              <Input id={`${idPrefix}-name`} {...field} className={fieldState.invalid ? "border-destructive" : ""} />
+              <Input {...field} className={fieldState.invalid ? "border-destructive" : ""} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -104,7 +103,7 @@ function UserFormFields<TValues extends UserFormBaseValues>({
                 : t("users.management.edit.fields.email")}
             </FormLabel>
             <FormControl>
-              <Input id={`${idPrefix}-email`} type="email" {...field} className={fieldState.invalid ? "border-destructive" : ""} />
+              <Input type="email" {...field} className={fieldState.invalid ? "border-destructive" : ""} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -123,7 +122,7 @@ function UserFormFields<TValues extends UserFormBaseValues>({
             </FormLabel>
             <FormControl>
               <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger id={`${idPrefix}-role`} className="w-full">
+                <SelectTrigger className="w-full">
                   <SelectValue
                     placeholder={
                       mode === "create"
@@ -158,7 +157,6 @@ function UserFormFields<TValues extends UserFormBaseValues>({
             </FormLabel>
             <FormControl>
               <Input
-                id={`${idPrefix}-picture-path`}
                 placeholder={
                   mode === "create"
                     ? t("users.management.create.fields.picturePlaceholder")
@@ -185,7 +183,6 @@ function UserFormFields<TValues extends UserFormBaseValues>({
             </FormLabel>
             <FormControl>
               <Input
-                id={`${idPrefix}-password`}
                 type="password"
                 placeholder={
                   mode === "create"
