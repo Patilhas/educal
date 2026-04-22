@@ -8,7 +8,7 @@ import {
   formatTime,
   getMonthEventColorClass,
 } from "@/features/calendar/helpers";
-import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
+import type { IEvent, IOccurrence } from "@/shared/calendar/types";
 import { EventBullet } from "@/features/calendar/views/month-view/event-bullet";
 
 const eventBadgeVariants = cva(

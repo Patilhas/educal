@@ -17,7 +17,7 @@ import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import AddEditEventDialog from "@/features/calendar/dialogs/add-edit-event-dialog";
 import DeleteEventDialog from "@/features/calendar/dialogs/delete-event-dialog";
 import { formatTime, getEventCategoryLabel } from "@/features/calendar/helpers";
-import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
+import type { IEvent, IOccurrence } from "@/shared/calendar/types";
 import { useTranslations } from "@/i18n/use-translations";
 
 interface IProps {
@@ -27,7 +27,7 @@ interface IProps {
 }
 
 export default function EventDetailsDialog({ event, occurrence, children }: IProps) {
-  const { use24HourFormat } = useCalendar();
+  const { use24HourFormat, canEditEvents } = useCalendar();
   const { t } = useTranslations();
 
   // Use the provided occurrence or fall back to the first one
@@ -162,12 +162,14 @@ export default function EventDetailsDialog({ event, occurrence, children }: IPro
             </div>
           </div>
         </ScrollArea>
-        <div className="flex justify-end gap-2">
-          <AddEditEventDialog event={event}>
-            <Button variant="outline">{t("calendar.header.editEvent")}</Button>
-          </AddEditEventDialog>
-          <DeleteEventDialog eventId={event.id} />
-        </div>
+        {canEditEvents && (
+          <div className="flex justify-end gap-2">
+            <AddEditEventDialog event={event}>
+              <Button variant="outline">{t("calendar.header.editEvent")}</Button>
+            </AddEditEventDialog>
+            <DeleteEventDialog eventId={event.id} />
+          </div>
+        )}
         <DialogClose />
       </DialogContent>
     </Dialog>

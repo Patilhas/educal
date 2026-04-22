@@ -6,7 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 
 import { groupOccurrences } from "@/features/calendar/helpers";
-import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
+import type { IEvent, IOccurrence } from "@/shared/calendar/types";
 import { CalendarTimeline } from "@/features/calendar/views/week-and-day-view/calendar-time-line";
 import { DayViewMultiDayEventsRow } from "@/features/calendar/views/week-and-day-view/day-view-multi-day-events-row";
 import { RenderGroupedEvents } from "@/features/calendar/views/week-and-day-view/render-grouped-events";

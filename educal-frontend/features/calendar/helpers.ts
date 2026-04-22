@@ -29,12 +29,13 @@ import type {
 	ICalendarCell,
 	IEvent,
 	IOccurrence,
-} from "@/features/calendar/interfaces";
+} from "@/shared/calendar/types";
 import type {
 	TCalendarView,
 	TEventColor,
 } from "@/features/calendar/types";
 import { TranslationKey } from "@/i18n/types";
+import { translate } from "@/i18n/translate";
 
 const FORMAT_STRING = "MMM d, yyyy";
 
@@ -62,7 +63,7 @@ export function rangeText(view: TCalendarView, date: Date): string {
 			end = endOfMonth(date);
 			break;
 		default:
-			return "Erro ao formatar";
+			return translate("common.errors.format");
 	}
 
 	return `${format(start, FORMAT_STRING)} - ${format(end, FORMAT_STRING)}`;

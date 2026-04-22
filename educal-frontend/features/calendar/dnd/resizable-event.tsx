@@ -15,7 +15,7 @@ import { useCallback, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 
-import type { IEvent, IOccurrence } from "@/features/calendar/interfaces";
+import type { IEvent, IOccurrence } from "@/shared/calendar/types";
 
 interface ResizableEventBlockProps {
   event: IEvent;
@@ -34,7 +34,7 @@ export function ResizableEvent({
   children,
   className,
 }: ResizableEventBlockProps) {
-  const { updateOccurrence, use24HourFormat } = useCalendar();
+  const { updateOccurrence, use24HourFormat, canEditEvents } = useCalendar();
 
   const [isResizing, setIsResizing] = useState(false);
   const [resizePreview, setResizePreview] = useState<{
@@ -166,7 +166,9 @@ export function ResizableEvent({
     [handleResizeStart, handleResize, handleResizeStop, isResizing],
   );
 
-  return (
+  return !canEditEvents ? (
+    <>{children}</>
+  ) : (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}

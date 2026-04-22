@@ -38,6 +38,7 @@ export default function Settings() {
   const isDarkMode = resolvedTheme === "dark";
   const isDotVariant = badgeVariant === "dot";
 
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -152,8 +153,9 @@ export default function Settings() {
             <DropdownMenuRadioItem value="date">{t("calendar.settings.groupByDate")}</DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="category">{t("calendar.settings.groupByCategory")}</DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
-        </DropdownMenuGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
+         </DropdownMenuGroup>
+         <DropdownMenuSeparator />
+       </DropdownMenuContent>
+     </DropdownMenu>
+   );
+ }

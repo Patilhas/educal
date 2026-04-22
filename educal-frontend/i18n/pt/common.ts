@@ -9,6 +9,12 @@ export const common = {
     remove: "Remover",
     confirm: "Confirmar",
     close: "Fechar",
+    logout: "Terminar sessão",
+  },
+  roles: {
+    viewer: "Visualizador",
+    editor: "Editor",
+    admin: "Administrador",
   },
   status: {
     success: "Sucesso",
@@ -18,5 +24,17 @@ export const common = {
   errors: {
     generic: "Ocorreu um erro inesperado.",
     network: "Falha ao comunicar com o servidor.",
+    format: "Erro ao formatar",
   },
+  api: {
+    errors: {
+      endpointNotFound: "Endpoint não encontrado",
+      backendCommunicationFailed: "Falha ao comunicar com o backend",
+      invalidServerResponse: "Resposta inválida do servidor",
+    },
+  },
+  navBar: {
+    calendar: "Calendário",
+    users: "Utilizadores"
+  }
 };

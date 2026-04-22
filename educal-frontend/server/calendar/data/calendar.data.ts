@@ -4,17 +4,16 @@ import type {
     IClassification,
     IEvent,
     IResponsible,
-    IStatus,
-    IUser,
-} from "@/features/calendar/interfaces";
+  IStatus,
+} from "@/shared/calendar/types";
 import {
     buildCalendarSeed,
     type ICalendarDb,
 } from "@/server/calendar/data/calendar.seed";
+import { CALENDAR_REDIS_DB_KEY } from "@/server/shared/config";
 
 const clone = <T>(value: T): T => structuredClone(value);
 
-const REDIS_KEY = process.env.UPSTASH_REDIS_FILE_NAME || 'calendar-db';
 const CACHE_REVALIDATE_MS = 500;
 
 export class CalendarData {
@@ -24,11 +23,11 @@ export class CalendarData {
     private redis = Redis.fromEnv()
 
     private async ensureCacheFile(): Promise<void> {
-        const cacheFile = await this.redis.get(REDIS_KEY);
+        const cacheFile = await this.redis.get(CALENDAR_REDIS_DB_KEY);
 
         if (!cacheFile) {
             const seed = buildCalendarSeed();
-            await this.redis.set(REDIS_KEY, JSON.stringify(seed));
+            await this.redis.set(CALENDAR_REDIS_DB_KEY, JSON.stringify(seed));
         }
     }
 
@@ -46,8 +45,8 @@ export class CalendarData {
             return this.cachedDb;
         }
 
-        const parsed = await this.redis.get(REDIS_KEY) as ICalendarDb;
-        if (!parsed) throw new Error(`${REDIS_KEY} not found in Redis after ensureCacheFile`);
+        const parsed = (await this.redis.get(CALENDAR_REDIS_DB_KEY)) as ICalendarDb;
+        if (!parsed) throw new Error(`${CALENDAR_REDIS_DB_KEY} not found in Redis after ensureCacheFile`);
 
         this.cachedDb = parsed;
         this.lastCacheValidationAt = now;
@@ -57,7 +56,7 @@ export class CalendarData {
 
     private async persistDb(nextDb: ICalendarDb): Promise<void> {
         this.writeQueue = this.writeQueue.then(async () => {
-            await this.redis.set(REDIS_KEY, JSON.stringify(nextDb));
+            await this.redis.set(CALENDAR_REDIS_DB_KEY, JSON.stringify(nextDb));
 
             this.cachedDb = clone(nextDb);
             this.lastCacheValidationAt = Date.now();
@@ -90,10 +89,6 @@ export class CalendarData {
 
     // ─── Core data ─────────────────────────────────────────────────────────────
 
-    async listUsers(): Promise<IUser[]> {
-        const db = await this.readDb();
-        return clone(db.users);
-    }
 
     async listEvents(): Promise<IEvent[]> {
         const db = await this.readDb();

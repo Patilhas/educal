@@ -19,7 +19,7 @@ import Settings from "@/features/calendar/settings/settings";
 import Views from "./view-tabs";
 
 export function CalendarHeader() {
-  const { view, events } = useCalendar();
+  const { view, events, canEditEvents } = useCalendar();
 
   return (
     <div className="flex flex-col gap-4 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
@@ -49,12 +49,14 @@ export function CalendarHeader() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-1.5">
           <UserSelect />
 
-          <AddEditEventDialog>
-            <Button>
-              <Plus className="h-4 w-4" />
-              Adicionar Evento
-            </Button>
-          </AddEditEventDialog>
+          {canEditEvents && (
+            <AddEditEventDialog>
+              <Button>
+                <Plus className="h-4 w-4" />
+                Adicionar Evento
+              </Button>
+            </AddEditEventDialog>
+          )}
         </div>
         <Settings />
       </motion.div>
