@@ -2,10 +2,25 @@
 
 import { useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { type Control, type FieldPath, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useTranslations } from "@/i18n/use-translations";
 import {
   createUserRequest,
@@ -30,6 +45,161 @@ interface UserManagementProps {
   currentUserId: string;
 }
 
+type UserFormMode = "create" | "edit";
+
+type UserFormBaseValues = {
+  name: string;
+  email: string;
+  role: TUserRole;
+  picturePath: string;
+  password: string;
+};
+
+interface UserFormFieldsProps<TValues extends UserFormBaseValues> {
+  control: Control<TValues>;
+  mode: UserFormMode;
+}
+
+function UserFormFields<TValues extends UserFormBaseValues>({
+  control,
+  mode,
+}: UserFormFieldsProps<TValues>) {
+  const { t } = useTranslations();
+
+  const roleOptions: Array<{ value: TUserRole; label: string }> = [
+    { value: "viewer", label: t("common.roles.viewer") },
+    { value: "editor", label: t("common.roles.editor") },
+    { value: "admin", label: t("common.roles.admin") },
+  ];
+
+  return (
+    <>
+      <FormField
+        control={control}
+        name={"name" as FieldPath<TValues>}
+        render={({ field, fieldState }) => (
+          <FormItem>
+            <FormLabel>
+              {mode === "create"
+                ? t("users.management.create.fields.name")
+                : t("users.management.edit.fields.name")}
+            </FormLabel>
+            <FormControl>
+              <Input {...field} className={fieldState.invalid ? "border-destructive" : ""} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={control}
+        name={"email" as FieldPath<TValues>}
+        render={({ field, fieldState }) => (
+          <FormItem>
+            <FormLabel>
+              {mode === "create"
+                ? t("users.management.create.fields.email")
+                : t("users.management.edit.fields.email")}
+            </FormLabel>
+            <FormControl>
+              <Input type="email" {...field} className={fieldState.invalid ? "border-destructive" : ""} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={control}
+        name={"role" as FieldPath<TValues>}
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>
+              {mode === "create"
+                ? t("users.management.create.fields.role")
+                : t("users.management.edit.fields.role")}
+            </FormLabel>
+            <FormControl>
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger className="w-full">
+                  <SelectValue
+                    placeholder={
+                      mode === "create"
+                        ? t("users.management.create.fields.role")
+                        : t("users.management.edit.fields.role")
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent position="popper">
+                  {roleOptions.map((roleOption) => (
+                    <SelectItem key={roleOption.value} value={roleOption.value}>
+                      {roleOption.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={control}
+        name={"picturePath" as FieldPath<TValues>}
+        render={({ field, fieldState }) => (
+          <FormItem>
+            <FormLabel>
+              {mode === "create"
+                ? t("users.management.create.fields.picturePath")
+                : t("users.management.edit.fields.picturePath")}
+            </FormLabel>
+            <FormControl>
+              <Input
+                placeholder={
+                  mode === "create"
+                    ? t("users.management.create.fields.picturePlaceholder")
+                    : t("users.management.edit.fields.picturePlaceholder")
+                }
+                {...field}
+                className={fieldState.invalid ? "border-destructive" : ""}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={control}
+        name={"password" as FieldPath<TValues>}
+        render={({ field, fieldState }) => (
+          <FormItem>
+            <FormLabel>
+              {mode === "create"
+                ? t("users.management.create.fields.password")
+                : t("users.management.edit.fields.password")}
+            </FormLabel>
+            <FormControl>
+              <Input
+                type="password"
+                placeholder={
+                  mode === "create"
+                    ? undefined
+                    : t("users.management.edit.fields.passwordPlaceholder")
+                }
+                {...field}
+                className={fieldState.invalid ? "border-destructive" : ""}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </>
+  );
+}
 
 const sortUsers = (users: IUserWithEmail[]) => {
   return [...users].sort((left, right) => left.name.localeCompare(right.name));
@@ -49,12 +219,6 @@ export function UserManagement({ initialUsers, currentUserId }: UserManagementPr
   const [users, setUsers] = useState<IUserWithEmail[]>(() => sortUsers(initialUsers));
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [busyUserId, setBusyUserId] = useState<string | null>(null);
-
-  const roleOptions: Array<{ value: TUserRole; label: string }> = [
-    { value: "viewer", label: t("common.roles.viewer") },
-    { value: "editor", label: t("common.roles.editor") },
-    { value: "admin", label: t("common.roles.admin") },
-  ];
 
   const createForm = useForm<TCreateUserFormValues>({
     resolver: zodResolver(createUserFormSchema),
@@ -125,7 +289,7 @@ export function UserManagement({ initialUsers, currentUserId }: UserManagementPr
     }
 
     if (Object.keys(candidatePayload).length === 0) {
-      toast.info(t("users.management.edit.noChanges"))
+      toast.info(t("users.management.edit.noChanges"));
       return;
     }
 
@@ -188,58 +352,19 @@ export function UserManagement({ initialUsers, currentUserId }: UserManagementPr
         </p>
       </header>
 
-      <form className="grid gap-3 rounded-lg border p-4 md:grid-cols-2 xl:grid-cols-5" onSubmit={handleCreateUser}>
-        <div className="space-y-1">
-          <label className="text-sm font-medium" htmlFor="create-user-name">
-            {t("users.management.create.fields.name")}
-          </label>
-          <Input id="create-user-name" {...createForm.register("name")} />
-        </div>
+      <Form {...createForm}>
+        <form className="grid gap-3 rounded-lg border p-4 md:grid-cols-2 xl:grid-cols-5" onSubmit={handleCreateUser}>
+          <UserFormFields control={createForm.control} mode="create" />
 
-        <div className="space-y-1">
-          <label className="text-sm font-medium" htmlFor="create-user-email">
-            {t("users.management.create.fields.email")}
-          </label>
-          <Input id="create-user-email" type="email" {...createForm.register("email")} />
-        </div>
-
-        <div className="space-y-1">
-          <label className="text-sm font-medium" htmlFor="create-user-role">
-            {t("users.management.create.fields.role")}
-          </label>
-          <select
-            id="create-user-role"
-            className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-            {...createForm.register("role")}
-          >
-            {roleOptions.map((roleOption) => (
-              <option key={roleOption.value} value={roleOption.value}>
-                {roleOption.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="space-y-1">
-          <label className="text-sm font-medium" htmlFor="create-user-picture-path">
-            {t("users.management.create.fields.picturePath")}
-          </label>
-          <Input id="create-user-picture-path" placeholder={t("users.management.create.fields.picturePlaceholder")} {...createForm.register("picturePath")} />
-        </div>
-
-        <div className="space-y-1">
-          <label className="text-sm font-medium" htmlFor="create-user-password">
-            {t("users.management.create.fields.password")}
-          </label>
-          <Input id="create-user-password" type="password" {...createForm.register("password")} />
-        </div>
-
-        <div className="md:col-span-2 xl:col-span-5">
-          <Button type="submit" disabled={createForm.formState.isSubmitting}>
-            {createForm.formState.isSubmitting ? t("users.management.create.submitting") : t("users.management.create.submit")}
-          </Button>
-        </div>
-      </form>
+          <div className="md:col-span-2 xl:col-span-5">
+            <Button type="submit" disabled={createForm.formState.isSubmitting}>
+              {createForm.formState.isSubmitting
+                ? t("users.management.create.submitting")
+                : t("users.management.create.submit")}
+            </Button>
+          </div>
+        </form>
+      </Form>
 
       <div className="overflow-x-auto rounded-lg border">
         <table className="w-full min-w-190 text-left text-sm">
@@ -261,7 +386,7 @@ export function UserManagement({ initialUsers, currentUserId }: UserManagementPr
                 <tr key={user.id} className="border-t align-top">
                   <td className="px-3 py-2">{user.name}</td>
                   <td className="px-3 py-2">{user.email}</td>
-                  <td className="px-3 py-2">{user.role}</td>
+                  <td className="px-3 py-2">{t(`common.roles.${user.role}`)}</td>
                   <td className="px-3 py-2">{user.picturePath ?? t("users.management.table.emptyPicture")}</td>
                   <td className="px-3 py-2">
                     <div className="flex flex-wrap gap-2">
@@ -298,70 +423,25 @@ export function UserManagement({ initialUsers, currentUserId }: UserManagementPr
       {editingUser ? (
         <section className="space-y-3 rounded-lg border p-4">
           <h2 className="font-medium">{t("users.management.editing", { name: editingUser.name })}</h2>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-            <div className="space-y-1">
-              <label className="text-sm font-medium" htmlFor="edit-user-name">
-                {t("users.management.edit.fields.name")}
-              </label>
-              <Input id="edit-user-name" {...editForm.register("name")} />
-            </div>
+          <Form {...editForm}>
+            <form className="space-y-3" onSubmit={handleSaveEdit}>
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                <UserFormFields control={editForm.control} mode="edit" />
+              </div>
 
-            <div className="space-y-1">
-              <label className="text-sm font-medium" htmlFor="edit-user-email">
-                {t("users.management.edit.fields.email")}
-              </label>
-              <Input id="edit-user-email" type="email" {...editForm.register("email")} />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-sm font-medium" htmlFor="edit-user-role">
-                {t("users.management.edit.fields.role")}
-              </label>
-              <select
-                id="edit-user-role"
-                className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                {...editForm.register("role")}
-              >
-                {roleOptions.map((roleOption) => (
-                  <option key={roleOption.value} value={roleOption.value}>
-                    {roleOption.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-sm font-medium" htmlFor="edit-user-picture-path">
-                {t("users.management.edit.fields.picturePath")}
-              </label>
-              <Input id="edit-user-picture-path" placeholder={t("users.management.edit.fields.picturePlaceholder")} {...editForm.register("picturePath")} />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-sm font-medium" htmlFor="edit-user-password">
-                {t("users.management.edit.fields.password")}
-              </label>
-              <Input
-                id="edit-user-password"
-                type="password"
-                placeholder={t("users.management.edit.fields.passwordPlaceholder")}
-                {...editForm.register("password")}
-              />
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              onClick={handleSaveEdit}
-              disabled={busyUserId === editingUser.id || editForm.formState.isSubmitting}
-            >
-              {t("common.actions.saveChanges")}
-            </Button>
-            <Button type="button" variant="outline" onClick={resetEditing}>
-              {t("common.actions.cancel")}
-            </Button>
-          </div>
+              <div className="flex gap-2">
+                <Button
+                  type="submit"
+                  disabled={busyUserId === editingUser.id || editForm.formState.isSubmitting}
+                >
+                  {t("common.actions.saveChanges")}
+                </Button>
+                <Button type="button" variant="outline" onClick={resetEditing}>
+                  {t("common.actions.cancel")}
+                </Button>
+              </div>
+            </form>
+          </Form>
         </section>
       ) : null}
     </section>
