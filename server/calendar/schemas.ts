@@ -9,12 +9,19 @@ const dateLikeString = z
     message: "Data inválida",
   });
 
+export const alertSchema = z.object({
+  id: z.string().min(1),
+  value: z.number().int().min(0),
+  unit: z.enum(["minutes", "hours", "days", "weeks"]),
+});
+
 export const occurrencePayloadSchema = z
   .object({
     id: z.string().min(1),
     description: z.string().min(1),
     startDate: dateLikeString,
     endDate: dateLikeString,
+    alerts: z.array(alertSchema).default([]),
   })
   .refine((value) => new Date(value.endDate) > new Date(value.startDate), {
     message: "A data de fim deve ser posterior à data de início",
@@ -62,6 +69,13 @@ export async function buildEventPayloadSchema() {
     status: z.enum(statusValues as [string, ...string[]]),
     responsible: z.enum(responsibleValues as [string, ...string[]]),
     occurrences: z.array(occurrencePayloadSchema).min(1),
+    emailTemplate: z
+      .object({
+        recipients: z.array(z.string().min(1)),
+        content: z.string().min(1),
+      })
+      .nullable()
+      .optional()
   });
 }
 
@@ -69,4 +83,5 @@ export const patchOccurrenceSchema = z.object({
   description: z.string().min(1).optional(),
   startDate: dateLikeString.optional(),
   endDate: dateLikeString.optional(),
+  alerts: z.array(alertSchema).optional(),
 });

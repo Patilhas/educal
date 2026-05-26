@@ -4,6 +4,15 @@ import type { TranslationKey } from "@/i18n";
 type Translator = (key: TranslationKey, variables?: Record<string, string | number>) => string;
 
 export const createEventSchema = (t: Translator) => {
+  const alertSchema = z.object({
+    id: z.string(),
+    value: z
+      .number()
+      .int()
+      .min(0),
+    unit: z.enum(["minutes", "hours", "days", "weeks"]),
+  });
+
   const occurrenceSchema = z
     .object({
       id: z.string(),
@@ -12,6 +21,7 @@ export const createEventSchema = (t: Translator) => {
         .min(1, t("calendar.dialogs.addEditEvent.validations.occurrenceDescriptionRequired")),
       startDate: z.date(t("calendar.dialogs.addEditEvent.validations.occurrenceStartDateRequired")),
       endDate: z.date(t("calendar.dialogs.addEditEvent.validations.occurrenceEndDateRequired")),
+      alerts: z.array(alertSchema),
     })
     .refine((occurrence) => occurrence.endDate > occurrence.startDate, {
       message: t("calendar.dialogs.addEditEvent.validations.occurrenceEndAfterStart"),

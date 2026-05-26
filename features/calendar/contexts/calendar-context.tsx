@@ -5,11 +5,18 @@ import { createContext, useCallback, useContext, useMemo, useState } from "react
 import {
   createEventRequest,
   deleteEventRequest,
+  markNotificationReadRequest,
   updateEventRequest,
   updateOccurrenceRequest,
 } from "@/features/calendar/client-requests";
-import { useLocalStorage } from "@/features/calendar/hooks";
-import type { IEvent, IEventEnums, TEventCategory } from "@/shared/calendar/types";
+import { useLocalStorage } from "@/features/calendar/hooks"
+import type {
+  IEvent,
+  IEventEnums,
+  TEventCategory,
+  INotification,
+  IAlert,
+} from "@/shared/calendar/types"
 import type { IUser } from "@/shared/user/types";
 import { canManageCalendarEvents } from "@/shared/user/roles";
 import { getEventColorByCategory } from "@/features/calendar/helpers";
@@ -44,7 +51,10 @@ interface ICalendarContext {
     startDate?: string;
     endDate?: string;
     description?: string;
+    alerts?: IAlert[];
   }) => Promise<void>;
+  notifications: INotification[];
+  markNotificationRead: (notificationId: string) => Promise<void>;
   removeEvent: (eventId: number) => Promise<void>;
   clearFilter: () => void;
   getEventColor: (category: string) => TEventColor;
@@ -72,6 +82,7 @@ export function CalendarProvider({
   currentUser,
   events,
   initialEventEnums,
+  initialNotifications = [],
   badge = "colored",
   view = "day",
 }: {
@@ -80,6 +91,7 @@ export function CalendarProvider({
   currentUser: IUser | null;
   events: IEvent[];
   initialEventEnums: IEventEnums;
+  initialNotifications?: INotification[];
   view?: TCalendarView;
   badge?: "dot" | "colored";
 }) {
@@ -112,6 +124,8 @@ export function CalendarProvider({
   const [selectedCategories, setSelectedCategories] = useState<TEventCategory[]>([]);
 
   const [allEvents, setAllEvents] = useState<IEvent[]>(events || []);
+  const [notifications, setNotifications] = useState<INotification[]>(initialNotifications);
+
   const canEditEvents = currentUser ? canManageCalendarEvents(currentUser.role) : false;
 
   const categoryColorMap = useMemo(
@@ -189,12 +203,14 @@ export function CalendarProvider({
     startDate,
     endDate,
     description,
+    alerts,
   }: {
     eventId: number;
     occurrenceId: string;
     startDate?: string;
     endDate?: string;
     description?: string;
+    alerts?: IAlert[];
   }) => {
     const updatedEvent = await updateOccurrenceRequest({
       eventId,
@@ -202,12 +218,28 @@ export function CalendarProvider({
       startDate,
       endDate,
       description,
+      alerts,
     });
 
     setAllEvents((prev) =>
       prev.map((item) => (item.id === updatedEvent.id ? updatedEvent : item)),
     );
   };
+
+  const markNotificationRead = useCallback(
+    async (notificationId: string) => {
+      await markNotificationReadRequest(notificationId);
+
+      if (notificationId === "ALL") {
+        setNotifications([]);
+      } else {
+        setNotifications((previous) =>
+          previous.filter((notification) => notification.id !== notificationId)
+        );
+      }
+    },
+    [],
+  );
 
   const removeEvent = async (eventId: number) => {
     await deleteEventRequest(eventId);
@@ -256,6 +288,8 @@ export function CalendarProvider({
     updateOccurrence,
     removeEvent,
     clearFilter,
+    notifications,
+    markNotificationRead,
     getEventColor,
   };
 

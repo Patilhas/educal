@@ -14,3 +14,7 @@ export const getEventEnums = async () => {
 	return await calendarService.listEnums();
 };
 
+export const getNotifications = async (userId: string) => {
+  console.log(await calendarService.listNotifications(userId))
+	return await calendarService.listNotifications(userId);
+};

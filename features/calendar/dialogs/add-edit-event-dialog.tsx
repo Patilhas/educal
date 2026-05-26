@@ -41,6 +41,99 @@ import {
   toInputDate,
 } from "@/features/calendar/dialogs/add-edit-event-dialog-utils";
 import { useTranslations } from "@/i18n/use-translations";
+import { Trash2 } from "lucide-react";
+import type { Control } from "react-hook-form";
+
+const OccurrenceAlerts = ({
+  control,
+  occurrenceIndex,
+  t,
+}: {
+  control: Control<TEventFormData>;
+  occurrenceIndex: number;
+  t: ReturnType<typeof useTranslations>["t"];
+}) => {
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: `occurrences.${occurrenceIndex}.alerts`,
+  });
+
+  return (
+    <div className="col-span-full mt-2 rounded border bg-muted/50 p-2">
+      <div className="mb-2 flex items-center justify-between">
+        <FormLabel>{t("calendar.dialogs.addEditEvent.alerts.title")}</FormLabel>
+      </div>
+
+      <div className="space-y-2">
+        {fields.map((alert, alertIndex) => (
+          <div key={alert.id} className="flex gap-2 items-center">
+            <FormField
+              control={control}
+              name={`occurrences.${occurrenceIndex}.alerts.${alertIndex}.value`}
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={0}
+                      {...field}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={control}
+              name={`occurrences.${occurrenceIndex}.alerts.${alertIndex}.unit`}
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="minutes">{t("calendar.dialogs.addEditEvent.alerts.minutes")}</SelectItem>
+                      <SelectItem value="hours">{t("calendar.dialogs.addEditEvent.alerts.hours")}</SelectItem>
+                      <SelectItem value="days">{t("calendar.dialogs.addEditEvent.alerts.days")}</SelectItem>
+                      <SelectItem value="weeks">{t("calendar.dialogs.addEditEvent.alerts.weeks")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => remove(alertIndex)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        ))}
+        {fields.length === 0 && <p className="text-xs text-muted-foreground">{t("calendar.dialogs.addEditEvent.alerts.empty")}</p>}
+        <Button
+          type="button"
+          variant="link"
+          size="sm"
+          className="mt-2 text-xs"
+          onClick={() =>
+            append({
+              id: crypto.randomUUID(),
+              value: 10,
+              unit: "minutes",
+            })
+          }
+        >
+          {t("calendar.dialogs.addEditEvent.alerts.add")}
+        </Button>
+      </div>
+    </div>
+  );
+};
 
 interface IProps {
   children: ReactNode;
@@ -314,6 +407,7 @@ export default function AddEditEventDialog({
                       description: "",
                       startDate: initialDates.startDate,
                       endDate: initialDates.endDate,
+                      alerts: [],
                     })
                   }
                 >
@@ -397,6 +491,8 @@ export default function AddEditEventDialog({
                         </FormItem>
                       )}
                     />
+                    
+                    <OccurrenceAlerts control={form.control} occurrenceIndex={index} t={t} />
                   </div>
                 </div>
               ))}
@@ -418,4 +514,3 @@ export default function AddEditEventDialog({
     </Modal>
   );
 }
-

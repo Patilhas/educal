@@ -76,6 +76,16 @@ export const calendar = {
         descriptionPlaceholder: "Descreva esta ocorrência",
         startDate: "Data de início",
         endDate: "Data de fim",
+        notificationDaysBefore: "Dias de antecedência para notificação",
+      },
+      alerts: {
+        title: "Lembretes",
+        minutes: "Minutos",
+        hours: "Horas",
+        days: "Dias",
+        weeks: "Semanas",
+        empty: "Sem lembretes configurados.",
+        add: "+ Adicionar alerta",
       },
       submitAdd: "Criar evento",
       submitEdit: "Guardar alterações",
@@ -122,6 +132,12 @@ export const calendar = {
     eventsList: {
       title: "Eventos de {date}",
       noEvents: "Nenhum evento neste dia.",
+    },
+    notificationConfig: {
+      trigger: "Configurar Notificação",
+      title: "Configurar Notificação",
+      recipients: "Destinatários (emails separados por vírgula)",
+      content: "Conteúdo do template",
     }
   },
   messages: {

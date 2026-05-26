@@ -7,12 +7,15 @@ import type {
 } from "@/shared/calendar/types";
 import { AUTH_PUBLIC_USERS_SEED } from "@/server/auth/data/auth.seed";
 
+import type { INotification } from "@/shared/calendar/types";
+
 export interface ICalendarDb {
   events: IEvent[];
   categories: ICategory[];
   classifications: IClassification[];
   statuses: IStatus[];
   responsibles: IResponsible[];
+  notifications: INotification[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -111,7 +114,11 @@ const createOccurrence = (startDate: Date, endDate: Date): IEvent["occurrences"]
     description: OCCURRENCE_DESCRIPTION,
     startDate: startDate.toISOString(),
     endDate: endDate.toISOString(),
-  };
+    alerts:
+      Math.random() < 0.7
+        ? [{ id: crypto.randomUUID(), value: 10, unit: "minutes" }]
+        : [],
+  }
 };
 
 const createRandomOccurrence = (startRange: Date, endRange: Date): IEvent["occurrences"][number] => {
@@ -159,6 +166,10 @@ const createEvent = (
     responsible: randomArrayItem(RESPONSIBLES_SEED).value,
     occurrences,
     user: randomArrayItem(AUTH_PUBLIC_USERS_SEED),
+    emailTemplate: {
+      recipients: ["noreply@educal.local"],
+      content: `Recordatório: ${randomArrayItem(eventNames)} — ${OCCURRENCE_DESCRIPTION}`,
+    },
   };
 };
 
@@ -218,5 +229,6 @@ export const buildCalendarSeed = (): ICalendarDb => {
     classifications: structuredClone(CLASSIFICATIONS_SEED),
     statuses: structuredClone(STATUSES_SEED),
     responsibles: structuredClone(RESPONSIBLES_SEED),
+    notifications: [],
   };
 };

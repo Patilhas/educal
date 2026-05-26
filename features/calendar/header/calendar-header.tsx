@@ -17,6 +17,7 @@ import { TodayButton } from "@/features/calendar/header/today-button";
 import { UserSelect } from "@/features/calendar/header/user-select";
 import Settings from "@/features/calendar/settings/settings";
 import Views from "./view-tabs";
+import NotificationsPopover from "@/features/calendar/notifications/notifications-popover";
 
 export function CalendarHeader() {
   const { view, events, canEditEvents } = useCalendar();
@@ -48,6 +49,7 @@ export function CalendarHeader() {
 
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-1.5">
           <UserSelect />
+          <NotificationsPopover />
 
           {canEditEvents && (
             <AddEditEventDialog>

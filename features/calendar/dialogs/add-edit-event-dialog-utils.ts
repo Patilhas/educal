@@ -71,12 +71,14 @@ export const getEventFormDefaults = (
         description: occurrence.description,
         startDate: new Date(occurrence.startDate),
         endDate: new Date(occurrence.endDate),
+        alerts: occurrence.alerts || [],
       })) ?? [
         {
           id: crypto.randomUUID(),
           description: "",
           startDate: initialDates.startDate,
           endDate: initialDates.endDate,
+          alerts: [],
         },
       ],
   };
@@ -115,8 +117,9 @@ export const formatEventFromForm = ({
       description: occurrence.description,
       startDate: format(occurrence.startDate, "yyyy-MM-dd'T'HH:mm:ss"),
       endDate: format(occurrence.endDate, "yyyy-MM-dd'T'HH:mm:ss"),
+      alerts: occurrence.alerts || [],
     })),
     user: isEditing && event ? event.user : defaultUser,
+    emailTemplate: isEditing && event ? event.emailTemplate : null,
   };
 };
-

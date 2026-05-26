@@ -16,6 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import AddEditEventDialog from "@/features/calendar/dialogs/add-edit-event-dialog";
 import DeleteEventDialog from "@/features/calendar/dialogs/delete-event-dialog";
+import NotificationConfigDialog from "@/features/calendar/dialogs/notification-config-dialog";
 import { formatTime, getEventCategoryLabel } from "@/features/calendar/helpers";
 import type { IEvent, IOccurrence } from "@/shared/calendar/types";
 import { useTranslations } from "@/i18n/use-translations";
@@ -39,13 +40,13 @@ export default function EventDetailsDialog({ event, occurrence, children }: IPro
   return (
     <Dialog>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
+      <DialogContent className="flex max-h-[calc(100vh-2rem)] max-w-[min(56rem,calc(100vw-2rem))] flex-col overflow-hidden sm:max-w-2xl">
+        <DialogHeader className="shrink-0 px-4 pt-4">
           <DialogTitle>{event.name}</DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[80vh]">
-          <div className="space-y-4 p-4">
+        <ScrollArea className="min-h-0 flex-1 px-4">
+          <div className="space-y-4 pb-4 pr-1">
             <div className="flex items-start gap-2">
               <Text className="mt-1 size-4 shrink-0 text-muted-foreground" />
               <div>
@@ -163,7 +164,8 @@ export default function EventDetailsDialog({ event, occurrence, children }: IPro
           </div>
         </ScrollArea>
         {canEditEvents && (
-          <div className="flex justify-end gap-2">
+          <div className="shrink-0 flex justify-end gap-2 border-t px-4 py-4">
+            <NotificationConfigDialog event={event} />
             <AddEditEventDialog event={event}>
               <Button variant="outline">{t("calendar.header.editEvent")}</Button>
             </AddEditEventDialog>

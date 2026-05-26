@@ -38,7 +38,7 @@ export const withOptionalApiAuth = (
     try {
       const auth = await requireAuthFromRequest(request);
       return await handler(attachAuthToRequest(request, auth));
-    } catch (error) {
+    } catch {
       // Best-effort: auth failed, but continue with unauthenticated request
       return await handler(request);
     }

@@ -4,6 +4,7 @@ erDiagram
     CALENDAR ||--|{ CALENDAR_VACATION : "has"
     EVENT ||--|{ OCCURRENCE : "has"
     EVENT ||--|{ RULE : "has"
+    OCCURRENCE ||--o{ ALERT : "has"
     CATEGORY ||--o{ EVENT : "has"
     CLASSIFICATION ||--o{ EVENT : "has"
     STATUS ||--o{ EVENT : "defines"
@@ -25,7 +26,7 @@ erDiagram
     EVENT {
         string name
         string objective
-        string days_between_ocurrences
+        string days_between_occurrences
     }
 
     RULE {
@@ -45,16 +46,27 @@ erDiagram
         string value
     }
     
+    ALERT {
+        string id
+        int value
+        string unit
+    }
+
     OCCURRENCE {
         string description
         datetime start_date
         datetime end_date
-        int notification_days_before
     }
 
     EMAIL_TEMPLATE {
         string recipients
         text content
+    }
+
+    NOTIFICATION {
+        string id
+        datetime triggered_at
+        string[] unread_ids
     }
 
     STATUS {
@@ -71,6 +83,8 @@ erDiagram
     USER ||--o{ CLASSIFICATION : "created_by"
     USER ||--o{ OCCURRENCE : "created_by"
     USER ||--o{ EMAIL_TEMPLATE : "created_by"
+    USER }o--o{ NOTIFICATION : "has_unread"
+    OCCURRENCE ||--o{ NOTIFICATION : "triggers"
     USER ||--o{ STATUS : "created_by"
     USER {
         string name

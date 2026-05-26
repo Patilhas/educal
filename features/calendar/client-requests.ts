@@ -1,4 +1,8 @@
-import type { IEvent, IEventEnums } from "@/shared/calendar/types";
+import type {
+  IAlert,
+  IEvent,
+  IEventEnums,
+} from "@/shared/calendar/types"
 import { requestJson } from "@/lib/api-client";
 
 export const fetchEventEnums = async (): Promise<IEventEnums> => {
@@ -31,12 +35,14 @@ export const updateOccurrenceRequest = async ({
   startDate,
   endDate,
   description,
+  alerts,
 }: {
   eventId: number;
   occurrenceId: string;
   startDate?: string;
   endDate?: string;
   description?: string;
+  alerts?: IAlert[];
 }) => {
   return requestJson<IEvent>(`/api/events/${eventId}/occurrences/${occurrenceId}`, {
     method: "PATCH",
@@ -44,7 +50,14 @@ export const updateOccurrenceRequest = async ({
       startDate,
       endDate,
       description,
+      alerts,
     }),
   });
 };
 
+export const markNotificationReadRequest = async (notificationId: string): Promise<void> => {
+  await requestJson<{ ok: boolean }>("/api/notifications", {
+    method: "PATCH",
+    body: JSON.stringify({ notificationId }),
+  });
+};

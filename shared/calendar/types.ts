@@ -22,11 +22,25 @@ export interface IResponsible {
   value: string;
 }
 
+export type TAlertUnit = 'minutes' | 'hours' | 'days' | 'weeks';
+
+export interface IAlert {
+  id: string;
+  value: number;
+  unit: TAlertUnit;
+}
+
 export interface IOccurrence {
   id: string;
   description: string;
   startDate: string;
   endDate: string;
+  alerts: IAlert[];
+}
+
+export interface IEmailTemplate {
+  recipients: string[];
+  content: string;
 }
 
 export interface IEvent {
@@ -40,6 +54,15 @@ export interface IEvent {
   responsible: TEventResponsible;
   occurrences: IOccurrence[];
   user: IUser;
+  emailTemplate: IEmailTemplate | null;
+}
+
+export interface INotification {
+  id: string;
+  eventId: number;
+  occurrenceId: string;
+  unreadIds: string[];
+  triggeredAt: string;
 }
 
 export interface ICalendarCell {
@@ -54,4 +77,3 @@ export interface IEventEnums {
   statuses: string[];
   responsibles: string[];
 }
-
