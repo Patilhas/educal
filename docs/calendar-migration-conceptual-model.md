@@ -216,6 +216,54 @@ Ou seja: nem todas as datas têm de mudar, mas as que colidem com a nova regra t
 
 ---
 
+### Exemplo real 4 — Nova tolerância afeta as inscrições em UC
+
+#### Contexto
+Depois da migração inicial, a instituição introduz uma nova tolerância interna:
+- entre **2027-09-10** e **2027-09-11** não pode haver inscrições em UC;
+- essa janela corresponde a uma indisponibilidade da secretaria académica.
+
+#### Ano transato
+Bloco já válido:
+- matrículas CNA: **2026-09-01** a **2026-09-02**
+- inscrições em UC: **2026-09-07** a **2026-09-11**
+
+#### Cópia para o ano seguinte
+Copiando apenas o ano:
+- matrículas CNA: **2027-09-01** a **2027-09-02**
+- inscrições em UC: **2027-09-07** a **2027-09-11**
+
+#### Nova restrição que altera o resultado
+A data final das inscrições em UC em **2027-09-11** passa a ser inválida, porque cai dentro da nova janela bloqueada.
+
+#### Validação passo a passo
+1. **Verificar a janela bloqueada**.
+   - 2027-09-10 e 2027-09-11 estão bloqueados.
+2. **Verificar o impacto no fim das inscrições em UC**.
+   - o fim previsto em **2027-09-11** fica inválido.
+3. **Recuar a fase de inscrições para trás no tempo**.
+   - mantendo a mesma duração mínima, a fase passa de **2027-09-07 a 2027-09-11** para **2027-09-03 a 2027-09-07**.
+4. **Verificar os dias de calendário**.
+   - 2027-09-03 = sexta-feira
+   - 2027-09-07 = terça-feira
+   - o bloco não começa nem termina em fim de semana.
+5. **Revalidar a relação com a fase anterior**.
+   - matrículas CNA terminam em **2027-09-02**
+   - inscrições em UC começam em **2027-09-03**
+   - não há sobreposição.
+
+#### Resultado final após a nova restrição
+- matrículas CNA: **2027-09-01** a **2027-09-02**
+- inscrições em UC: **2027-09-03** a **2027-09-07**
+
+#### Leitura conceptual
+Este exemplo mostra uma situação importante: uma fase que já estava correta pode ficar inválida depois de surgir uma nova restrição.
+
+Nesse caso, o sistema não deve tentar manter a data antiga.
+Deve recuar a fase afetada, e depois voltar a validar a sua duração e a relação com a fase anterior.
+
+---
+
 ## 7. Estratégia de migração
 
 ### 7.1 Entrada
