@@ -10,6 +10,7 @@ import {
     buildCalendarSeed,
     type ICalendarDb,
 } from "@/server/calendar/data/calendar.seed";
+import { getAcademicYearRange } from "@/shared/calendar/academic-year";
 import { CALENDAR_REDIS_DB_KEY } from "@/server/shared/config";
 
 const clone = <T>(value: T): T => structuredClone(value);
@@ -23,11 +24,12 @@ export class CalendarData {
     private redis = Redis.fromEnv()
 
     private async ensureCacheFile(): Promise<void> {
-        const cacheFile = await this.redis.get(CALENDAR_REDIS_DB_KEY);
+        const raw = await this.redis.get(CALENDAR_REDIS_DB_KEY) as ICalendarDb | null;
 
-        if (!cacheFile) {
+        if (!raw) {
             const seed = buildCalendarSeed();
             await this.redis.set(CALENDAR_REDIS_DB_KEY, JSON.stringify(seed));
+            this.cachedDb = null;
         }
     }
 
@@ -54,17 +56,6 @@ export class CalendarData {
         return parsed;
     }
 
-    private async persistDb(nextDb: ICalendarDb): Promise<void> {
-        this.writeQueue = this.writeQueue.then(async () => {
-            await this.redis.set(CALENDAR_REDIS_DB_KEY, JSON.stringify(nextDb));
-
-            this.cachedDb = clone(nextDb);
-            this.lastCacheValidationAt = Date.now();
-        });
-
-        await this.writeQueue;
-    }
-
     // ─── Reference data ────────────────────────────────────────────────────────
 
     async listCategories(): Promise<ICategory[]> {
@@ -89,7 +80,6 @@ export class CalendarData {
 
     // ─── Core data ─────────────────────────────────────────────────────────────
 
-
     async listEvents(): Promise<IEvent[]> {
         const db = await this.readDb();
         return clone(db.academicYears.flatMap((ay) => ay.events));
@@ -104,49 +94,54 @@ export class CalendarData {
         return null;
     }
 
-    async insertEventIntoAcademicYear(event: IEvent, academicYearStart?: number) {
-        const db = await this.readDb();
+    async insertEventIntoAcademicYear(event: IEvent, academicYearStart?: number): Promise<IEvent> {
+        let result!: IEvent;
 
-        const eventYear =
-            typeof academicYearStart === "number"
-                ? academicYearStart
-                : new Date(event.occurrences[0]?.startDate ?? new Date().toISOString()).getFullYear();
+        this.writeQueue = this.writeQueue.then(async () => {
+            // Fresh read inside the queue — guaranteed to see all previous writes.
+            const db = (await this.redis.get(CALENDAR_REDIS_DB_KEY)) as ICalendarDb;
 
-        // find existing academic year
-        const ayIndex = db.academicYears.findIndex((ay) => ay.startYear === eventYear);
+            const assignedId =
+                event.id > 0
+                    ? event.id
+                    : (() => {
+                          const allIds = db.academicYears.flatMap((ay) => ay.events.map((e) => e.id));
+                          return allIds.length === 0 ? 1 : Math.max(...allIds) + 1;
+                      })();
 
-        let nextDb: ICalendarDb;
-        if (ayIndex >= 0) {
-            const nextAcademicYears = [...db.academicYears];
-            nextAcademicYears[ayIndex] = {
-                ...nextAcademicYears[ayIndex],
-                events: [event, ...nextAcademicYears[ayIndex].events],
-            };
+            const finalEvent: IEvent = { ...event, id: assignedId };
 
-            nextDb = {
-                ...db,
-                academicYears: nextAcademicYears,
-            };
-        } else {
-            // create new academic year range
-            const startDate = new Date(eventYear, 0, 1, 0, 0, 0, 0).toISOString();
-            const endDate = new Date(eventYear + 1, 8, 30, 23, 59, 59, 999).toISOString();
-            const newAcademicYear = {
-                startYear: eventYear,
-                label: `${eventYear}/${eventYear + 1}`,
-                startDate,
-                endDate,
-                events: [event],
-            };
+            const eventYear =
+                typeof academicYearStart === "number"
+                    ? academicYearStart
+                    : new Date(finalEvent.occurrences[0]?.startDate ?? new Date().toISOString()).getFullYear();
 
-            nextDb = {
-                ...db,
-                academicYears: [newAcademicYear, ...db.academicYears],
-            };
-        }
+            const ayIndex = db.academicYears.findIndex((ay) => ay.startYear === eventYear);
 
-        await this.persistDb(nextDb);
-        return clone(event);
+            let nextDb: ICalendarDb;
+            if (ayIndex >= 0) {
+                const nextAcademicYears = [...db.academicYears];
+                nextAcademicYears[ayIndex] = {
+                    ...nextAcademicYears[ayIndex],
+                    events: [finalEvent, ...nextAcademicYears[ayIndex].events],
+                };
+                nextDb = { ...db, academicYears: nextAcademicYears };
+            } else {
+                const range = getAcademicYearRange(eventYear);
+                nextDb = {
+                    ...db,
+                    academicYears: [{ ...range, events: [finalEvent] }, ...db.academicYears],
+                };
+            }
+
+            await this.redis.set(CALENDAR_REDIS_DB_KEY, JSON.stringify(nextDb));
+            this.cachedDb = clone(nextDb);
+            this.lastCacheValidationAt = Date.now();
+            result = clone(finalEvent);
+        });
+
+        await this.writeQueue;
+        return result;
     }
 
     async replaceEvent(eventId: number, event: IEvent) {
@@ -183,6 +178,17 @@ export class CalendarData {
 
         await this.persistDb({ ...db, academicYears: nextAcademicYears });
         return true;
+    }
+
+    private async persistDb(nextDb: ICalendarDb): Promise<void> {
+        this.writeQueue = this.writeQueue.then(async () => {
+            await this.redis.set(CALENDAR_REDIS_DB_KEY, JSON.stringify(nextDb));
+
+            this.cachedDb = clone(nextDb);
+            this.lastCacheValidationAt = Date.now();
+        });
+
+        await this.writeQueue;
     }
 }
 

@@ -65,7 +65,6 @@ export interface ICalendarRuleIssue {
   date: string;
   rule: TCalendarRuleType;
   ruleLabel: string;
-  message: string;
 }
 
 export interface IAcademicYearValidationResult {

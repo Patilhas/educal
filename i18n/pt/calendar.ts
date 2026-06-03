@@ -165,6 +165,14 @@ export const calendar = {
     issueFieldRange: "período",
     issueOccurrence: "Ocorrência:",
     issueDate: "Data:",
+    issueMessages: {
+      weekend_start: "O início coincide com um fim de semana",
+      weekend_end: "O fim coincide com um fim de semana",
+      weekend_range: "O período inclui um dia de fim de semana",
+      holiday_start: "O início coincide com o feriado {holidayName}",
+      holiday_end: "O fim coincide com o feriado {holidayName}",
+      holiday_range: "O período inclui o feriado {holidayName}",
+    },
   },
   messages: {
     noUser: "Não existe utilizador disponível para criar o evento",

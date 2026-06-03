@@ -26,7 +26,13 @@ export const getEventAcademicYearStart = (event: Pick<IEvent, "occurrences">): n
 };
 
 export const shiftDateByYears = (dateValue: string, years: number): string => {
-  const nextDate = new Date(dateValue);
-  nextDate.setFullYear(nextDate.getFullYear() + years);
-  return nextDate.toISOString();
+  const source = new Date(dateValue);
+  const target = new Date(dateValue);
+  target.setFullYear(source.getFullYear() + years);
+
+  if (target.getMonth() !== source.getMonth()) {
+    target.setDate(0);
+  }
+
+  return target.toISOString();
 };

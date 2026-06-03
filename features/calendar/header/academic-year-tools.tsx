@@ -21,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import {
   migrateAcademicYearRequest,
@@ -193,7 +192,9 @@ export function AcademicYearTools() {
                         </Badge>
                         <span className="text-sm font-medium">{issue.eventName}</span>
                       </div>
-                      <p className="mt-2 text-sm text-muted-foreground">{issue.message}</p>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        {t(`calendar.academicYearTools.issueMessages.${issue.rule}`, { holidayName: issue.ruleLabel })}
+                      </p>
                       <p className="mt-1 text-xs text-muted-foreground">
                         {t("calendar.academicYearTools.issueOccurrence")} {issue.occurrenceDescription || "-"}
                       </p>
