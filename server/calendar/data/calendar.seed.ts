@@ -1,4 +1,4 @@
-import type { IEvent } from "@/shared/calendar/types";
+import type { IEvent, IAcademicYear } from "@/shared/calendar/types";
 import type {
   ICategory,
   IClassification,
@@ -8,7 +8,7 @@ import type {
 import { AUTH_PUBLIC_USERS_SEED } from "@/server/auth/data/auth.seed";
 
 export interface ICalendarDb {
-  events: IEvent[];
+  academicYears: IAcademicYear[];
   categories: ICategory[];
   classifications: IClassification[];
   statuses: IStatus[];
@@ -157,6 +157,7 @@ const createEvent = (
     classification: randomArrayItem(CLASSIFICATIONS_SEED).value,
     status: randomArrayItem(STATUSES_SEED).name,
     responsible: randomArrayItem(RESPONSIBLES_SEED).value,
+    rules: [],
     occurrences,
     user: randomArrayItem(AUTH_PUBLIC_USERS_SEED),
   };
@@ -212,8 +213,17 @@ const generateEvents = (totalOccurrencesTarget: number): IEvent[] => {
 };
 
 export const buildCalendarSeed = (): ICalendarDb => {
+  const academicYearStart = new Date().getFullYear();
   return {
-    events: generateEvents(50),
+    academicYears: [
+      {
+        startYear: academicYearStart,
+        label: `${academicYearStart}/${academicYearStart + 1}`,
+        startDate: new Date(academicYearStart, 0, 1).toISOString(),
+        endDate: new Date(academicYearStart + 1, 8, 30, 23, 59, 59, 999).toISOString(),
+        events: generateEvents(50),
+      },
+    ],
     categories: structuredClone(CATEGORIES_SEED),
     classifications: structuredClone(CLASSIFICATIONS_SEED),
     statuses: structuredClone(STATUSES_SEED),

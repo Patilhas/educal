@@ -1,6 +1,7 @@
 import CalendarBody from "@/features/calendar/calendar-body";
 import { CalendarProvider } from "@/features/calendar/contexts/calendar-context";
 import { DndProvider } from "@/features/calendar/contexts/dnd-context";
+import { CalendarActionsBar } from "@/features/calendar/header/calendar-actions-bar";
 import { CalendarHeader } from "@/features/calendar/header/calendar-header";
 import { getEventEnums, getEvents, getUsers } from "@/features/calendar/requests";
 import type { IUser } from "@/shared/user/types";
@@ -33,6 +34,7 @@ export default async function Calendar({ currentUser }: { currentUser: IUser }) 
       <DndProvider>
         <div className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-xl border">
           <CalendarHeader />
+          <CalendarActionsBar />
           <CalendarBody />
         </div>
       </DndProvider>

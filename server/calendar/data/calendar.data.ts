@@ -92,20 +92,58 @@ export class CalendarData {
 
     async listEvents(): Promise<IEvent[]> {
         const db = await this.readDb();
-        return clone(db.events);
+        return clone(db.academicYears.flatMap((ay) => ay.events));
     }
 
     async findEventById(eventId: number) {
         const db = await this.readDb();
-        return db.events.find((event) => event.id === eventId) ?? null;
+        for (const ay of db.academicYears) {
+            const found = ay.events.find((event) => event.id === eventId);
+            if (found) return clone(found);
+        }
+        return null;
     }
 
-    async insertEvent(event: IEvent) {
+    async insertEventIntoAcademicYear(event: IEvent, academicYearStart?: number) {
         const db = await this.readDb();
-        const nextDb: ICalendarDb = {
-            ...db,
-            events: [event, ...db.events],
-        };
+
+        const eventYear =
+            typeof academicYearStart === "number"
+                ? academicYearStart
+                : new Date(event.occurrences[0]?.startDate ?? new Date().toISOString()).getFullYear();
+
+        // find existing academic year
+        const ayIndex = db.academicYears.findIndex((ay) => ay.startYear === eventYear);
+
+        let nextDb: ICalendarDb;
+        if (ayIndex >= 0) {
+            const nextAcademicYears = [...db.academicYears];
+            nextAcademicYears[ayIndex] = {
+                ...nextAcademicYears[ayIndex],
+                events: [event, ...nextAcademicYears[ayIndex].events],
+            };
+
+            nextDb = {
+                ...db,
+                academicYears: nextAcademicYears,
+            };
+        } else {
+            // create new academic year range
+            const startDate = new Date(eventYear, 0, 1, 0, 0, 0, 0).toISOString();
+            const endDate = new Date(eventYear + 1, 8, 30, 23, 59, 59, 999).toISOString();
+            const newAcademicYear = {
+                startYear: eventYear,
+                label: `${eventYear}/${eventYear + 1}`,
+                startDate,
+                endDate,
+                events: [event],
+            };
+
+            nextDb = {
+                ...db,
+                academicYears: [newAcademicYear, ...db.academicYears],
+            };
+        }
 
         await this.persistDb(nextDb);
         return clone(event);
@@ -113,34 +151,37 @@ export class CalendarData {
 
     async replaceEvent(eventId: number, event: IEvent) {
         const db = await this.readDb();
-        const index = db.events.findIndex((item) => item.id === eventId);
-        if (index < 0) {
-            return null;
+
+        for (let i = 0; i < db.academicYears.length; i++) {
+            const ay = db.academicYears[i];
+            const idx = ay.events.findIndex((item) => item.id === eventId);
+            if (idx >= 0) {
+                const nextAcademicYears = [...db.academicYears];
+                const nextEvents = [...ay.events];
+                nextEvents[idx] = event;
+                nextAcademicYears[i] = { ...ay, events: nextEvents };
+
+                await this.persistDb({ ...db, academicYears: nextAcademicYears });
+                return clone(event);
+            }
         }
 
-        const nextEvents = [...db.events];
-        nextEvents[index] = event;
-
-        await this.persistDb({
-            ...db,
-            events: nextEvents,
-        });
-
-        return clone(event);
+        return null;
     }
 
     async deleteEvent(eventId: number) {
         const db = await this.readDb();
-        const hasEvent = db.events.some((event) => event.id === eventId);
-        if (!hasEvent) {
-            return false;
-        }
 
-        await this.persistDb({
-            ...db,
-            events: db.events.filter((event) => event.id !== eventId),
+        let found = false;
+        const nextAcademicYears = db.academicYears.map((ay) => {
+            const filtered = ay.events.filter((e) => e.id !== eventId);
+            if (filtered.length !== ay.events.length) found = true;
+            return { ...ay, events: filtered };
         });
 
+        if (!found) return false;
+
+        await this.persistDb({ ...db, academicYears: nextAcademicYears });
         return true;
     }
 }

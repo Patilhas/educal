@@ -7,6 +7,7 @@ import {
     transition,
 } from "@/features/calendar/animations";
 import {useCalendar} from "@/features/calendar/contexts/calendar-context";
+import { useTranslations } from "@/i18n/use-translations";
 import {groupOccurrences} from "@/features/calendar/helpers";
 import type {IEvent, IOccurrence} from "@/shared/calendar/types";
 import {CalendarTimeline} from "@/features/calendar/views/week-and-day-view/calendar-time-line";
@@ -24,6 +25,7 @@ interface IProps {
 
 export default function CalendarWeekView({singleDayOccurrences, multiDayOccurrences}: IProps) {
     const {selectedDate, use24HourFormat} = useCalendar();
+    const { t } = useTranslations();
 
     const weekStart = startOfWeek(selectedDate);
     const weekDays = Array.from({length: 7}, (_, i) => addDays(weekStart, i));
@@ -44,8 +46,8 @@ export default function CalendarWeekView({singleDayOccurrences, multiDayOccurren
                 animate={{opacity: 1, y: 0}}
                 transition={transition}
             >
-                <p>A vista semanal não é recomendada em dispositivos pequenos.</p>
-                <p>Use um ecrã maior ou mude para a vista diária.</p>
+                <p>{t("calendar.views.week.smallScreenWarning")}</p>
+                <p>{t("calendar.views.week.smallScreenHint")}</p>
             </motion.div>
 
             <motion.div

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { calendarData } from "@/server/calendar/data/calendar.data";
 import { DomainError } from "@/server/shared/domain-error";
+import { CALENDAR_RULE_TYPES } from "@/shared/calendar/types";
 
 const dateLikeString = z
   .string()
@@ -57,10 +58,12 @@ export async function buildEventPayloadSchema() {
     name: z.string().min(1),
     objective: z.string().min(1),
     daysBetweenOccurrences: z.string().regex(/^\d*$/),
+    academicYearStart: z.number().int().positive().optional(),
     category: z.enum(categoryValues as [string, ...string[]]),
     classification: z.enum(classificationValues as [string, ...string[]]),
     status: z.enum(statusValues as [string, ...string[]]),
     responsible: z.enum(responsibleValues as [string, ...string[]]),
+    rules: z.array(z.enum(CALENDAR_RULE_TYPES)).optional().default([]),
     occurrences: z.array(occurrencePayloadSchema).min(1),
   });
 }

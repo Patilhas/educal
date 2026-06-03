@@ -1,6 +1,14 @@
 import { z } from "zod";
 import { canManageCalendarEvents } from "@/shared/user/roles";
-import type { IEvent, IOccurrence } from "@/shared/calendar/types";
+import { getAcademicYearRange, getEventAcademicYearStart, shiftDateByYears } from "@/shared/calendar/academic-year";
+import { getRuleIssue } from "@/server/calendar/holidays";
+import type {
+  IAcademicYearMigrationResult,
+  IAcademicYearValidationResult,
+  ICalendarRuleIssue,
+  IEvent,
+  IOccurrence,
+} from "@/shared/calendar/types";
 import type { IUser } from "@/shared/user/types";
 import {
   buildEventPayloadSchema,
@@ -11,6 +19,14 @@ import type { IRequestWithAuth } from "@/server/auth/session";
 import { DomainError } from "@/server/shared/domain-error";
 
 const toIsoString = (dateValue: string) => new Date(dateValue).toISOString();
+
+const getNextEventId = (events: IEvent[]) => {
+  if (events.length === 0) {
+    return 1;
+  }
+
+  return Math.max(...events.map((event) => event.id)) + 1;
+};
 
 export class CalendarService {
   async listEvents(): Promise<IEvent[]> {
@@ -38,6 +54,8 @@ export class CalendarService {
     this.ensureCanManageEvents(request.auth.user.role);
     const schema = await buildEventPayloadSchema();
     const parsed = schema.parse(payload);
+    const academicYearStart =
+      parsed.academicYearStart ?? new Date(parsed.occurrences[0].startDate).getFullYear();
 
     const newEvent: IEvent = {
       id: await this.generateNextEventId(),
@@ -48,6 +66,7 @@ export class CalendarService {
       classification: parsed.classification,
       status: parsed.status,
       responsible: parsed.responsible,
+      rules: parsed.rules,
       occurrences: parsed.occurrences.map((occurrence) => ({
         id: occurrence.id,
         description: occurrence.description,
@@ -57,7 +76,7 @@ export class CalendarService {
       user: request.auth.user,
     };
 
-    return calendarData.insertEvent(newEvent);
+    return calendarData.insertEventIntoAcademicYear(newEvent, academicYearStart);
   }
 
   async updateEvent(request: IRequestWithAuth, eventId: number, payload: unknown): Promise<IEvent> {
@@ -74,6 +93,9 @@ export class CalendarService {
       throw new DomainError("NOT_FOUND", 404, "Evento não encontrado");
     }
 
+    const targetAcademicYearStart =
+      parsed.academicYearStart ?? new Date(parsed.occurrences[0].startDate).getFullYear();
+
     const updatedEvent: IEvent = {
       id: eventId,
       name: parsed.name,
@@ -83,6 +105,7 @@ export class CalendarService {
       classification: parsed.classification,
       status: parsed.status,
       responsible: parsed.responsible,
+      rules: parsed.rules,
       occurrences: parsed.occurrences.map((occurrence) => ({
         id: occurrence.id,
         description: occurrence.description,
@@ -92,12 +115,98 @@ export class CalendarService {
       user: existing.user,
     };
 
+    // If academic year changed, remove from old and insert into new academic year
+    const existingAcademicYearStart = getEventAcademicYearStart({ occurrences: existing.occurrences });
+    if (existingAcademicYearStart !== targetAcademicYearStart) {
+      // delete existing event and insert into target year
+      const deleted = await calendarData.deleteEvent(eventId);
+      if (!deleted) throw new DomainError("NOT_FOUND", 404, "Evento não encontrado");
+
+      const inserted = await calendarData.insertEventIntoAcademicYear(updatedEvent, targetAcademicYearStart);
+      return inserted as IEvent;
+    }
+
     const saved = await calendarData.replaceEvent(eventId, updatedEvent);
     if (!saved) {
       throw new DomainError("NOT_FOUND", 404, "Evento não encontrado");
     }
 
     return saved;
+  }
+
+  async validateAcademicYear(academicYearStart: number): Promise<IAcademicYearValidationResult> {
+    const academicYear = getAcademicYearRange(academicYearStart);
+    const events = await calendarData.listEvents();
+    const academicYearEvents = events.filter(
+      (event) => getEventAcademicYearStart(event) === academicYearStart,
+    );
+
+    const issues = academicYearEvents.flatMap((event) =>
+      this.collectEventRuleIssues(event, academicYearStart),
+    );
+
+    return {
+      academicYear,
+      totalEvents: academicYearEvents.length,
+      totalOccurrences: academicYearEvents.reduce(
+        (count, event) => count + event.occurrences.length,
+        0,
+      ),
+      issues,
+    };
+  }
+
+  async migrateAcademicYear(
+    request: IRequestWithAuth,
+    sourceAcademicYearStart: number,
+  ): Promise<IAcademicYearMigrationResult> {
+    this.ensureCanManageEvents(request.auth.user.role);
+
+    const targetAcademicYearStart = sourceAcademicYearStart + 1;
+    const [allEvents, sourceValidation] = await Promise.all([
+      calendarData.listEvents(),
+      this.validateAcademicYear(sourceAcademicYearStart),
+    ]);
+
+    const sourceEvents = allEvents.filter(
+      (event) => getEventAcademicYearStart({ occurrences: event.occurrences }) === sourceAcademicYearStart,
+    );
+    const targetEvents = allEvents.filter(
+      (event) => getEventAcademicYearStart({ occurrences: event.occurrences }) === targetAcademicYearStart,
+    );
+
+    const existingSignatures = new Set(
+      targetEvents.map((event) => this.buildEventSignature(event)),
+    );
+
+    let nextEventId = getNextEventId(allEvents);
+    const issues: ICalendarRuleIssue[] = [];
+    let createdEvents = 0;
+    let skippedEvents = 0;
+
+    for (const sourceEvent of sourceEvents) {
+      const migratedEvent = this.cloneEventForAcademicYear(sourceEvent, targetAcademicYearStart, nextEventId);
+      const signature = this.buildEventSignature(migratedEvent);
+
+      if (existingSignatures.has(signature)) {
+        skippedEvents += 1;
+        continue;
+      }
+
+      const saved = await calendarData.insertEventIntoAcademicYear(migratedEvent, targetAcademicYearStart);
+      existingSignatures.add(signature);
+      nextEventId = saved.id + 1;
+      createdEvents += 1;
+      issues.push(...this.collectEventRuleIssues(saved, targetAcademicYearStart));
+    }
+
+    return {
+      sourceAcademicYear: sourceValidation.academicYear,
+      targetAcademicYear: getAcademicYearRange(targetAcademicYearStart),
+      createdEvents,
+      skippedEvents,
+      issues,
+    };
   }
 
   async deleteEvent(request: IRequestWithAuth, eventId: number): Promise<void> {
@@ -130,7 +239,7 @@ export class CalendarService {
       throw new DomainError("NOT_FOUND", 404, "Evento não encontrado");
     }
 
-    const occurrence = existing.occurrences.find((item) => item.id === occurrenceId);
+    const occurrence = existing.occurrences.find((item: IOccurrence) => item.id === occurrenceId);
     if (!occurrence) {
       throw new DomainError("NOT_FOUND", 404, "Ocorrência não encontrada");
     }
@@ -152,7 +261,7 @@ export class CalendarService {
 
     const updatedEvent: IEvent = {
       ...existing,
-      occurrences: existing.occurrences.map((item) =>
+      occurrences: existing.occurrences.map((item: IOccurrence) =>
         item.id === occurrenceId ? nextOccurrence : item,
       ),
     };
@@ -166,12 +275,67 @@ export class CalendarService {
   }
 
   private async generateNextEventId() {
-    const events = await calendarData.listEvents();
-    if (events.length === 0) {
-      return 1;
+    return getNextEventId(await calendarData.listEvents());
+  }
+
+  private cloneEventForAcademicYear(
+    event: IEvent,
+    academicYearStart: number,
+    nextId: number,
+  ): IEvent {
+    return {
+      ...structuredClone(event),
+      id: nextId,
+      occurrences: event.occurrences.map((occurrence) => ({
+        id: crypto.randomUUID(),
+        description: occurrence.description,
+        startDate: shiftDateByYears(occurrence.startDate, academicYearStart - getEventAcademicYearStart({ occurrences: event.occurrences })),
+        endDate: shiftDateByYears(occurrence.endDate, academicYearStart - getEventAcademicYearStart({ occurrences: event.occurrences })),
+      })),
+    };
+  }
+
+  private buildEventSignature(event: IEvent): string {
+    return JSON.stringify({
+      name: event.name,
+      objective: event.objective,
+      daysBetweenOccurrences: event.daysBetweenOccurrences,
+      academicYearStart: getEventAcademicYearStart({ occurrences: event.occurrences }),
+      category: event.category,
+      classification: event.classification,
+      status: event.status,
+      responsible: event.responsible,
+      userId: event.user.id,
+      occurrences: event.occurrences.map((occurrence) => ({
+        description: occurrence.description,
+        startDate: occurrence.startDate,
+        endDate: occurrence.endDate,
+      })),
+    });
+  }
+
+  private collectEventRuleIssues(event: IEvent, academicYearStart: number): ICalendarRuleIssue[] {
+    if (!event.rules || event.rules.length === 0) return [];
+
+    const issues: ICalendarRuleIssue[] = [];
+
+    for (const occurrence of event.occurrences) {
+      for (const rule of event.rules) {
+        const result = getRuleIssue(rule, occurrence.startDate, occurrence.endDate);
+        if (!result) continue;
+
+        issues.push({
+          eventId: event.id,
+          eventName: event.name,
+          occurrenceId: occurrence.id,
+          occurrenceDescription: occurrence.description,
+          academicYearStart,
+          ...result,
+        });
+      }
     }
 
-    return Math.max(...events.map((event) => event.id)) + 1;
+    return issues;
   }
 
   private ensureCanManageEvents(role: IUser["role"]) {

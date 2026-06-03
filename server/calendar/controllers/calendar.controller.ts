@@ -12,6 +12,15 @@ const parseEventId = (rawValue: string) => {
   return value;
 };
 
+const parseAcademicYearStart = (rawValue: string) => {
+  const value = Number(rawValue);
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new DomainError("VALIDATION_ERROR", 400, "academicYearStart inválido");
+  }
+
+  return value;
+};
+
 export const calendarController = {
   async listEnums() {
     try {
@@ -67,6 +76,30 @@ export const calendarController = {
       const eventId = parseEventId(eventIdValue);
       const payload = await readJson(request);
       return ok(await calendarService.updateOccurrence(request, eventId, occurrenceId, payload));
+    } catch (error) {
+      return fail(error);
+    }
+  },
+
+  async validateAcademicYear(request: IRequestWithAuth) {
+    try {
+      const academicYearStart = parseAcademicYearStart(
+        new URL(request.url).searchParams.get("academicYearStart") ??
+          new Date().getFullYear().toString(),
+      );
+
+      return ok(await calendarService.validateAcademicYear(academicYearStart));
+    } catch (error) {
+      return fail(error);
+    }
+  },
+
+  async migrateAcademicYear(request: IRequestWithAuth) {
+    try {
+      const payload = await readJson<{ academicYearStart: number }>(request);
+      const academicYearStart = parseAcademicYearStart(String(payload.academicYearStart));
+
+      return ok(await calendarService.migrateAcademicYear(request, academicYearStart), 201);
     } catch (error) {
       return fail(error);
     }

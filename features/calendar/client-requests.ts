@@ -1,4 +1,9 @@
-import type { IEvent, IEventEnums } from "@/shared/calendar/types";
+import type {
+  IAcademicYearMigrationResult,
+  IAcademicYearValidationResult,
+  IEvent,
+  IEventEnums,
+} from "@/shared/calendar/types";
 import { requestJson } from "@/lib/api-client";
 
 export const fetchEventEnums = async (): Promise<IEventEnums> => {
@@ -22,6 +27,23 @@ export const updateEventRequest = async (event: IEvent) => {
 export const deleteEventRequest = async (eventId: number) => {
   return requestJson<{ deleted: boolean }>(`/api/events/${eventId}`, {
     method: "DELETE",
+  });
+};
+
+export const validateAcademicYearRequest = async (
+  academicYearStart: number,
+): Promise<IAcademicYearValidationResult> => {
+  return requestJson<IAcademicYearValidationResult>(
+    `/api/events/academic-year?academicYearStart=${academicYearStart}`,
+  );
+};
+
+export const migrateAcademicYearRequest = async (
+  academicYearStart: number,
+): Promise<IAcademicYearMigrationResult> => {
+  return requestJson<IAcademicYearMigrationResult>("/api/events/academic-year", {
+    method: "POST",
+    body: JSON.stringify({ academicYearStart }),
   });
 };
 

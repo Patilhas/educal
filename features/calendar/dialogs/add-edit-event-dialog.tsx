@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useMemo } from "react";
-import { useFieldArray, useForm } from "react-hook-form";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +32,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import { useDisclosure } from "@/features/calendar/hooks";
 import type { IEvent } from "@/shared/calendar/types";
+import { CALENDAR_RULE_TYPES } from "@/shared/calendar/types";
 import { createEventSchema, type TEventFormData } from "@/features/calendar/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -79,6 +80,19 @@ export default function AddEditEventDialog({
     control: form.control,
     name: "occurrences",
   });
+
+  const activeRules = useWatch({ control: form.control, name: "rules" }) ?? [];
+  const availableRules = CALENDAR_RULE_TYPES.filter((r) => !activeRules.includes(r));
+
+  const addRule = (rule: string) => {
+    const current = form.getValues("rules");
+    form.setValue("rules", [...current, rule as typeof CALENDAR_RULE_TYPES[number]], { shouldDirty: true });
+  };
+
+  const removeRule = (rule: string) => {
+    const current = form.getValues("rules");
+    form.setValue("rules", current.filter((r) => r !== rule), { shouldDirty: true });
+  };
 
   useEffect(() => {
     form.reset(defaultValues);
@@ -301,6 +315,45 @@ export default function AddEditEventDialog({
               />
             </div>
 
+
+            <div className="space-y-3 rounded-md border p-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium">{t("calendar.dialogs.addEditEvent.rules.title")}</p>
+                {availableRules.length > 0 && (
+                  <Select onValueChange={addRule}>
+                    <SelectTrigger className="h-8 w-auto">
+                      <SelectValue placeholder={t("calendar.dialogs.addEditEvent.rules.add")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableRules.map((rule) => (
+                        <SelectItem key={rule} value={rule}>
+                          {t(`calendar.dialogs.addEditEvent.rules.${rule}` as never)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+              {activeRules.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {activeRules.map((rule) => (
+                    <div key={rule} className="flex items-center gap-1 rounded-md border bg-muted px-2 py-1 text-sm">
+                      <span>{t(`calendar.dialogs.addEditEvent.rules.${rule}` as never)}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeRule(rule)}
+                        className="ml-1 text-muted-foreground hover:text-foreground"
+                        aria-label={t("calendar.dialogs.addEditEvent.rules.removeRule")}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">{t("calendar.dialogs.addEditEvent.rules.noRules")}</p>
+              )}
+            </div>
 
             <div className="space-y-3 rounded-md border p-3">
               <div className="flex items-center justify-between">

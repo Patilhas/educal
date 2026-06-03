@@ -9,6 +9,7 @@ import {
   updateOccurrenceRequest,
 } from "@/features/calendar/client-requests";
 import { useLocalStorage } from "@/features/calendar/hooks";
+import { getEventAcademicYearStart } from "@/shared/calendar/academic-year";
 import type { IEvent, IEventEnums, TEventCategory } from "@/shared/calendar/types";
 import type { IUser } from "@/shared/user/types";
 import { canManageCalendarEvents } from "@/shared/user/roles";
@@ -17,6 +18,7 @@ import type { TCalendarView, TEventColor } from "@/features/calendar/types";
 
 interface ICalendarContext {
   selectedDate: Date;
+  academicYearStart: number;
   view: TCalendarView;
   setView: (view: TCalendarView) => void;
   agendaModeGroupBy: "date" | "category";
@@ -113,6 +115,7 @@ export function CalendarProvider({
 
   const [allEvents, setAllEvents] = useState<IEvent[]>(events || []);
   const canEditEvents = currentUser ? canManageCalendarEvents(currentUser.role) : false;
+  const academicYearStart = selectedDate.getFullYear();
 
   const categoryColorMap = useMemo(
     () =>
@@ -225,13 +228,16 @@ export function CalendarProvider({
         selectedCategories.length === 0 || selectedCategories.includes(event.category);
       const matchesUser =
         selectedUserId === "all" || event.user.id === selectedUserId;
+      const matchesAcademicYear =
+        getEventAcademicYearStart(event) === academicYearStart;
 
-      return matchesCategory && matchesUser;
+      return matchesCategory && matchesUser && matchesAcademicYear;
     });
-  }, [allEvents, selectedCategories, selectedUserId]);
+  }, [allEvents, selectedCategories, selectedUserId, academicYearStart]);
 
   const value = {
     selectedDate,
+    academicYearStart,
     setSelectedDate: handleSelectDate,
     selectedUserId,
     setSelectedUserId,

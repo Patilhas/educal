@@ -2,6 +2,7 @@ import { cva } from "class-variance-authority";
 import { endOfDay, isSameDay, parseISO, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
+import { useTranslations } from "@/i18n/use-translations";
 import EventDetailsDialog from "@/features/calendar/dialogs/event-details-dialog";
 import { DraggableEvent } from "@/features/calendar/dnd/draggable-event";
 import {
@@ -46,6 +47,7 @@ export function MonthEventBadge({
   position: propPosition,
 }: IProps) {
   const { badgeVariant, use24HourFormat, getEventColor } = useCalendar();
+  const { t } = useTranslations();
 
   const occurrenceStart = startOfDay(parseISO(occurrence.startDate));
   const occurrenceEnd = endOfDay(parseISO(occurrence.endDate));
@@ -97,7 +99,7 @@ export function MonthEventBadge({
               <p className="flex-1 truncate font-semibold">
                 {occurrenceCurrentDay && (
                   <span className="text-xs">
-                    Dia {occurrenceCurrentDay} de {occurrenceTotalDays} •{" "}
+                    {t("calendar.views.month.occurrenceDayOf", { day: occurrenceCurrentDay, total: occurrenceTotalDays ?? 0 })} •{" "}
                   </span>
                 )}
                 {event.name}

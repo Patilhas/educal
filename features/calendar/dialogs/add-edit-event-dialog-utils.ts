@@ -65,6 +65,7 @@ export const getEventFormDefaults = (
     classification: event?.classification ?? "",
     status: event?.status ?? "",
     responsible: event?.responsible ?? "",
+    rules: event?.rules ?? [],
     occurrences:
       event?.occurrences?.map((occurrence) => ({
         id: occurrence.id,
@@ -110,6 +111,7 @@ export const formatEventFromForm = ({
     classification: values.classification,
     status: values.status,
     responsible: values.responsible,
+    rules: values.rules,
     occurrences: sortedOccurrences.map((occurrence) => ({
       id: occurrence.id,
       description: occurrence.description,
