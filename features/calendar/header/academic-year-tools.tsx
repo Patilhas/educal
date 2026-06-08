@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
+import EventDetailsDialog from "@/features/calendar/dialogs/event-details-dialog";
 import {
   migrateAcademicYearRequest,
   validateAcademicYearRequest,
@@ -39,7 +40,7 @@ import { useTranslations } from "@/i18n/use-translations";
 export function AcademicYearTools() {
   const router = useRouter();
   const { t } = useTranslations();
-  const { academicYearStart, selectedDate, setSelectedDate, canEditEvents } = useCalendar();
+  const { academicYearStart, selectedDate, setSelectedDate, canEditEvents, events } = useCalendar();
   const [isValidating, setIsValidating] = useState(false);
   const [isMigrating, setIsMigrating] = useState(false);
   const [validationResult, setValidationResult] =
@@ -179,30 +180,47 @@ export function AcademicYearTools() {
                     {t("calendar.academicYearTools.reportNoIssues")}
                   </div>
                 ) : (
-                  report.issues.map((issue) => (
-                    <div key={`${issue.eventId}-${issue.occurrenceId}-${issue.field}-${issue.date}`} className="rounded-lg border p-3">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="secondary">{issue.ruleLabel}</Badge>
-                        <Badge variant="outline">
-                          {issue.field === "startDate"
-                            ? t("calendar.academicYearTools.issueFieldStart")
-                            : issue.field === "endDate"
-                              ? t("calendar.academicYearTools.issueFieldEnd")
-                              : t("calendar.academicYearTools.issueFieldRange")}
-                        </Badge>
-                        <span className="text-sm font-medium">{issue.eventName}</span>
+                  report.issues.map((issue) => {
+                    const event = events.find((e) => e.id === issue.eventId);
+                    const occurrence = event?.occurrences.find((o) => o.id === issue.occurrenceId);
+                    const card = (
+                      <div className="rounded-lg border p-3 transition-colors data-[clickable=true]:cursor-pointer data-[clickable=true]:hover:bg-muted/50" data-clickable={!!event}>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant="secondary">{issue.ruleLabel}</Badge>
+                          <Badge variant="outline">
+                            {issue.field === "startDate"
+                              ? t("calendar.academicYearTools.issueFieldStart")
+                              : issue.field === "endDate"
+                                ? t("calendar.academicYearTools.issueFieldEnd")
+                                : t("calendar.academicYearTools.issueFieldRange")}
+                          </Badge>
+                          <span className="text-sm font-medium">{issue.eventName}</span>
+                        </div>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          {t(`calendar.academicYearTools.issueMessages.${issue.rule}`, { holidayName: issue.ruleLabel })}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {t("calendar.academicYearTools.issueOccurrence")} {issue.occurrenceDescription || "-"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {t("calendar.academicYearTools.issueDate")} {new Date(issue.date).toLocaleString("pt-PT")}
+                        </p>
                       </div>
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        {t(`calendar.academicYearTools.issueMessages.${issue.rule}`, { holidayName: issue.ruleLabel })}
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {t("calendar.academicYearTools.issueOccurrence")} {issue.occurrenceDescription || "-"}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {t("calendar.academicYearTools.issueDate")} {new Date(issue.date).toLocaleString("pt-PT")}
-                      </p>
-                    </div>
-                  ))
+                    );
+                    return event ? (
+                      <EventDetailsDialog
+                        key={`${issue.eventId}-${issue.occurrenceId}-${issue.field}-${issue.date}`}
+                        event={event}
+                        occurrence={occurrence}
+                      >
+                        {card}
+                      </EventDetailsDialog>
+                    ) : (
+                      <div key={`${issue.eventId}-${issue.occurrenceId}-${issue.field}-${issue.date}`}>
+                        {card}
+                      </div>
+                    );
+                  })
                 )}
               </div>
             ) : (
