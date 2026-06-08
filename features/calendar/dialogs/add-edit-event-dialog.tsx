@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect, useMemo } from "react";
+import { X } from "lucide-react";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -16,8 +17,6 @@ import {
   ModalClose,
   ModalContent,
   ModalDescription,
-  ModalFooter,
-  ModalHeader,
   ModalTitle,
   ModalTrigger,
 } from "@/components/ui/responsive-modal";
@@ -50,21 +49,17 @@ interface IProps {
   event?: IEvent;
 }
 
-export default function AddEditEventDialog({
-  children,
-  startDate,
-  startTime,
-  event,
-}: IProps) {
+export default function AddEditEventDialog({ children, startDate, startTime, event }: IProps) {
   const { t } = useTranslations();
   const { isOpen, onClose, onToggle } = useDisclosure();
   const { addEvent, updateEvent, users, eventEnums, canEditEvents } = useCalendar();
   const isEditing = !!event;
   const eventSchema = useMemo(() => createEventSchema(t), [t]);
 
-  const initialDates = useMemo(() => {
-    return getInitialDates({ event, startDate, startTime });
-  }, [event, startDate, startTime]);
+  const initialDates = useMemo(
+    () => getInitialDates({ event, startDate, startTime }),
+    [event, startDate, startTime],
+  );
 
   const defaultValues = useMemo(
     () => getEventFormDefaults(event, initialDates),
@@ -106,12 +101,7 @@ export default function AddEditEventDialog({
         return;
       }
 
-      const formattedEvent: IEvent = formatEventFromForm({
-        values,
-        isEditing,
-        event,
-        defaultUser,
-      });
+      const formattedEvent: IEvent = formatEventFromForm({ values, isEditing, event, defaultUser });
 
       if (isEditing) {
         await updateEvent(formattedEvent);
@@ -125,114 +115,73 @@ export default function AddEditEventDialog({
       form.reset();
     } catch (error) {
       console.error(`Error ${isEditing ? "editing" : "adding"} event:`, error);
-      toast.error(
-        isEditing
-          ? t("calendar.messages.updateError")
-          : t("calendar.messages.createError"),
-      );
+      toast.error(isEditing ? t("calendar.messages.updateError") : t("calendar.messages.createError"));
     }
   };
 
-  if (!canEditEvents) {
-    return <>{children}</>;
-  }
+  if (!canEditEvents) return <>{children}</>;
 
   return (
     <Modal open={isOpen} onOpenChange={onToggle}>
       <ModalTrigger asChild>{children}</ModalTrigger>
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            {isEditing ? t("calendar.dialogs.addEditEvent.titleEdit") : t("calendar.dialogs.addEditEvent.titleAdd")}
-          </ModalTitle>
-          <ModalDescription>
-            {isEditing
-              ? t("calendar.dialogs.addEditEvent.descEdit")
-              : t("calendar.dialogs.addEditEvent.descAdd")}
-          </ModalDescription>
-        </ModalHeader>
 
+      <ModalContent showCloseButton={false} className="lg:p-0 lg:gap-0 lg:flex lg:flex-col lg:max-w-[82vw] lg:h-[80vh] lg:max-h-[80vh]">
+        {/* Header */}
+        <div className="flex items-start gap-4 lg:px-8 lg:pt-7 lg:pb-6 lg:border-b lg:shrink-0">
+          <div className="flex-1 min-w-0">
+            <ModalTitle>
+              {isEditing
+                ? t("calendar.dialogs.addEditEvent.titleEdit")
+                : t("calendar.dialogs.addEditEvent.titleAdd")}
+            </ModalTitle>
+            <ModalDescription className="mt-1">
+              {isEditing
+                ? t("calendar.dialogs.addEditEvent.descEdit")
+                : t("calendar.dialogs.addEditEvent.descAdd")}
+            </ModalDescription>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 pt-0.5">
+            <ModalClose asChild>
+              <Button type="button" variant="outline" size="sm">
+                {t("common.actions.cancel")}
+              </Button>
+            </ModalClose>
+            <Button form="event-form" type="submit" size="sm">
+              {isEditing
+                ? t("calendar.dialogs.addEditEvent.submitEdit")
+                : t("calendar.dialogs.addEditEvent.submitAdd")}
+            </Button>
+            <ModalClose asChild>
+              <Button type="button" variant="ghost" size="icon-sm">
+                <X className="size-4" />
+                <span className="sr-only">Close</span>
+              </Button>
+            </ModalClose>
+          </div>
+        </div>
+
+        {/* Body */}
         <Form {...form}>
           <form
             id="event-form"
             onSubmit={form.handleSubmit(onSubmit)}
-            className="grid gap-4 py-4"
+            className="lg:flex lg:flex-1 lg:min-h-0"
           >
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field, fieldState }) => (
-                <FormItem>
-                  <FormLabel className="required">{t("calendar.dialogs.addEditEvent.fields.name")}</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t("calendar.dialogs.addEditEvent.fields.namePlaceholder")}
-                      {...field}
-                      className={fieldState.invalid ? "border-red-500" : ""}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="objective"
-              render={({ field, fieldState }) => (
-                <FormItem>
-                  <FormLabel className="required">{t("calendar.dialogs.addEditEvent.fields.objective")}</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder={t("calendar.dialogs.addEditEvent.fields.objectivePlaceholder")}
-                      className={fieldState.invalid ? "border-red-500" : ""}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="daysBetweenOccurrences"
-              render={({ field, fieldState }) => (
-                <FormItem>
-                  <FormLabel>{t("calendar.dialogs.addEditEvent.fields.daysBetween")}</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      inputMode="numeric"
-                      placeholder={t("calendar.dialogs.addEditEvent.fields.daysBetweenPlaceholder")}
-                      className={fieldState.invalid ? "border-red-500" : ""}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid gap-4 md:grid-cols-2">
+            {/* Left panel — event fields */}
+            <div className="lg:w-[45%] lg:shrink-0 lg:border-r lg:overflow-y-auto lg:px-8 lg:py-7 space-y-4 mb-4 lg:mb-0">
               <FormField
                 control={form.control}
-                name="category"
-                render={({ field }) => (
+                name="name"
+                render={({ field, fieldState }) => (
                   <FormItem>
-                    <FormLabel className="required">{t("calendar.dialogs.addEditEvent.fields.category")}</FormLabel>
+                    <FormLabel className="required">{t("calendar.dialogs.addEditEvent.fields.name")}</FormLabel>
                     <FormControl>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t("calendar.dialogs.addEditEvent.fields.categoryPlaceholder")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {eventEnums.categories.map(({ value }) => (
-                            <SelectItem value={value} key={value}>
-                              {t(`calendar.categories.${value}` as never)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Input
+                        placeholder={t("calendar.dialogs.addEditEvent.fields.namePlaceholder")}
+                        {...field}
+                        className={fieldState.invalid ? "border-red-500" : ""}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -241,126 +190,199 @@ export default function AddEditEventDialog({
 
               <FormField
                 control={form.control}
-                name="classification"
-                render={({ field }) => (
+                name="objective"
+                render={({ field, fieldState }) => (
                   <FormItem>
-                    <FormLabel className="required">{t("calendar.dialogs.addEditEvent.fields.classification")}</FormLabel>
+                    <FormLabel className="required">{t("calendar.dialogs.addEditEvent.fields.objective")}</FormLabel>
                     <FormControl>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t("calendar.dialogs.addEditEvent.fields.classificationPlaceholder")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {eventEnums.classifications.map((key) => (
-                            <SelectItem value={key} key={key}>
-                              {t(`calendar.classifications.${key}` as never)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Textarea
+                        {...field}
+                        placeholder={t("calendar.dialogs.addEditEvent.fields.objectivePlaceholder")}
+                        className={fieldState.invalid ? "border-red-500" : ""}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              <div className="grid gap-4 grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="required">{t("calendar.dialogs.addEditEvent.fields.category")}</FormLabel>
+                      <FormControl>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t("calendar.dialogs.addEditEvent.fields.categoryPlaceholder")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {eventEnums.categories.map(({ value }) => (
+                              <SelectItem value={value} key={value}>
+                                {t(`calendar.categories.${value}` as never)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="classification"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="required">{t("calendar.dialogs.addEditEvent.fields.classification")}</FormLabel>
+                      <FormControl>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t("calendar.dialogs.addEditEvent.fields.classificationPlaceholder")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {eventEnums.classifications.map((key) => (
+                              <SelectItem value={key} key={key}>
+                                {t(`calendar.classifications.${key}` as never)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="required">{t("calendar.dialogs.addEditEvent.fields.status")}</FormLabel>
+                      <FormControl>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t("calendar.dialogs.addEditEvent.fields.statusPlaceholder")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {eventEnums.statuses.map((key) => (
+                              <SelectItem value={key} key={key}>
+                                {t(`calendar.statuses.${key}` as never)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="responsible"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="required">{t("calendar.dialogs.addEditEvent.fields.responsible")}</FormLabel>
+                      <FormControl>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t("calendar.dialogs.addEditEvent.fields.responsiblePlaceholder")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {eventEnums.responsibles.map((key) => (
+                              <SelectItem value={key} key={key}>
+                                {t(`calendar.responsibles.${key}` as never)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <FormField
                 control={form.control}
-                name="status"
-                render={({ field }) => (
+                name="daysBetweenOccurrences"
+                render={({ field, fieldState }) => (
                   <FormItem>
-                    <FormLabel className="required">{t("calendar.dialogs.addEditEvent.fields.status")}</FormLabel>
+                    <FormLabel>{t("calendar.dialogs.addEditEvent.fields.daysBetween")}</FormLabel>
                     <FormControl>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t("calendar.dialogs.addEditEvent.fields.statusPlaceholder")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {eventEnums.statuses.map((key) => (
-                            <SelectItem value={key} key={key}>
-                              {t(`calendar.statuses.${key}` as never)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Input
+                        {...field}
+                        inputMode="numeric"
+                        placeholder={t("calendar.dialogs.addEditEvent.fields.daysBetweenPlaceholder")}
+                        className={fieldState.invalid ? "border-red-500" : ""}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="responsible"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="required">{t("calendar.dialogs.addEditEvent.fields.responsible")}</FormLabel>
-                    <FormControl>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t("calendar.dialogs.addEditEvent.fields.responsiblePlaceholder")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {eventEnums.responsibles.map((key) => (
-                            <SelectItem value={key} key={key}>
-                              {t(`calendar.responsibles.${key}` as never)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-
-            <div className="space-y-3 rounded-md border p-3">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">{t("calendar.dialogs.addEditEvent.rules.title")}</p>
-                {availableRules.length > 0 && (
-                  <Select onValueChange={addRule}>
-                    <SelectTrigger className="h-8 w-auto">
-                      <SelectValue placeholder={t("calendar.dialogs.addEditEvent.rules.add")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableRules.map((rule) => (
-                        <SelectItem key={rule} value={rule}>
-                          {t(`calendar.dialogs.addEditEvent.rules.${rule}` as never)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              {/* Rules */}
+              <div className="space-y-3 rounded-md border p-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">{t("calendar.dialogs.addEditEvent.rules.title")}</p>
+                  {availableRules.length > 0 && (
+                    <Select onValueChange={addRule}>
+                      <SelectTrigger className="h-8 w-auto">
+                        <SelectValue placeholder={t("calendar.dialogs.addEditEvent.rules.add")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableRules.map((rule) => (
+                          <SelectItem key={rule} value={rule}>
+                            {t(`calendar.dialogs.addEditEvent.rules.${rule}` as never)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+                {activeRules.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {activeRules.map((rule) => (
+                      <div
+                        key={rule}
+                        className="flex items-center gap-1 rounded-md border bg-muted px-2 py-1 text-sm"
+                      >
+                        <span>{t(`calendar.dialogs.addEditEvent.rules.${rule}` as never)}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeRule(rule)}
+                          className="ml-1 text-muted-foreground hover:text-foreground"
+                          aria-label={t("calendar.dialogs.addEditEvent.rules.removeRule")}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    {t("calendar.dialogs.addEditEvent.rules.noRules")}
+                  </p>
                 )}
               </div>
-              {activeRules.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {activeRules.map((rule) => (
-                    <div key={rule} className="flex items-center gap-1 rounded-md border bg-muted px-2 py-1 text-sm">
-                      <span>{t(`calendar.dialogs.addEditEvent.rules.${rule}` as never)}</span>
-                      <button
-                        type="button"
-                        onClick={() => removeRule(rule)}
-                        className="ml-1 text-muted-foreground hover:text-foreground"
-                        aria-label={t("calendar.dialogs.addEditEvent.rules.removeRule")}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">{t("calendar.dialogs.addEditEvent.rules.noRules")}</p>
-              )}
             </div>
 
-            <div className="space-y-3 rounded-md border p-3">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">{t("calendar.dialogs.addEditEvent.occurrences.title")}</p>
+            {/* Right panel — occurrences */}
+            <div className="lg:flex-1 lg:overflow-y-auto lg:px-8 lg:py-7 space-y-3">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                  {t("calendar.dialogs.addEditEvent.occurrences.title")}
+                </p>
                 <Button
                   type="button"
                   variant="outline"
+                  size="sm"
                   onClick={() =>
                     append({
                       id: crypto.randomUUID(),
@@ -374,54 +396,36 @@ export default function AddEditEventDialog({
                 </Button>
               </div>
 
-              {fields.map((occurrence, index) => (
-                <div key={occurrence.id} className="space-y-3 rounded-md border p-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      {t("calendar.dialogs.addEditEvent.occurrences.occurrenceLabel")} {index + 1}
-                    </p>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      disabled={fields.length === 1}
-                      onClick={() => remove(index)}
-                    >
-                      {t("common.actions.remove")}
-                    </Button>
-                  </div>
+              <div className="grid gap-3 lg:grid-cols-2">
+                {fields.map((occurrence, index) => (
+                  <div key={occurrence.id} className="rounded-lg border bg-background p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                        {t("calendar.dialogs.addEditEvent.occurrences.occurrenceLabel")} {index + 1}
+                      </p>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={fields.length === 1}
+                        onClick={() => remove(index)}
+                      >
+                        {t("common.actions.remove")}
+                      </Button>
+                    </div>
 
-                  <FormField
-                    control={form.control}
-                    name={`occurrences.${index}.description`}
-                    render={({ field, fieldState }) => (
-                      <FormItem>
-                        <FormLabel className="required">{t("calendar.dialogs.addEditEvent.occurrences.description")}</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            {...field}
-                            placeholder={t("calendar.dialogs.addEditEvent.occurrences.descriptionPlaceholder")}
-                            className={fieldState.invalid ? "border-red-500" : ""}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="grid gap-3 md:grid-cols-2">
                     <FormField
                       control={form.control}
-                      name={`occurrences.${index}.startDate`}
+                      name={`occurrences.${index}.description`}
                       render={({ field, fieldState }) => (
                         <FormItem>
-                          <FormLabel className="required">{t("calendar.dialogs.addEditEvent.occurrences.startDate")}</FormLabel>
+                          <FormLabel className="required">
+                            {t("calendar.dialogs.addEditEvent.occurrences.description")}
+                          </FormLabel>
                           <FormControl>
-                            <Input
-                              type="datetime-local"
-                              value={field.value ? toInputDate(field.value) : ""}
-                              onChange={(event) =>
-                                field.onChange(new Date(event.target.value))
-                              }
+                            <Textarea
+                              {...field}
+                              placeholder={t("calendar.dialogs.addEditEvent.occurrences.descriptionPlaceholder")}
                               className={fieldState.invalid ? "border-red-500" : ""}
                             />
                           </FormControl>
@@ -430,45 +434,56 @@ export default function AddEditEventDialog({
                       )}
                     />
 
-                    <FormField
-                      control={form.control}
-                      name={`occurrences.${index}.endDate`}
-                      render={({ field, fieldState }) => (
-                        <FormItem>
-                          <FormLabel className="required">{t("calendar.dialogs.addEditEvent.occurrences.endDate")}</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="datetime-local"
-                              value={field.value ? toInputDate(field.value) : ""}
-                              onChange={(event) =>
-                                field.onChange(new Date(event.target.value))
-                              }
-                              className={fieldState.invalid ? "border-red-500" : ""}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div className="grid gap-3 grid-cols-2">
+                      <FormField
+                        control={form.control}
+                        name={`occurrences.${index}.startDate`}
+                        render={({ field, fieldState }) => (
+                          <FormItem>
+                            <FormLabel className="required">
+                              {t("calendar.dialogs.addEditEvent.occurrences.startDate")}
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="datetime-local"
+                                value={field.value ? toInputDate(field.value) : ""}
+                                onChange={(e) => field.onChange(new Date(e.target.value))}
+                                className={fieldState.invalid ? "border-red-500" : ""}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name={`occurrences.${index}.endDate`}
+                        render={({ field, fieldState }) => (
+                          <FormItem>
+                            <FormLabel className="required">
+                              {t("calendar.dialogs.addEditEvent.occurrences.endDate")}
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="datetime-local"
+                                value={field.value ? toInputDate(field.value) : ""}
+                                onChange={(e) => field.onChange(new Date(e.target.value))}
+                                className={fieldState.invalid ? "border-red-500" : ""}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </form>
         </Form>
-
-        <ModalFooter className="flex justify-end gap-2">
-          <ModalClose asChild>
-            <Button type="button" variant="outline">
-              {t("common.actions.cancel")}
-            </Button>
-          </ModalClose>
-          <Button form="event-form" type="submit">
-            {isEditing ? t("calendar.dialogs.addEditEvent.submitEdit") : t("calendar.dialogs.addEditEvent.submitAdd")}
-          </Button>
-        </ModalFooter>
       </ModalContent>
     </Modal>
   );
 }
-
