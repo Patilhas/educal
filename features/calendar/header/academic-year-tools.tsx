@@ -186,18 +186,12 @@ export function AcademicYearTools() {
                     const card = (
                       <div className="rounded-lg border p-3 transition-colors data-[clickable=true]:cursor-pointer data-[clickable=true]:hover:bg-muted/50" data-clickable={!!event}>
                         <div className="flex flex-wrap items-center gap-2">
-                          <Badge variant="secondary">{issue.ruleLabel}</Badge>
-                          <Badge variant="outline">
-                            {issue.field === "startDate"
-                              ? t("calendar.academicYearTools.issueFieldStart")
-                              : issue.field === "endDate"
-                                ? t("calendar.academicYearTools.issueFieldEnd")
-                                : t("calendar.academicYearTools.issueFieldRange")}
-                          </Badge>
+                          <Badge variant="secondary">{t(`calendar.rules.${issue.ruleType}.label` as never)}</Badge>
+                          {issue.fieldLabelKey && <Badge variant="outline">{t(`calendar.rules.${issue.ruleType}.fieldLabels.${issue.fieldLabelKey}` as never)}</Badge>}
                           <span className="text-sm font-medium">{issue.eventName}</span>
                         </div>
                         <p className="mt-2 text-sm text-muted-foreground">
-                          {t(`calendar.academicYearTools.issueMessages.${issue.rule}`, { holidayName: issue.ruleLabel })}
+                          {t(`calendar.rules.${issue.ruleType}.messages.${issue.messageKey}` as never, issue.messageParams)}
                         </p>
                         <p className="mt-1 text-xs text-muted-foreground">
                           {t("calendar.academicYearTools.issueOccurrence")} {issue.occurrenceDescription || "-"}
@@ -209,14 +203,14 @@ export function AcademicYearTools() {
                     );
                     return event ? (
                       <EventDetailsDialog
-                        key={`${issue.eventId}-${issue.occurrenceId}-${issue.field}-${issue.date}`}
+                        key={`${issue.eventId}-${issue.occurrenceId}-${issue.ruleType}-${issue.date}`}
                         event={event}
                         occurrence={occurrence}
                       >
                         {card}
                       </EventDetailsDialog>
                     ) : (
-                      <div key={`${issue.eventId}-${issue.occurrenceId}-${issue.field}-${issue.date}`}>
+                      <div key={`${issue.eventId}-${issue.occurrenceId}-${issue.ruleType}-${issue.date}`}>
                         {card}
                       </div>
                     );

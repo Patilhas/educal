@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { calendarData } from "@/server/calendar/data/calendar.data";
 import { DomainError } from "@/server/shared/domain-error";
-import { CALENDAR_RULE_TYPES } from "@/shared/calendar/types";
+import { SERVER_RULES } from "@/server/calendar/rules";
 
 const dateLikeString = z
   .string()
@@ -63,7 +63,18 @@ export async function buildEventPayloadSchema() {
     classification: z.enum(classificationValues as [string, ...string[]]),
     status: z.enum(statusValues as [string, ...string[]]),
     responsible: z.enum(responsibleValues as [string, ...string[]]),
-    rules: z.array(z.enum(CALENDAR_RULE_TYPES)).optional().default([]),
+    rules: z.array(
+      z.object({
+        type: z.string().refine(
+          (t) => SERVER_RULES.some((r) => r.id === t),
+          "Tipo de regra inválido",
+        ),
+        config: z.record(z.string(), z.unknown()),
+      }),
+    ).optional().default([]).refine(
+      (rules) => new Set(rules.map((r) => r.type)).size === rules.length,
+      "Não podem existir regras duplicadas",
+    ),
     occurrences: z.array(occurrencePayloadSchema).min(1),
   });
 }

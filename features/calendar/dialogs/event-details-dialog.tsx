@@ -37,7 +37,7 @@ function MetaField({ label, value }: { label: string; value: string }) {
 }
 
 export default function EventDetailsDialog({ event, occurrence, children }: IProps) {
-  const { use24HourFormat, canEditEvents } = useCalendar();
+  const { use24HourFormat, canEditEvents, eventEnums } = useCalendar();
   const { t } = useTranslations();
 
   const displayOccurrence = occurrence || event.occurrences[0];
@@ -136,6 +136,40 @@ export default function EventDetailsDialog({ event, occurrence, children }: IPro
                 </>
               )}
             </div>
+
+            {/* Applied rules */}
+            {event.rules && event.rules.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                  {t("calendar.dialogs.eventDetails.fields.rules")}
+                </p>
+                <div className="space-y-2">
+                  {event.rules.map((rule, index) => {
+                    const meta = eventEnums.rules.find((r) => r.id === rule.type);
+                    if (!meta) return null;
+                    return (
+                      <div key={`${rule.type}-${index}`} className="rounded-md border bg-background px-3 py-2 space-y-1.5">
+                        <p className="text-sm font-medium">{t(`calendar.rules.${rule.type}.label` as never)}</p>
+                        <div className="flex flex-wrap gap-x-4 gap-y-1">
+                          {meta.fields.map((fieldDef) => {
+                            const label = t(`calendar.rules.${rule.type}.fields.${fieldDef.id}` as never);
+                            const active = Boolean(rule.config[fieldDef.id] ?? fieldDef.defaultValue);
+                            return (
+                              <span
+                                key={fieldDef.id}
+                                className={`text-xs ${active ? "text-foreground" : "text-muted-foreground line-through"}`}
+                              >
+                                {label}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Right panel — occurrences */}

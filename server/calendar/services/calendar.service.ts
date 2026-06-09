@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { canManageCalendarEvents } from "@/shared/user/roles";
 import { getAcademicYearRange, getEventAcademicYearStart, shiftDateByYears } from "@/shared/calendar/academic-year";
-import { getRuleIssue } from "@/server/calendar/holidays";
+import { validateEventRule, getRulesMetadata } from "@/server/calendar/rules";
 import type {
   IAcademicYearMigrationResult,
   IAcademicYearValidationResult,
@@ -39,6 +39,7 @@ export class CalendarService {
       classifications: classifications.map((c) => c.value),
       statuses: statuses.map((s) => s.name),
       responsibles: responsibles.map((r) => r.value),
+      rules: getRulesMetadata(),
     };
   }
 
@@ -134,7 +135,7 @@ export class CalendarService {
     );
 
     const issues = academicYearEvents.flatMap((event) =>
-      this.collectEventRuleIssues(event, academicYearStart),
+      this.collectEventRuleIssues(event, academicYearStart, events),
     );
 
     return {
@@ -184,7 +185,7 @@ export class CalendarService {
       const saved = await calendarData.insertEventIntoAcademicYear(migratedEvent, targetAcademicYearStart);
       existingSignatures.add(signature);
       createdEvents += 1;
-      issues.push(...this.collectEventRuleIssues(saved, targetAcademicYearStart));
+      issues.push(...this.collectEventRuleIssues(saved, targetAcademicYearStart, allEvents));
     }
 
     return {
@@ -294,24 +295,30 @@ export class CalendarService {
     });
   }
 
-  private collectEventRuleIssues(event: IEvent, academicYearStart: number): ICalendarRuleIssue[] {
+  private collectEventRuleIssues(event: IEvent, academicYearStart: number, allEvents: IEvent[]): ICalendarRuleIssue[] {
     if (!event.rules || event.rules.length === 0) return [];
 
+    const context = { allEvents, academicYearStart };
     const issues: ICalendarRuleIssue[] = [];
 
     for (const occurrence of event.occurrences) {
       for (const rule of event.rules) {
-        const result = getRuleIssue(rule, occurrence.startDate, occurrence.endDate);
-        if (!result) continue;
+        const violations = validateEventRule(rule, event, occurrence, context);
 
-        issues.push({
-          eventId: event.id,
-          eventName: event.name,
-          occurrenceId: occurrence.id,
-          occurrenceDescription: occurrence.description,
-          academicYearStart,
-          ...result,
-        });
+        for (const v of violations) {
+          issues.push({
+            eventId: event.id,
+            eventName: event.name,
+            occurrenceId: occurrence.id,
+            occurrenceDescription: occurrence.description,
+            academicYearStart,
+            date: v.date,
+            ruleType: rule.type,
+            fieldLabelKey: v.fieldLabelKey,
+            messageKey: v.messageKey,
+            messageParams: v.messageParams,
+          });
+        }
       }
     }
 

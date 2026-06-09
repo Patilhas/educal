@@ -15,6 +15,7 @@ import type { IUser } from "@/shared/user/types";
 import { canManageCalendarEvents } from "@/shared/user/roles";
 import { getEventColorByCategory } from "@/features/calendar/helpers";
 import type { TCalendarView, TEventColor } from "@/features/calendar/types";
+import { registerRuleTranslations } from "@/i18n/register-rules";
 
 interface ICalendarContext {
   selectedDate: Date;
@@ -85,6 +86,8 @@ export function CalendarProvider({
   view?: TCalendarView;
   badge?: "dot" | "colored";
 }) {
+  registerRuleTranslations(initialEventEnums.rules);
+
   const [settings, setSettings] = useLocalStorage<CalendarSettings>(
     "calendar-settings",
     {

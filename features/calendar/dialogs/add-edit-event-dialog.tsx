@@ -31,7 +31,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import { useDisclosure } from "@/features/calendar/hooks";
 import type { IEvent } from "@/shared/calendar/types";
-import { CALENDAR_RULE_TYPES } from "@/shared/calendar/types";
+import { computeDefaultConfig } from "@/shared/calendar/rules";
 import { createEventSchema, type TEventFormData } from "@/features/calendar/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -77,16 +77,28 @@ export default function AddEditEventDialog({ children, startDate, startTime, eve
   });
 
   const activeRules = useWatch({ control: form.control, name: "rules" }) ?? [];
-  const availableRules = CALENDAR_RULE_TYPES.filter((r) => !activeRules.includes(r));
+  const availableRuleDefs = eventEnums.rules.filter(
+    (def) => !activeRules.some((r) => r.type === def.id),
+  );
 
-  const addRule = (rule: string) => {
+  const addRule = (ruleId: string) => {
+    const meta = eventEnums.rules.find((r) => r.id === ruleId);
+    if (!meta) return;
     const current = form.getValues("rules");
-    form.setValue("rules", [...current, rule as typeof CALENDAR_RULE_TYPES[number]], { shouldDirty: true });
+    form.setValue("rules", [...current, { type: ruleId, config: computeDefaultConfig(meta.fields) }], { shouldDirty: true });
   };
 
-  const removeRule = (rule: string) => {
+  const removeRule = (index: number) => {
     const current = form.getValues("rules");
-    form.setValue("rules", current.filter((r) => r !== rule), { shouldDirty: true });
+    form.setValue("rules", current.filter((_, i) => i !== index), { shouldDirty: true });
+  };
+
+  const updateRuleConfig = (index: number, fieldId: string, value: unknown) => {
+    const current = form.getValues("rules");
+    const updated = current.map((rule, i) =>
+      i === index ? { ...rule, config: { ...rule.config, [fieldId]: value } } : rule,
+    );
+    form.setValue("rules", updated, { shouldDirty: true });
   };
 
   useEffect(() => {
@@ -331,15 +343,15 @@ export default function AddEditEventDialog({ children, startDate, startTime, eve
               <div className="space-y-3 rounded-md border p-3">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium">{t("calendar.dialogs.addEditEvent.rules.title")}</p>
-                  {availableRules.length > 0 && (
+                  {availableRuleDefs.length > 0 && (
                     <Select onValueChange={addRule}>
                       <SelectTrigger className="h-8 w-auto">
                         <SelectValue placeholder={t("calendar.dialogs.addEditEvent.rules.add")} />
                       </SelectTrigger>
                       <SelectContent>
-                        {availableRules.map((rule) => (
-                          <SelectItem key={rule} value={rule}>
-                            {t(`calendar.dialogs.addEditEvent.rules.${rule}` as never)}
+                        {availableRuleDefs.map((def) => (
+                          <SelectItem key={def.id} value={def.id}>
+                            {t(`calendar.rules.${def.id}.label` as never)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -347,23 +359,44 @@ export default function AddEditEventDialog({ children, startDate, startTime, eve
                   )}
                 </div>
                 {activeRules.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {activeRules.map((rule) => (
-                      <div
-                        key={rule}
-                        className="flex items-center gap-1 rounded-md border bg-muted px-2 py-1 text-sm"
-                      >
-                        <span>{t(`calendar.dialogs.addEditEvent.rules.${rule}` as never)}</span>
-                        <button
-                          type="button"
-                          onClick={() => removeRule(rule)}
-                          className="ml-1 text-muted-foreground hover:text-foreground"
-                          aria-label={t("calendar.dialogs.addEditEvent.rules.removeRule")}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
+                  <div className="space-y-2">
+                    {activeRules.map((rule, index) => {
+                      const meta = eventEnums.rules.find((r) => r.id === rule.type);
+                      if (!meta) return null;
+                      return (
+                        <div key={`${rule.type}-${index}`} className="rounded-md border bg-muted/40 p-2.5 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">{t(`calendar.rules.${rule.type}.label` as never)}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeRule(index)}
+                              className="text-muted-foreground hover:text-foreground"
+                              aria-label={t("calendar.dialogs.addEditEvent.rules.removeRule")}
+                            >
+                              <X className="size-3.5" />
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+                            {meta.fields.map((fieldDef) => {
+                              if (fieldDef.type !== "checkbox") return null;
+                              const label = t(`calendar.rules.${rule.type}.fields.${fieldDef.id}` as never);
+                              const checked = (rule.config[fieldDef.id] as boolean) ?? (fieldDef.defaultValue as boolean);
+                              return (
+                                <label key={fieldDef.id} className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={(e) => updateRuleConfig(index, fieldDef.id, e.target.checked)}
+                                    className="h-3.5 w-3.5 cursor-pointer"
+                                  />
+                                  {label}
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <p className="text-xs text-muted-foreground">

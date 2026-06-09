@@ -1,6 +1,5 @@
 import { z } from "zod";
 import type { TranslationKey } from "@/i18n";
-import { CALENDAR_RULE_TYPES } from "@/shared/calendar/types";
 
 type Translator = (key: TranslationKey, variables?: Record<string, string | number>) => string;
 
@@ -31,7 +30,12 @@ export const createEventSchema = (t: Translator) => {
       .min(1, t("calendar.dialogs.addEditEvent.validations.classificationRequired")),
     status: z.string().min(1, t("calendar.dialogs.addEditEvent.validations.statusRequired")),
     responsible: z.string().min(1, t("calendar.dialogs.addEditEvent.validations.responsibleRequired")),
-    rules: z.array(z.enum(CALENDAR_RULE_TYPES)),
+    rules: z.array(
+      z.object({
+        type: z.string().min(1),
+        config: z.record(z.string(), z.unknown()),
+      }),
+    ),
     occurrences: z
       .array(occurrenceSchema)
       .min(1, t("calendar.dialogs.addEditEvent.validations.occurrenceRequired")),

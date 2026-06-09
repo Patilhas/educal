@@ -1,4 +1,5 @@
 import type { IUser } from "@/shared/user/types";
+import type { IRuleDefinitionMeta } from "@/shared/calendar/rules/types";
 
 export type TEventCategory = string;
 export type TEventClassification = string;
@@ -44,16 +45,10 @@ export interface IAcademicYear {
   events: IEvent[];
 }
 
-export const CALENDAR_RULE_TYPES = [
-  "weekend_start",
-  "weekend_end",
-  "weekend_range",
-  "holiday_start",
-  "holiday_end",
-  "holiday_range",
-] as const;
-
-export type TCalendarRuleType = (typeof CALENDAR_RULE_TYPES)[number];
+export interface IEventRule {
+  type: string;
+  config: Record<string, unknown>;
+}
 
 export interface ICalendarRuleIssue {
   eventId: number;
@@ -61,10 +56,11 @@ export interface ICalendarRuleIssue {
   occurrenceId: string;
   occurrenceDescription: string;
   academicYearStart: number;
-  field: "startDate" | "endDate" | "range";
   date: string;
-  rule: TCalendarRuleType;
-  ruleLabel: string;
+  ruleType: string;
+  fieldLabelKey?: string;
+  messageKey: string;
+  messageParams?: Record<string, string>;
 }
 
 export interface IAcademicYearValidationResult {
@@ -91,7 +87,7 @@ export interface IEvent {
   classification: TEventClassification;
   status: TEventStatus;
   responsible: TEventResponsible;
-  rules: TCalendarRuleType[];
+  rules: IEventRule[];
   occurrences: IOccurrence[];
   user: IUser;
 }
@@ -107,5 +103,6 @@ export interface IEventEnums {
   classifications: string[];
   statuses: string[];
   responsibles: string[];
+  rules: IRuleDefinitionMeta[];
 }
 
