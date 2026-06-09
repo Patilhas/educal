@@ -104,4 +104,36 @@ export const calendarController = {
       return fail(error);
     }
   },
+
+  async createHoliday(request: IRequestWithAuth) {
+    try {
+      const { academicYearStart: rawYear, ...holidayPayload } = await readJson<{ academicYearStart: number }>(request);
+      const academicYearStart = parseAcademicYearStart(String(rawYear));
+      return ok(await calendarService.createHoliday(request, academicYearStart, holidayPayload), 201);
+    } catch (error) {
+      return fail(error);
+    }
+  },
+
+  async updateHoliday(request: IRequestWithAuth, holidayId: string) {
+    try {
+      const { academicYearStart: rawYear, ...holidayPayload } = await readJson<{ academicYearStart: number }>(request);
+      const academicYearStart = parseAcademicYearStart(String(rawYear));
+      return ok(await calendarService.updateHoliday(request, academicYearStart, holidayId, holidayPayload));
+    } catch (error) {
+      return fail(error);
+    }
+  },
+
+  async deleteHoliday(request: IRequestWithAuth, holidayId: string) {
+    try {
+      const academicYearStart = parseAcademicYearStart(
+        new URL(request.url).searchParams.get("academicYearStart") ?? "",
+      );
+      await calendarService.deleteHoliday(request, academicYearStart, holidayId);
+      return ok({ deleted: true });
+    } catch (error) {
+      return fail(error);
+    }
+  },
 };

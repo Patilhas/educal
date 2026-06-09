@@ -14,7 +14,7 @@ export default async function Page() {
 
   return (
     <main className="flex h-dvh min-h-0 w-full justify-center overflow-hidden p-4">
-      <div className="flex h-full min-h-0 w-full max-w-[1400px] flex-col gap-4">
+      <div className="flex h-full min-h-0 w-full max-w-[80vw] flex-col gap-4">
         <MainNavbar currentUser={currentUser} activePath="/" />
         <div className="min-h-0 flex-1">
           <Suspense fallback={<CalendarSkeleton />}>

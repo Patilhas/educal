@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRightLeft, BadgeAlert, CheckCircle2 } from "lucide-react";
+import { ArrowRightLeft, BadgeAlert, CalendarOff, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import EventDetailsDialog from "@/features/calendar/dialogs/event-details-dialog";
+import HolidaysDialog from "@/features/calendar/dialogs/holidays-dialog";
 import {
   migrateAcademicYearRequest,
   validateAcademicYearRequest,
@@ -48,6 +49,7 @@ export function AcademicYearTools() {
   const [migrationResult, setMigrationResult] =
     useState<IAcademicYearMigrationResult | null>(null);
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const [isHolidaysOpen, setIsHolidaysOpen] = useState(false);
 
   const yearOptions = useMemo(
     () => getAcademicYearOptions(selectedDate.getFullYear(), 2),
@@ -71,16 +73,16 @@ export function AcademicYearTools() {
       setIsReportOpen(true);
 
       if (result.issues.length === 0) {
-        toast.success(t("calendar.academicYearTools.validationSuccess", { label: result.academicYear.label }));
+        toast.success(t("calendar.academicYearTools.validate.success", { label: result.academicYear.label }));
         return;
       }
 
       toast.error(
-        t("calendar.academicYearTools.validationIssues", { count: result.issues.length, label: result.academicYear.label }),
+        t("calendar.academicYearTools.validate.issues", { count: result.issues.length, label: result.academicYear.label }),
       );
     } catch (error) {
       console.error("Erro a validar ano letivo:", error);
-      toast.error(t("calendar.academicYearTools.validationError"));
+      toast.error(t("calendar.academicYearTools.validate.error"));
     } finally {
       setIsValidating(false);
     }
@@ -94,12 +96,17 @@ export function AcademicYearTools() {
       setValidationResult(null);
       setIsReportOpen(true);
       toast.success(
-        t("calendar.academicYearTools.migrationSuccess", { createdEvents: result.createdEvents, skippedEvents: result.skippedEvents }),
+        t("calendar.academicYearTools.migrate.success", {
+          createdEvents: result.createdEvents,
+          skippedEvents: result.skippedEvents,
+          createdHolidays: result.createdHolidays,
+          skippedHolidays: result.skippedHolidays,
+        }),
       );
       router.refresh();
     } catch (error) {
       console.error("Erro a migrar ano letivo:", error);
-      toast.error(t("calendar.academicYearTools.migrationError"));
+      toast.error(t("calendar.academicYearTools.migrate.error"));
     } finally {
       setIsMigrating(false);
     }
@@ -107,18 +114,18 @@ export function AcademicYearTools() {
 
   const report = validationResult ?? migrationResult;
   const reportTitle = validationResult
-    ? t("calendar.academicYearTools.reportValidationTitle", { label: validationResult.academicYear.label })
+    ? t("calendar.academicYearTools.report.validationTitle", { label: validationResult.academicYear.label })
     : migrationResult
-      ? t("calendar.academicYearTools.reportMigrationTitle", { source: migrationResult.sourceAcademicYear.label, target: migrationResult.targetAcademicYear.label })
-      : t("calendar.academicYearTools.reportTitle");
+      ? t("calendar.academicYearTools.report.migrationTitle", { source: migrationResult.sourceAcademicYear.label, target: migrationResult.targetAcademicYear.label })
+      : t("calendar.academicYearTools.report.title");
   const reportDescription = validationResult
-    ? t("calendar.academicYearTools.reportValidationDescription", { totalEvents: validationResult.totalEvents, totalOccurrences: validationResult.totalOccurrences })
+    ? t("calendar.academicYearTools.report.validationDescription", { totalEvents: validationResult.totalEvents, totalOccurrences: validationResult.totalOccurrences })
     : migrationResult
-      ? t("calendar.academicYearTools.reportMigrationDescription", { createdEvents: migrationResult.createdEvents, skippedEvents: migrationResult.skippedEvents })
+      ? t("calendar.academicYearTools.report.migrationDescription", { createdEvents: migrationResult.createdEvents, skippedEvents: migrationResult.skippedEvents })
       : "";
 
   return (
-    <div className="flex flex-col gap-2 rounded-xl border bg-background/60 p-3 lg:flex-row lg:items-center lg:gap-3">
+    <div className="flex flex-col gap-2 rounded-xl border bg-background/60 p-3 lg:flex-row lg:items-center lg:justify-between lg:gap-3">
       <div className="flex items-center gap-2">
         <Badge variant="secondary" className="h-8 px-3">
           {t("calendar.academicYearTools.academicYear")}
@@ -146,10 +153,22 @@ export function AcademicYearTools() {
           disabled={isValidating || isMigrating}
         >
           <CheckCircle2 className="h-4 w-4" />
-          {isValidating ? t("calendar.academicYearTools.validating") : t("calendar.academicYearTools.validate")}
+          {isValidating ? t("calendar.academicYearTools.validate.loading") : t("calendar.academicYearTools.validate.button")}
         </Button>
 
-        {canEditEvents && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setIsHolidaysOpen(true)}
+        >
+          <CalendarOff className="h-4 w-4" />
+          {t("calendar.academicYearTools.holidays.button")}
+        </Button>
+      </div>
+
+      {canEditEvents && (
+        <div className="flex items-center gap-2">
           <Button
             type="button"
             size="sm"
@@ -157,10 +176,12 @@ export function AcademicYearTools() {
             disabled={isValidating || isMigrating}
           >
             <ArrowRightLeft className="h-4 w-4" />
-            {isMigrating ? t("calendar.academicYearTools.migrating") : t("calendar.academicYearTools.migrate")}
+            {isMigrating ? t("calendar.academicYearTools.migrate.loading") : t("calendar.academicYearTools.migrate.button")}
           </Button>
-        )}
-      </div>
+        </div>
+      )}
+
+      <HolidaysDialog open={isHolidaysOpen} onOpenChange={setIsHolidaysOpen} />
 
       <Modal open={isReportOpen} onOpenChange={setIsReportOpen}>
         <ModalContent className="sm:max-w-180">
@@ -177,7 +198,7 @@ export function AcademicYearTools() {
               <div className="space-y-3">
                 {report.issues.length === 0 ? (
                   <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-800 dark:text-emerald-200">
-                    {t("calendar.academicYearTools.reportNoIssues")}
+                    {t("calendar.academicYearTools.report.noIssues")}
                   </div>
                 ) : (
                   report.issues.map((issue) => {
@@ -194,10 +215,10 @@ export function AcademicYearTools() {
                           {t(`calendar.rules.${issue.ruleType}.messages.${issue.messageKey}` as never, issue.messageParams)}
                         </p>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          {t("calendar.academicYearTools.issueOccurrence")} {issue.occurrenceDescription || "-"}
+                          {t("calendar.academicYearTools.issues.occurrence")} {issue.occurrenceDescription || "-"}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {t("calendar.academicYearTools.issueDate")} {new Date(issue.date).toLocaleString("pt-PT")}
+                          {t("calendar.academicYearTools.issues.date")} {new Date(issue.date).toLocaleString("pt-PT")}
                         </p>
                       </div>
                     );
@@ -219,7 +240,7 @@ export function AcademicYearTools() {
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
-                {t("calendar.academicYearTools.reportEmpty")}
+                {t("calendar.academicYearTools.report.empty")}
               </p>
             )}
           </div>

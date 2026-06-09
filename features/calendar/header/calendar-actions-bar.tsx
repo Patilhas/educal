@@ -24,7 +24,7 @@ export function CalendarActionsBar() {
   return (
     <div className="border-b px-4 py-3">
       <motion.div
-        className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between"
+        className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"
         variants={slideFromRight}
         initial="initial"
         animate="animate"
@@ -33,8 +33,9 @@ export function CalendarActionsBar() {
         <div className="flex flex-wrap items-center gap-2">
           <FilterEvents />
           <Views />
-          <AcademicYearTools />
         </div>
+
+        <AcademicYearTools />
 
         <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
           <div className="min-w-55 flex-1 lg:flex-none">
@@ -54,7 +55,7 @@ export function CalendarActionsBar() {
         </div>
       </motion.div>
     </div>
-  );
+  )
 }
 
 

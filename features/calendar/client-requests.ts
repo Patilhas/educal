@@ -3,6 +3,7 @@ import type {
   IAcademicYearValidationResult,
   IEvent,
   IEventEnums,
+  IHolidayPeriod,
 } from "@/shared/calendar/types";
 import { requestJson } from "@/lib/api-client";
 
@@ -45,6 +46,37 @@ export const migrateAcademicYearRequest = async (
     method: "POST",
     body: JSON.stringify({ academicYearStart }),
   });
+};
+
+export const createHolidayRequest = async (
+  academicYearStart: number,
+  payload: { label: string; startDate: string; endDate: string },
+): Promise<IHolidayPeriod> => {
+  return requestJson<IHolidayPeriod>("/api/events/academic-year/holidays", {
+    method: "POST",
+    body: JSON.stringify({ academicYearStart, ...payload }),
+  });
+};
+
+export const updateHolidayRequest = async (
+  academicYearStart: number,
+  holidayId: string,
+  payload: { label: string; startDate: string; endDate: string },
+): Promise<IHolidayPeriod> => {
+  return requestJson<IHolidayPeriod>(`/api/events/academic-year/holidays/${holidayId}`, {
+    method: "PUT",
+    body: JSON.stringify({ academicYearStart, ...payload }),
+  });
+};
+
+export const deleteHolidayRequest = async (
+  academicYearStart: number,
+  holidayId: string,
+): Promise<{ deleted: boolean }> => {
+  return requestJson<{ deleted: boolean }>(
+    `/api/events/academic-year/holidays/${holidayId}?academicYearStart=${academicYearStart}`,
+    { method: "DELETE" },
+  );
 };
 
 export const updateOccurrenceRequest = async ({

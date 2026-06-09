@@ -84,3 +84,14 @@ export const patchOccurrenceSchema = z.object({
   startDate: dateLikeString.optional(),
   endDate: dateLikeString.optional(),
 });
+
+export const holidayPayloadSchema = z
+  .object({
+    label: z.string().min(1),
+    startDate: dateLikeString,
+    endDate: dateLikeString,
+  })
+  .refine((v) => new Date(v.endDate) > new Date(v.startDate), {
+    message: "A data de fim deve ser posterior à data de início",
+    path: ["endDate"],
+  });

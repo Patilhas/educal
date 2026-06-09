@@ -37,11 +37,19 @@ export interface IAcademicYearRange {
   endDate: string;
 }
 
+export interface IHolidayPeriod {
+  id: string;
+  label: string;
+  startDate: string;
+  endDate: string;
+}
+
 export interface IAcademicYear {
   startYear: number;
   label: string;
   startDate: string;
   endDate: string;
+  holidays: IHolidayPeriod[];
   events: IEvent[];
 }
 
@@ -75,6 +83,8 @@ export interface IAcademicYearMigrationResult {
   targetAcademicYear: IAcademicYearRange;
   createdEvents: number;
   skippedEvents: number;
+  createdHolidays: number;
+  skippedHolidays: number;
   issues: ICalendarRuleIssue[];
 }
 

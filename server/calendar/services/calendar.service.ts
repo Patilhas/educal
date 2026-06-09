@@ -7,11 +7,13 @@ import type {
   IAcademicYearValidationResult,
   ICalendarRuleIssue,
   IEvent,
+  IHolidayPeriod,
   IOccurrence,
 } from "@/shared/calendar/types";
 import type { IUser } from "@/shared/user/types";
 import {
   buildEventPayloadSchema,
+  holidayPayloadSchema,
   patchOccurrenceSchema,
 } from "@/server/calendar/schemas";
 import { calendarData } from "@/server/calendar/data/calendar.data";
@@ -188,13 +190,82 @@ export class CalendarService {
       issues.push(...this.collectEventRuleIssues(saved, targetAcademicYearStart, allEvents));
     }
 
+    const sourceHolidays = await calendarData.listHolidays(sourceAcademicYearStart);
+    const targetHolidays = await calendarData.listHolidays(targetAcademicYearStart);
+    const targetLabels = new Set(targetHolidays.map((h) => h.label));
+    let createdHolidays = 0;
+    let skippedHolidays = 0;
+
+    for (const h of sourceHolidays) {
+      if (targetLabels.has(h.label)) {
+        skippedHolidays++;
+        continue;
+      }
+      await calendarData.upsertHoliday(targetAcademicYearStart, {
+        id: crypto.randomUUID(),
+        label: h.label,
+        startDate: shiftDateByYears(h.startDate, 1),
+        endDate: shiftDateByYears(h.endDate, 1),
+      });
+      createdHolidays++;
+    }
+
     return {
       sourceAcademicYear: getAcademicYearRange(sourceAcademicYearStart),
       targetAcademicYear: getAcademicYearRange(targetAcademicYearStart),
       createdEvents,
       skippedEvents,
+      createdHolidays,
+      skippedHolidays,
       issues,
     };
+  }
+
+  async listAllHolidays(): Promise<Record<number, IHolidayPeriod[]>> {
+    return calendarData.listAllHolidays();
+  }
+
+  async createHoliday(
+    request: IRequestWithAuth,
+    academicYearStart: number,
+    payload: unknown,
+  ): Promise<IHolidayPeriod> {
+    this.ensureCanManageEvents(request.auth.user.role);
+    const parsed = holidayPayloadSchema.parse(payload);
+    return calendarData.upsertHoliday(academicYearStart, {
+      id: crypto.randomUUID(),
+      label: parsed.label,
+      startDate: new Date(parsed.startDate).toISOString(),
+      endDate: new Date(parsed.endDate).toISOString(),
+    });
+  }
+
+  async updateHoliday(
+    request: IRequestWithAuth,
+    academicYearStart: number,
+    holidayId: string,
+    payload: unknown,
+  ): Promise<IHolidayPeriod> {
+    this.ensureCanManageEvents(request.auth.user.role);
+    const parsed = holidayPayloadSchema.parse(payload);
+    return calendarData.upsertHoliday(academicYearStart, {
+      id: holidayId,
+      label: parsed.label,
+      startDate: new Date(parsed.startDate).toISOString(),
+      endDate: new Date(parsed.endDate).toISOString(),
+    });
+  }
+
+  async deleteHoliday(
+    request: IRequestWithAuth,
+    academicYearStart: number,
+    holidayId: string,
+  ): Promise<void> {
+    this.ensureCanManageEvents(request.auth.user.role);
+    const removed = await calendarData.deleteHoliday(academicYearStart, holidayId);
+    if (!removed) {
+      throw new DomainError("NOT_FOUND", 404, "Período de férias não encontrado");
+    }
   }
 
   async deleteEvent(request: IRequestWithAuth, eventId: number): Promise<void> {

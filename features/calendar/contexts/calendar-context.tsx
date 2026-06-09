@@ -10,7 +10,7 @@ import {
 } from "@/features/calendar/client-requests";
 import { useLocalStorage } from "@/features/calendar/hooks";
 import { getEventAcademicYearStart } from "@/shared/calendar/academic-year";
-import type { IEvent, IEventEnums, TEventCategory } from "@/shared/calendar/types";
+import type { IEvent, IEventEnums, IHolidayPeriod, TEventCategory } from "@/shared/calendar/types";
 import type { IUser } from "@/shared/user/types";
 import { canManageCalendarEvents } from "@/shared/user/roles";
 import { getEventColorByCategory } from "@/features/calendar/helpers";
@@ -39,6 +39,10 @@ interface ICalendarContext {
   canEditEvents: boolean;
   eventEnums: IEventEnums;
   events: IEvent[];
+  holidays: IHolidayPeriod[];
+  addHoliday: (h: IHolidayPeriod) => void;
+  replaceHoliday: (h: IHolidayPeriod) => void;
+  removeHoliday: (id: string) => void;
   addEvent: (event: IEvent) => Promise<void>;
   updateEvent: (event: IEvent) => Promise<void>;
   updateOccurrence: (params: {
@@ -75,6 +79,7 @@ export function CalendarProvider({
   currentUser,
   events,
   initialEventEnums,
+  initialHolidaysByYear = {},
   badge = "colored",
   view = "day",
 }: {
@@ -83,6 +88,7 @@ export function CalendarProvider({
   currentUser: IUser | null;
   events: IEvent[];
   initialEventEnums: IEventEnums;
+  initialHolidaysByYear?: Record<number, IHolidayPeriod[]>;
   view?: TCalendarView;
   badge?: "dot" | "colored";
 }) {
@@ -117,6 +123,7 @@ export function CalendarProvider({
   const [selectedCategories, setSelectedCategories] = useState<TEventCategory[]>([]);
 
   const [allEvents, setAllEvents] = useState<IEvent[]>(events || []);
+  const [holidaysByYear, setHolidaysByYear] = useState<Record<number, IHolidayPeriod[]>>(initialHolidaysByYear);
   const canEditEvents = currentUser ? canManageCalendarEvents(currentUser.role) : false;
   const academicYearStart = selectedDate.getFullYear();
 
@@ -220,6 +227,29 @@ export function CalendarProvider({
     setAllEvents((prev) => prev.filter((event) => event.id !== eventId));
   };
 
+  const addHoliday = (h: IHolidayPeriod) => {
+    setHolidaysByYear((prev) => ({
+      ...prev,
+      [academicYearStart]: [...(prev[academicYearStart] ?? []), h],
+    }));
+  };
+
+  const replaceHoliday = (h: IHolidayPeriod) => {
+    setHolidaysByYear((prev) => ({
+      ...prev,
+      [academicYearStart]: (prev[academicYearStart] ?? []).map((item) =>
+        item.id === h.id ? h : item,
+      ),
+    }));
+  };
+
+  const removeHoliday = (id: string) => {
+    setHolidaysByYear((prev) => ({
+      ...prev,
+      [academicYearStart]: (prev[academicYearStart] ?? []).filter((h) => h.id !== id),
+    }));
+  };
+
   const clearFilter = () => {
     setSelectedCategories([]);
     setSelectedUserId("all");
@@ -237,6 +267,11 @@ export function CalendarProvider({
       return matchesCategory && matchesUser && matchesAcademicYear;
     });
   }, [allEvents, selectedCategories, selectedUserId, academicYearStart]);
+
+  const holidays = useMemo(
+    () => holidaysByYear[academicYearStart] ?? [],
+    [holidaysByYear, academicYearStart],
+  );
 
   const value = {
     selectedDate,
@@ -260,6 +295,10 @@ export function CalendarProvider({
     setView,
     agendaModeGroupBy,
     setAgendaModeGroupBy,
+    holidays,
+    addHoliday,
+    replaceHoliday,
+    removeHoliday,
     addEvent,
     updateEvent,
     updateOccurrence,

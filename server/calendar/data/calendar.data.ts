@@ -3,6 +3,7 @@ import type {
     ICategory,
     IClassification,
     IEvent,
+    IHolidayPeriod,
     IResponsible,
   IStatus,
 } from "@/shared/calendar/types";
@@ -130,7 +131,7 @@ export class CalendarData {
                 const range = getAcademicYearRange(eventYear);
                 nextDb = {
                     ...db,
-                    academicYears: [{ ...range, events: [finalEvent] }, ...db.academicYears],
+                    academicYears: [{ ...range, holidays: [], events: [finalEvent] }, ...db.academicYears],
                 };
             }
 
@@ -176,6 +177,58 @@ export class CalendarData {
 
         if (!found) return false;
 
+        await this.persistDb({ ...db, academicYears: nextAcademicYears });
+        return true;
+    }
+
+    // ─── Holidays ──────────────────────────────────────────────────────────────
+
+    async listAllHolidays(): Promise<Record<number, IHolidayPeriod[]>> {
+        const db = await this.readDb();
+        return Object.fromEntries(
+            db.academicYears.map((ay) => [ay.startYear, clone(ay.holidays ?? [])]),
+        );
+    }
+
+    async listHolidays(academicYearStart: number): Promise<IHolidayPeriod[]> {
+        const db = await this.readDb();
+        const ay = db.academicYears.find((a) => a.startYear === academicYearStart);
+        return clone(ay?.holidays ?? []);
+    }
+
+    async upsertHoliday(academicYearStart: number, holiday: IHolidayPeriod): Promise<IHolidayPeriod> {
+        const db = await this.readDb();
+        const ayIndex = db.academicYears.findIndex((a) => a.startYear === academicYearStart);
+
+        let nextAcademicYears;
+        if (ayIndex >= 0) {
+            const ay = db.academicYears[ayIndex];
+            const existing = (ay.holidays ?? []).findIndex((h) => h.id === holiday.id);
+            const nextHolidays = existing >= 0
+                ? (ay.holidays ?? []).map((h, i) => (i === existing ? holiday : h))
+                : [...(ay.holidays ?? []), holiday];
+            nextAcademicYears = [...db.academicYears];
+            nextAcademicYears[ayIndex] = { ...ay, holidays: nextHolidays };
+        } else {
+            const range = getAcademicYearRange(academicYearStart);
+            nextAcademicYears = [{ ...range, holidays: [holiday], events: [] }, ...db.academicYears];
+        }
+
+        await this.persistDb({ ...db, academicYears: nextAcademicYears });
+        return clone(holiday);
+    }
+
+    async deleteHoliday(academicYearStart: number, holidayId: string): Promise<boolean> {
+        const db = await this.readDb();
+        const ayIndex = db.academicYears.findIndex((a) => a.startYear === academicYearStart);
+        if (ayIndex < 0) return false;
+
+        const ay = db.academicYears[ayIndex];
+        const filtered = (ay.holidays ?? []).filter((h) => h.id !== holidayId);
+        if (filtered.length === (ay.holidays ?? []).length) return false;
+
+        const nextAcademicYears = [...db.academicYears];
+        nextAcademicYears[ayIndex] = { ...ay, holidays: filtered };
         await this.persistDb({ ...db, academicYears: nextAcademicYears });
         return true;
     }
