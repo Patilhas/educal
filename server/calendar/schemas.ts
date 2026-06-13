@@ -85,7 +85,7 @@ export const patchOccurrenceSchema = z.object({
   endDate: dateLikeString.optional(),
 });
 
-export const holidayPayloadSchema = z
+export const vacationPayloadSchema = z
   .object({
     label: z.string().min(1),
     startDate: dateLikeString,

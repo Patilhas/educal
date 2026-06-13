@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import EventDetailsDialog from "@/features/calendar/dialogs/event-details-dialog";
-import HolidaysDialog from "@/features/calendar/dialogs/holidays-dialog";
+import VacationsDialog from "@/features/calendar/dialogs/vacations-dialog";
 import {
   migrateAcademicYearRequest,
   validateAcademicYearRequest,
@@ -49,7 +49,7 @@ export function AcademicYearTools() {
   const [migrationResult, setMigrationResult] =
     useState<IAcademicYearMigrationResult | null>(null);
   const [isReportOpen, setIsReportOpen] = useState(false);
-  const [isHolidaysOpen, setIsHolidaysOpen] = useState(false);
+  const [isVacationsOpen, setIsVacationsOpen] = useState(false);
 
   const yearOptions = useMemo(
     () => getAcademicYearOptions(selectedDate.getFullYear(), 2),
@@ -99,8 +99,8 @@ export function AcademicYearTools() {
         t("calendar.academicYearTools.migrate.success", {
           createdEvents: result.createdEvents,
           skippedEvents: result.skippedEvents,
-          createdHolidays: result.createdHolidays,
-          skippedHolidays: result.skippedHolidays,
+          createdVacations: result.createdVacations,
+          skippedVacations: result.skippedVacations,
         }),
       );
       router.refresh();
@@ -160,10 +160,10 @@ export function AcademicYearTools() {
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => setIsHolidaysOpen(true)}
+          onClick={() => setIsVacationsOpen(true)}
         >
           <CalendarOff className="h-4 w-4" />
-          {t("calendar.academicYearTools.holidays.button")}
+          {t("calendar.academicYearTools.vacations.button")}
         </Button>
       </div>
 
@@ -181,7 +181,7 @@ export function AcademicYearTools() {
         </div>
       )}
 
-      <HolidaysDialog open={isHolidaysOpen} onOpenChange={setIsHolidaysOpen} />
+      <VacationsDialog open={isVacationsOpen} onOpenChange={setIsVacationsOpen} />
 
       <Modal open={isReportOpen} onOpenChange={setIsReportOpen}>
         <ModalContent className="sm:max-w-180">

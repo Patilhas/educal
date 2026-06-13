@@ -10,7 +10,7 @@ import {
 } from "@/features/calendar/client-requests";
 import { useLocalStorage } from "@/features/calendar/hooks";
 import { getEventAcademicYearStart } from "@/shared/calendar/academic-year";
-import type { IEvent, IEventEnums, IHolidayPeriod, TEventCategory } from "@/shared/calendar/types";
+import type { IEvent, IEventEnums, IVacationPeriod, TEventCategory } from "@/shared/calendar/types";
 import type { IUser } from "@/shared/user/types";
 import { canManageCalendarEvents } from "@/shared/user/roles";
 import { getEventColorByCategory } from "@/features/calendar/helpers";
@@ -39,10 +39,10 @@ interface ICalendarContext {
   canEditEvents: boolean;
   eventEnums: IEventEnums;
   events: IEvent[];
-  holidays: IHolidayPeriod[];
-  addHoliday: (h: IHolidayPeriod) => void;
-  replaceHoliday: (h: IHolidayPeriod) => void;
-  removeHoliday: (id: string) => void;
+  vacations: IVacationPeriod[];
+  addVacation: (v: IVacationPeriod) => void;
+  replaceVacation: (v: IVacationPeriod) => void;
+  removeVacation: (id: string) => void;
   addEvent: (event: IEvent) => Promise<void>;
   updateEvent: (event: IEvent) => Promise<void>;
   updateOccurrence: (params: {
@@ -79,7 +79,7 @@ export function CalendarProvider({
   currentUser,
   events,
   initialEventEnums,
-  initialHolidaysByYear = {},
+  initialVacationsByYear = {},
   badge = "colored",
   view = "day",
 }: {
@@ -88,7 +88,7 @@ export function CalendarProvider({
   currentUser: IUser | null;
   events: IEvent[];
   initialEventEnums: IEventEnums;
-  initialHolidaysByYear?: Record<number, IHolidayPeriod[]>;
+  initialVacationsByYear?: Record<number, IVacationPeriod[]>;
   view?: TCalendarView;
   badge?: "dot" | "colored";
 }) {
@@ -123,7 +123,7 @@ export function CalendarProvider({
   const [selectedCategories, setSelectedCategories] = useState<TEventCategory[]>([]);
 
   const [allEvents, setAllEvents] = useState<IEvent[]>(events || []);
-  const [holidaysByYear, setHolidaysByYear] = useState<Record<number, IHolidayPeriod[]>>(initialHolidaysByYear);
+  const [vacationsByYear, setVacationsByYear] = useState<Record<number, IVacationPeriod[]>>(initialVacationsByYear);
   const canEditEvents = currentUser ? canManageCalendarEvents(currentUser.role) : false;
   const academicYearStart = selectedDate.getFullYear();
 
@@ -227,26 +227,26 @@ export function CalendarProvider({
     setAllEvents((prev) => prev.filter((event) => event.id !== eventId));
   };
 
-  const addHoliday = (h: IHolidayPeriod) => {
-    setHolidaysByYear((prev) => ({
+  const addVacation = (v: IVacationPeriod) => {
+    setVacationsByYear((prev) => ({
       ...prev,
-      [academicYearStart]: [...(prev[academicYearStart] ?? []), h],
+      [academicYearStart]: [...(prev[academicYearStart] ?? []), v],
     }));
   };
 
-  const replaceHoliday = (h: IHolidayPeriod) => {
-    setHolidaysByYear((prev) => ({
+  const replaceVacation = (v: IVacationPeriod) => {
+    setVacationsByYear((prev) => ({
       ...prev,
       [academicYearStart]: (prev[academicYearStart] ?? []).map((item) =>
-        item.id === h.id ? h : item,
+        item.id === v.id ? v : item,
       ),
     }));
   };
 
-  const removeHoliday = (id: string) => {
-    setHolidaysByYear((prev) => ({
+  const removeVacation = (id: string) => {
+    setVacationsByYear((prev) => ({
       ...prev,
-      [academicYearStart]: (prev[academicYearStart] ?? []).filter((h) => h.id !== id),
+      [academicYearStart]: (prev[academicYearStart] ?? []).filter((v) => v.id !== id),
     }));
   };
 
@@ -268,9 +268,9 @@ export function CalendarProvider({
     });
   }, [allEvents, selectedCategories, selectedUserId, academicYearStart]);
 
-  const holidays = useMemo(
-    () => holidaysByYear[academicYearStart] ?? [],
-    [holidaysByYear, academicYearStart],
+  const vacations = useMemo(
+    () => vacationsByYear[academicYearStart] ?? [],
+    [vacationsByYear, academicYearStart],
   );
 
   const value = {
@@ -295,10 +295,10 @@ export function CalendarProvider({
     setView,
     agendaModeGroupBy,
     setAgendaModeGroupBy,
-    holidays,
-    addHoliday,
-    replaceHoliday,
-    removeHoliday,
+    vacations,
+    addVacation,
+    replaceVacation,
+    removeVacation,
     addEvent,
     updateEvent,
     updateOccurrence,

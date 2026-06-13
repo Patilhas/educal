@@ -7,13 +7,13 @@ import type {
   IAcademicYearValidationResult,
   ICalendarRuleIssue,
   IEvent,
-  IHolidayPeriod,
+  IVacationPeriod,
   IOccurrence,
 } from "@/shared/calendar/types";
 import type { IUser } from "@/shared/user/types";
 import {
   buildEventPayloadSchema,
-  holidayPayloadSchema,
+  vacationPayloadSchema,
   patchOccurrenceSchema,
 } from "@/server/calendar/schemas";
 import { calendarData } from "@/server/calendar/data/calendar.data";
@@ -190,24 +190,24 @@ export class CalendarService {
       issues.push(...this.collectEventRuleIssues(saved, targetAcademicYearStart, allEvents));
     }
 
-    const sourceHolidays = await calendarData.listHolidays(sourceAcademicYearStart);
-    const targetHolidays = await calendarData.listHolidays(targetAcademicYearStart);
-    const targetLabels = new Set(targetHolidays.map((h) => h.label));
-    let createdHolidays = 0;
-    let skippedHolidays = 0;
+    const sourceVacations = await calendarData.listVacations(sourceAcademicYearStart);
+    const targetVacations = await calendarData.listVacations(targetAcademicYearStart);
+    const targetLabels = new Set(targetVacations.map((v) => v.label));
+    let createdVacations = 0;
+    let skippedVacations = 0;
 
-    for (const h of sourceHolidays) {
-      if (targetLabels.has(h.label)) {
-        skippedHolidays++;
+    for (const v of sourceVacations) {
+      if (targetLabels.has(v.label)) {
+        skippedVacations++;
         continue;
       }
-      await calendarData.upsertHoliday(targetAcademicYearStart, {
+      await calendarData.upsertVacation(targetAcademicYearStart, {
         id: crypto.randomUUID(),
-        label: h.label,
-        startDate: shiftDateByYears(h.startDate, 1),
-        endDate: shiftDateByYears(h.endDate, 1),
+        label: v.label,
+        startDate: shiftDateByYears(v.startDate, 1),
+        endDate: shiftDateByYears(v.endDate, 1),
       });
-      createdHolidays++;
+      createdVacations++;
     }
 
     return {
@@ -215,24 +215,24 @@ export class CalendarService {
       targetAcademicYear: getAcademicYearRange(targetAcademicYearStart),
       createdEvents,
       skippedEvents,
-      createdHolidays,
-      skippedHolidays,
+      createdVacations,
+      skippedVacations,
       issues,
     };
   }
 
-  async listAllHolidays(): Promise<Record<number, IHolidayPeriod[]>> {
-    return calendarData.listAllHolidays();
+  async listAllVacations(): Promise<Record<number, IVacationPeriod[]>> {
+    return calendarData.listAllVacations();
   }
 
-  async createHoliday(
+  async createVacation(
     request: IRequestWithAuth,
     academicYearStart: number,
     payload: unknown,
-  ): Promise<IHolidayPeriod> {
+  ): Promise<IVacationPeriod> {
     this.ensureCanManageEvents(request.auth.user.role);
-    const parsed = holidayPayloadSchema.parse(payload);
-    return calendarData.upsertHoliday(academicYearStart, {
+    const parsed = vacationPayloadSchema.parse(payload);
+    return calendarData.upsertVacation(academicYearStart, {
       id: crypto.randomUUID(),
       label: parsed.label,
       startDate: new Date(parsed.startDate).toISOString(),
@@ -240,29 +240,29 @@ export class CalendarService {
     });
   }
 
-  async updateHoliday(
+  async updateVacation(
     request: IRequestWithAuth,
     academicYearStart: number,
-    holidayId: string,
+    vacationId: string,
     payload: unknown,
-  ): Promise<IHolidayPeriod> {
+  ): Promise<IVacationPeriod> {
     this.ensureCanManageEvents(request.auth.user.role);
-    const parsed = holidayPayloadSchema.parse(payload);
-    return calendarData.upsertHoliday(academicYearStart, {
-      id: holidayId,
+    const parsed = vacationPayloadSchema.parse(payload);
+    return calendarData.upsertVacation(academicYearStart, {
+      id: vacationId,
       label: parsed.label,
       startDate: new Date(parsed.startDate).toISOString(),
       endDate: new Date(parsed.endDate).toISOString(),
     });
   }
 
-  async deleteHoliday(
+  async deleteVacation(
     request: IRequestWithAuth,
     academicYearStart: number,
-    holidayId: string,
+    vacationId: string,
   ): Promise<void> {
     this.ensureCanManageEvents(request.auth.user.role);
-    const removed = await calendarData.deleteHoliday(academicYearStart, holidayId);
+    const removed = await calendarData.deleteVacation(academicYearStart, vacationId);
     if (!removed) {
       throw new DomainError("NOT_FOUND", 404, "Período de férias não encontrado");
     }

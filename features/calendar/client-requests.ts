@@ -3,7 +3,7 @@ import type {
   IAcademicYearValidationResult,
   IEvent,
   IEventEnums,
-  IHolidayPeriod,
+  IVacationPeriod,
 } from "@/shared/calendar/types";
 import { requestJson } from "@/lib/api-client";
 
@@ -48,33 +48,33 @@ export const migrateAcademicYearRequest = async (
   });
 };
 
-export const createHolidayRequest = async (
+export const createVacationRequest = async (
   academicYearStart: number,
   payload: { label: string; startDate: string; endDate: string },
-): Promise<IHolidayPeriod> => {
-  return requestJson<IHolidayPeriod>("/api/events/academic-year/holidays", {
+): Promise<IVacationPeriod> => {
+  return requestJson<IVacationPeriod>("/api/events/academic-year/vacations", {
     method: "POST",
     body: JSON.stringify({ academicYearStart, ...payload }),
   });
 };
 
-export const updateHolidayRequest = async (
+export const updateVacationRequest = async (
   academicYearStart: number,
-  holidayId: string,
+  vacationId: string,
   payload: { label: string; startDate: string; endDate: string },
-): Promise<IHolidayPeriod> => {
-  return requestJson<IHolidayPeriod>(`/api/events/academic-year/holidays/${holidayId}`, {
+): Promise<IVacationPeriod> => {
+  return requestJson<IVacationPeriod>(`/api/events/academic-year/vacations/${vacationId}`, {
     method: "PUT",
     body: JSON.stringify({ academicYearStart, ...payload }),
   });
 };
 
-export const deleteHolidayRequest = async (
+export const deleteVacationRequest = async (
   academicYearStart: number,
-  holidayId: string,
+  vacationId: string,
 ): Promise<{ deleted: boolean }> => {
   return requestJson<{ deleted: boolean }>(
-    `/api/events/academic-year/holidays/${holidayId}?academicYearStart=${academicYearStart}`,
+    `/api/events/academic-year/vacations/${vacationId}?academicYearStart=${academicYearStart}`,
     { method: "DELETE" },
   );
 };

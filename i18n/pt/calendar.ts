@@ -149,7 +149,7 @@ export const calendar = {
     migrate: {
       button: "Migrar para o ano seguinte",
       loading: "A migrar...",
-      success: "Migração concluída: {createdEvents} evento(s) e {createdHolidays} período(s) de férias copiados, {skippedEvents} evento(s) e {skippedHolidays} período(s) ignorados.",
+      success: "Migração concluída: {createdEvents} evento(s) e {createdVacations} período(s) de férias copiados, {skippedEvents} evento(s) e {skippedVacations} período(s) ignorados.",
       error: "Não foi possível migrar o ano letivo.",
     },
     report: {
@@ -165,7 +165,7 @@ export const calendar = {
       occurrence: "Ocorrência:",
       date: "Data:",
     },
-    holidays: {
+    vacations: {
       button: "Férias letivas",
       title: "Férias letivas — {label}",
       count: "{count} período(s) definido(s).",

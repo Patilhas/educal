@@ -2,5 +2,5 @@ import { calendarController } from "@/server/calendar/controllers/calendar.contr
 import { withApiAuth } from "@/server/auth/middleware";
 
 export const POST = withApiAuth(async (request) => {
-  return calendarController.createHoliday(request);
+  return calendarController.createVacation(request);
 });

@@ -221,7 +221,7 @@ export const buildCalendarSeed = (): ICalendarDb => {
         label: `${academicYearStart}/${academicYearStart + 1}`,
         startDate: new Date(academicYearStart, 0, 1).toISOString(),
         endDate: new Date(academicYearStart + 1, 8, 30, 23, 59, 59, 999).toISOString(),
-        holidays: [],
+        vacations: [],
         events: generateEvents(50),
       },
     ],

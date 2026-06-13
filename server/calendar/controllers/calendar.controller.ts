@@ -105,32 +105,32 @@ export const calendarController = {
     }
   },
 
-  async createHoliday(request: IRequestWithAuth) {
+  async createVacation(request: IRequestWithAuth) {
     try {
-      const { academicYearStart: rawYear, ...holidayPayload } = await readJson<{ academicYearStart: number }>(request);
+      const { academicYearStart: rawYear, ...vacationPayload } = await readJson<{ academicYearStart: number }>(request);
       const academicYearStart = parseAcademicYearStart(String(rawYear));
-      return ok(await calendarService.createHoliday(request, academicYearStart, holidayPayload), 201);
+      return ok(await calendarService.createVacation(request, academicYearStart, vacationPayload), 201);
     } catch (error) {
       return fail(error);
     }
   },
 
-  async updateHoliday(request: IRequestWithAuth, holidayId: string) {
+  async updateVacation(request: IRequestWithAuth, vacationId: string) {
     try {
-      const { academicYearStart: rawYear, ...holidayPayload } = await readJson<{ academicYearStart: number }>(request);
+      const { academicYearStart: rawYear, ...vacationPayload } = await readJson<{ academicYearStart: number }>(request);
       const academicYearStart = parseAcademicYearStart(String(rawYear));
-      return ok(await calendarService.updateHoliday(request, academicYearStart, holidayId, holidayPayload));
+      return ok(await calendarService.updateVacation(request, academicYearStart, vacationId, vacationPayload));
     } catch (error) {
       return fail(error);
     }
   },
 
-  async deleteHoliday(request: IRequestWithAuth, holidayId: string) {
+  async deleteVacation(request: IRequestWithAuth, vacationId: string) {
     try {
       const academicYearStart = parseAcademicYearStart(
         new URL(request.url).searchParams.get("academicYearStart") ?? "",
       );
-      await calendarService.deleteHoliday(request, academicYearStart, holidayId);
+      await calendarService.deleteVacation(request, academicYearStart, vacationId);
       return ok({ deleted: true });
     } catch (error) {
       return fail(error);
