@@ -50,6 +50,7 @@ export default function EventDetailsDialog({ event, occurrence, children }: IPro
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent
         showCloseButton={false}
+        aria-describedby={undefined}
         className="flex flex-col w-[85vw] max-w-[85vw] h-[82vh] max-h-[82vh] p-0 gap-0 overflow-hidden"
       >
         {/* Header */}
