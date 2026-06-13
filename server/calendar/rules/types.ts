@@ -1,9 +1,10 @@
-import type { IEvent, IOccurrence } from "@/shared/calendar/types";
+import type { IEvent, IOccurrence, IVacationPeriod } from "@/shared/calendar/types";
 import type { IRuleDefinitionMeta } from "@/shared/calendar/rules/types";
 
 export interface IRuleValidationContext {
   allEvents: IEvent[];
   academicYearStart: number;
+  vacations: IVacationPeriod[];
 }
 
 export interface IRuleViolation {

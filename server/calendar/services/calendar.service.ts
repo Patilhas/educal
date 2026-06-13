@@ -131,13 +131,16 @@ export class CalendarService {
 
   async validateAcademicYear(academicYearStart: number): Promise<IAcademicYearValidationResult> {
     const academicYear = getAcademicYearRange(academicYearStart);
-    const events = await calendarData.listEvents();
+    const [events, vacations] = await Promise.all([
+      calendarData.listEvents(),
+      calendarData.listVacations(academicYearStart),
+    ]);
     const academicYearEvents = events.filter(
       (event) => getEventAcademicYearStart(event) === academicYearStart,
     );
 
     const issues = academicYearEvents.flatMap((event) =>
-      this.collectEventRuleIssues(event, academicYearStart, events),
+      this.collectEventRuleIssues(event, academicYearStart, events, vacations),
     );
 
     return {
@@ -158,6 +161,29 @@ export class CalendarService {
     this.ensureCanManageEvents(request.auth.user.role);
 
     const targetAcademicYearStart = sourceAcademicYearStart + 1;
+
+    // Vacations migration
+    const sourceVacations = await calendarData.listVacations(sourceAcademicYearStart);
+    const targetVacations = await calendarData.listVacations(targetAcademicYearStart);
+    const targetLabels = new Set(targetVacations.map((v) => v.label));
+    let createdVacations = 0;
+    let skippedVacations = 0;
+
+    for (const v of sourceVacations) {
+      if (targetLabels.has(v.label)) {
+        skippedVacations++;
+        continue;
+      }
+      await calendarData.upsertVacation(targetAcademicYearStart, {
+        id: crypto.randomUUID(),
+        label: v.label,
+        startDate: shiftDateByYears(v.startDate, 1),
+        endDate: shiftDateByYears(v.endDate, 1),
+      });
+      createdVacations++;
+    }
+
+    // Events Migration
     const allEvents = await calendarData.listEvents();
 
     const sourceEvents = allEvents.filter(
@@ -187,27 +213,7 @@ export class CalendarService {
       const saved = await calendarData.insertEventIntoAcademicYear(migratedEvent, targetAcademicYearStart);
       existingSignatures.add(signature);
       createdEvents += 1;
-      issues.push(...this.collectEventRuleIssues(saved, targetAcademicYearStart, allEvents));
-    }
-
-    const sourceVacations = await calendarData.listVacations(sourceAcademicYearStart);
-    const targetVacations = await calendarData.listVacations(targetAcademicYearStart);
-    const targetLabels = new Set(targetVacations.map((v) => v.label));
-    let createdVacations = 0;
-    let skippedVacations = 0;
-
-    for (const v of sourceVacations) {
-      if (targetLabels.has(v.label)) {
-        skippedVacations++;
-        continue;
-      }
-      await calendarData.upsertVacation(targetAcademicYearStart, {
-        id: crypto.randomUUID(),
-        label: v.label,
-        startDate: shiftDateByYears(v.startDate, 1),
-        endDate: shiftDateByYears(v.endDate, 1),
-      });
-      createdVacations++;
+      issues.push(...this.collectEventRuleIssues(saved, targetAcademicYearStart, allEvents, targetVacations));
     }
 
     return {
@@ -366,10 +372,10 @@ export class CalendarService {
     });
   }
 
-  private collectEventRuleIssues(event: IEvent, academicYearStart: number, allEvents: IEvent[]): ICalendarRuleIssue[] {
+  private collectEventRuleIssues(event: IEvent, academicYearStart: number, allEvents: IEvent[], vacations: IVacationPeriod[] = []): ICalendarRuleIssue[] {
     if (!event.rules || event.rules.length === 0) return [];
 
-    const context = { allEvents, academicYearStart };
+    const context = { allEvents, academicYearStart, vacations };
     const issues: ICalendarRuleIssue[] = [];
 
     for (const occurrence of event.occurrences) {
