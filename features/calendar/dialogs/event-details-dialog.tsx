@@ -16,7 +16,9 @@ import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import AddEditEventDialog from "@/features/calendar/dialogs/add-edit-event-dialog";
 import DeleteEventDialog from "@/features/calendar/dialogs/delete-event-dialog";
 import { formatTime, getEventCategoryLabel } from "@/features/calendar/helpers";
+import { getEventAcademicYearStart } from "@/shared/calendar/academic-year";
 import type { IEvent, IOccurrence } from "@/shared/calendar/types";
+import type { EventGapConstraint } from "@/features/calendar/components/event-constraint-list";
 import { useTranslations } from "@/i18n/use-translations";
 
 interface IProps {
@@ -37,7 +39,8 @@ function MetaField({ label, value }: { label: string; value: string }) {
 }
 
 export default function EventDetailsDialog({ event, occurrence, children }: IProps) {
-  const { use24HourFormat, canEditEvents, eventEnums } = useCalendar();
+  const { use24HourFormat, canEditEvents, eventEnums, allEvents, academicYearStart } = useCalendar();
+  const yearEvents = allEvents.filter((e) => getEventAcademicYearStart(e) === academicYearStart);
   const { t } = useTranslations();
 
   const displayOccurrence = occurrence || event.occurrences[0];
@@ -112,12 +115,6 @@ export default function EventDetailsDialog({ event, occurrence, children }: IPro
                 label={t("calendar.dialogs.eventDetails.fields.createdBy")}
                 value={event.user.name}
               />
-              {event.daysBetweenOccurrences ? (
-                <MetaField
-                  label={t("calendar.dialogs.eventDetails.fields.daysBetween")}
-                  value={String(event.daysBetweenOccurrences)}
-                />
-              ) : null}
               {displayOccurrence && (
                 <>
                   <MetaField
@@ -150,9 +147,48 @@ export default function EventDetailsDialog({ event, occurrence, children }: IPro
                   return (
                     <div key={`${rule.type}-${index}`} className="rounded-md border bg-background px-3 py-2 space-y-1.5">
                       <p className="text-sm font-medium">{t(`calendar.rules.${rule.type}.label` as never)}</p>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1">
+                      <div className="flex flex-col gap-1.5">
                         {meta.fields.map((fieldDef) => {
                           const label = t(`calendar.rules.${rule.type}.fields.${fieldDef.id}` as never);
+
+                          if (fieldDef.type === "event-multiselect") {
+                            const ids = (rule.config[fieldDef.id] as number[] | undefined) ?? [];
+                            const selected = yearEvents.filter((e) => ids.includes(e.id));
+                            if (selected.length === 0) return null;
+                            return (
+                              <div key={fieldDef.id} className="space-y-1">
+                                <span className="text-xs text-muted-foreground">{label}</span>
+                                <div className="flex flex-wrap gap-1">
+                                  {selected.map((e) => (
+                                    <Badge key={e.id} variant="secondary" className="text-xs font-normal">{e.name}</Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          if (fieldDef.type === "event-constraints") {
+                            const constraints = (rule.config[fieldDef.id] as EventGapConstraint[] | undefined) ?? [];
+                            if (constraints.length === 0) return null;
+                            return (
+                              <div key={fieldDef.id} className="space-y-1">
+                                <span className="text-xs text-muted-foreground">{label}</span>
+                                <div className="space-y-0.5">
+                                  {constraints.map((c) => {
+                                    const ev = yearEvents.find((e) => e.id === c.eventId);
+                                    if (!ev) return null;
+                                    return (
+                                      <div key={c.eventId} className="flex items-center gap-1.5 text-xs">
+                                        <Badge variant="secondary" className="font-normal">{ev.name}</Badge>
+                                        <span className="text-muted-foreground">{c.minWorkingDays} {t("calendar.dialogs.addEditEvent.rules.eventConstraintList.daysLabel")}</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          }
+
                           const active = Boolean(rule.config[fieldDef.id] ?? fieldDef.defaultValue);
                           return (
                             <span

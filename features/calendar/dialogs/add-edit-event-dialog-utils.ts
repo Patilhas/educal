@@ -60,7 +60,6 @@ export const getEventFormDefaults = (
   return {
     name: event?.name ?? "",
     objective: event?.objective ?? "",
-    daysBetweenOccurrences: event?.daysBetweenOccurrences ?? "",
     category: event?.category ?? "",
     classification: event?.classification ?? "",
     status: event?.status ?? "",
@@ -72,6 +71,8 @@ export const getEventFormDefaults = (
         description: occurrence.description,
         startDate: new Date(occurrence.startDate),
         endDate: new Date(occurrence.endDate),
+        minDays: occurrence.minDays,
+        minDaysToNext: occurrence.minDaysToNext,
       })) ?? [
         {
           id: crypto.randomUUID(),
@@ -106,7 +107,6 @@ export const formatEventFromForm = ({
     id,
     name: values.name,
     objective: values.objective,
-    daysBetweenOccurrences: values.daysBetweenOccurrences,
     category: values.category,
     classification: values.classification,
     status: values.status,
@@ -117,6 +117,8 @@ export const formatEventFromForm = ({
       description: occurrence.description,
       startDate: format(occurrence.startDate, "yyyy-MM-dd'T'HH:mm:ss"),
       endDate: format(occurrence.endDate, "yyyy-MM-dd'T'HH:mm:ss"),
+      minDays: occurrence.minDays,
+      minDaysToNext: occurrence.minDaysToNext,
     })),
     user: isEditing && event ? event.user : defaultUser,
   };

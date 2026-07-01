@@ -39,6 +39,7 @@ interface ICalendarContext {
   canEditEvents: boolean;
   eventEnums: IEventEnums;
   events: IEvent[];
+  allEvents: IEvent[];
   vacations: IVacationPeriod[];
   addVacation: (v: IVacationPeriod) => void;
   replaceVacation: (v: IVacationPeriod) => void;
@@ -289,6 +290,7 @@ export function CalendarProvider({
     filterEventsBySelectedCategories,
     filterEventsBySelectedUser,
     events: filteredEvents,
+    allEvents,
     view: currentView,
     use24HourFormat,
     toggleTimeFormat,

@@ -16,6 +16,8 @@ export const occurrencePayloadSchema = z
     description: z.string().min(1),
     startDate: dateLikeString,
     endDate: dateLikeString,
+    minDays: z.number().int().positive().optional(),
+    minDaysToNext: z.number().int().positive().optional(),
   })
   .refine((value) => new Date(value.endDate) > new Date(value.startDate), {
     message: "A data de fim deve ser posterior à data de início",
@@ -57,7 +59,6 @@ export async function buildEventPayloadSchema() {
   return z.object({
     name: z.string().min(1),
     objective: z.string().min(1),
-    daysBetweenOccurrences: z.string().regex(/^\d*$/),
     academicYearStart: z.number().int().positive().optional(),
     category: z.enum(categoryValues as [string, ...string[]]),
     classification: z.enum(classificationValues as [string, ...string[]]),

@@ -1,6 +1,6 @@
 export interface IRuleFieldDefinition {
   id: string;
-  type: "checkbox" | "select" | "number";
+  type: "checkbox" | "select" | "number" | "event-multiselect" | "event-constraints";
   defaultValue: unknown;
 }
 
@@ -15,6 +15,7 @@ export interface IRuleDefinitionMeta {
   id: string;
   fields: IRuleFieldDefinition[];
   translations: Record<string, IRuleTranslations>;
+  hidden?: boolean;
 }
 
 export function computeDefaultConfig(fields: IRuleFieldDefinition[]): Record<string, unknown> {

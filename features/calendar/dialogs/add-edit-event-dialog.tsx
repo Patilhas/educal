@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useMemo } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -29,8 +29,12 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
+import { EventMultiSelect } from "@/features/calendar/components/event-multi-select";
+import { EventConstraintList } from "@/features/calendar/components/event-constraint-list";
+import type { EventGapConstraint } from "@/features/calendar/components/event-constraint-list";
 import { useDisclosure } from "@/features/calendar/hooks";
 import type { IEvent } from "@/shared/calendar/types";
+import { getEventAcademicYearStart } from "@/shared/calendar/academic-year";
 import { computeDefaultConfig } from "@/shared/calendar/rules";
 import { createEventSchema, type TEventFormData } from "@/features/calendar/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -52,7 +56,11 @@ interface IProps {
 export default function AddEditEventDialog({ children, startDate, startTime, event }: IProps) {
   const { t } = useTranslations();
   const { isOpen, onClose, onToggle } = useDisclosure();
-  const { addEvent, updateEvent, users, eventEnums, canEditEvents } = useCalendar();
+  const { addEvent, updateEvent, users, eventEnums, canEditEvents, allEvents, academicYearStart } = useCalendar();
+  const yearEvents = useMemo(
+    () => allEvents.filter((e) => getEventAcademicYearStart(e) === academicYearStart),
+    [allEvents, academicYearStart],
+  );
   const isEditing = !!event;
   const eventSchema = useMemo(() => createEventSchema(t), [t]);
 
@@ -78,14 +86,17 @@ export default function AddEditEventDialog({ children, startDate, startTime, eve
 
   const activeRules = useWatch({ control: form.control, name: "rules" }) ?? [];
   const availableRuleDefs = eventEnums.rules.filter(
-    (def) => !activeRules.some((r) => r.type === def.id),
+    (def) => !def.hidden && !activeRules.some((r) => r.type === def.id),
   );
+
+  const [ruleSelectKey, setRuleSelectKey] = useState(0);
 
   const addRule = (ruleId: string) => {
     const meta = eventEnums.rules.find((r) => r.id === ruleId);
     if (!meta) return;
     const current = form.getValues("rules");
     form.setValue("rules", [...current, { type: ruleId, config: computeDefaultConfig(meta.fields) }], { shouldDirty: true });
+    setRuleSelectKey((k) => k + 1);
   };
 
   const removeRule = (index: number) => {
@@ -320,31 +331,13 @@ export default function AddEditEventDialog({ children, startDate, startTime, eve
                 />
               </div>
 
-              <FormField
-                control={form.control}
-                name="daysBetweenOccurrences"
-                render={({ field, fieldState }) => (
-                  <FormItem>
-                    <FormLabel>{t("calendar.dialogs.addEditEvent.fields.daysBetween")}</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        inputMode="numeric"
-                        placeholder={t("calendar.dialogs.addEditEvent.fields.daysBetweenPlaceholder")}
-                        className={fieldState.invalid ? "border-red-500" : ""}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
               {/* Rules */}
               <div className="space-y-3 rounded-md border p-3">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium">{t("calendar.dialogs.addEditEvent.rules.title")}</p>
                   {availableRuleDefs.length > 0 && (
-                    <Select onValueChange={addRule}>
+                    <Select key={ruleSelectKey} onValueChange={addRule}>
                       <SelectTrigger className="h-8 w-auto">
                         <SelectValue placeholder={t("calendar.dialogs.addEditEvent.rules.add")} />
                       </SelectTrigger>
@@ -376,22 +369,72 @@ export default function AddEditEventDialog({ children, startDate, startTime, eve
                               <X className="size-3.5" />
                             </button>
                           </div>
-                          <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+                          <div className="flex flex-wrap gap-x-4 gap-y-2">
                             {meta.fields.map((fieldDef) => {
-                              if (fieldDef.type !== "checkbox") return null;
                               const label = t(`calendar.rules.${rule.type}.fields.${fieldDef.id}` as never);
-                              const checked = (rule.config[fieldDef.id] as boolean) ?? (fieldDef.defaultValue as boolean);
-                              return (
-                                <label key={fieldDef.id} className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={(e) => updateRuleConfig(index, fieldDef.id, e.target.checked)}
-                                    className="h-3.5 w-3.5 cursor-pointer"
-                                  />
-                                  {label}
-                                </label>
-                              );
+
+                              if (fieldDef.type === "checkbox") {
+                                const checked = (rule.config[fieldDef.id] as boolean) ?? (fieldDef.defaultValue as boolean);
+                                return (
+                                  <label key={fieldDef.id} className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={checked}
+                                      onChange={(e) => updateRuleConfig(index, fieldDef.id, e.target.checked)}
+                                      className="h-3.5 w-3.5 cursor-pointer"
+                                    />
+                                    {label}
+                                  </label>
+                                );
+                              }
+
+                              if (fieldDef.type === "number") {
+                                const numVal = (rule.config[fieldDef.id] as number | undefined) ?? (fieldDef.defaultValue as number);
+                                return (
+                                  <label key={fieldDef.id} className="flex items-center gap-2 text-xs">
+                                    <span>{label}</span>
+                                    <input
+                                      type="number"
+                                      min={1}
+                                      value={numVal}
+                                      onChange={(e) => updateRuleConfig(index, fieldDef.id, parseInt(e.target.value, 10) || 1)}
+                                      className="w-16 h-6 rounded border border-input bg-background px-2 text-xs"
+                                    />
+                                  </label>
+                                );
+                              }
+
+                              if (fieldDef.type === "event-multiselect") {
+                                const selectedIds = (rule.config[fieldDef.id] as number[] | undefined) ?? [];
+                                return (
+                                  <div key={fieldDef.id} className="w-full space-y-1">
+                                    <span className="text-xs">{label}</span>
+                                    <EventMultiSelect
+                                      value={selectedIds}
+                                      onChange={(ids) => updateRuleConfig(index, fieldDef.id, ids)}
+                                      events={yearEvents}
+                                      excludeEventId={event?.id}
+                                    />
+                                  </div>
+                                );
+                              }
+
+                              if (fieldDef.type === "event-constraints") {
+                                const constraints = (rule.config[fieldDef.id] as EventGapConstraint[] | undefined) ?? [];
+                                return (
+                                  <div key={fieldDef.id} className="w-full space-y-1.5">
+                                    <span className="text-xs">{label}</span>
+                                    <EventConstraintList
+                                      value={constraints}
+                                      onChange={(c) => updateRuleConfig(index, fieldDef.id, c)}
+                                      events={yearEvents}
+                                      excludeEventId={event?.id}
+                                    />
+                                  </div>
+                                );
+                              }
+
+                              return null;
                             })}
                           </div>
                         </div>
@@ -466,6 +509,45 @@ export default function AddEditEventDialog({ children, startDate, startTime, eve
                         </FormItem>
                       )}
                     />
+
+                    <div className="grid gap-3 grid-cols-2">
+                      <FormField
+                        control={form.control}
+                        name={`occurrences.${index}.minDays`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t("calendar.dialogs.addEditEvent.occurrences.minDays")}</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min={1}
+                                placeholder={t("calendar.dialogs.addEditEvent.occurrences.minDaysPlaceholder")}
+                                value={field.value ?? ""}
+                                onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`occurrences.${index}.minDaysToNext`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t("calendar.dialogs.addEditEvent.occurrences.minDaysToNext")}</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min={1}
+                                placeholder={t("calendar.dialogs.addEditEvent.occurrences.minDaysToNextPlaceholder")}
+                                value={field.value ?? ""}
+                                onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
                     <div className="grid gap-3 grid-cols-2">
                       <FormField

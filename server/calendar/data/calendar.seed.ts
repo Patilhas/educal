@@ -152,7 +152,6 @@ const createEvent = (
     id,
     name: randomArrayItem(eventNames),
     objective: randomArrayItem(EVENT_OBJECTIVES),
-    daysBetweenOccurrences: (Math.floor(Math.random() * 120) + 1).toString(),
     category: randomArrayItem(CATEGORIES_SEED).value,
     classification: randomArrayItem(CLASSIFICATIONS_SEED).value,
     status: randomArrayItem(STATUSES_SEED).name,

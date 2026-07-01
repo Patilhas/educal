@@ -28,6 +28,8 @@ export interface IOccurrence {
   description: string;
   startDate: string;
   endDate: string;
+  minDays?: number;
+  minDaysToNext?: number;
 }
 
 export interface IAcademicYearRange {
@@ -92,7 +94,6 @@ export interface IEvent {
   id: number;
   name: string;
   objective: string;
-  daysBetweenOccurrences: string;
   category: TEventCategory;
   classification: TEventClassification;
   status: TEventStatus;

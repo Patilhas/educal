@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { canManageCalendarEvents } from "@/shared/user/roles";
 import { getAcademicYearRange, getEventAcademicYearStart, shiftDateByYears } from "@/shared/calendar/academic-year";
-import { validateEventRule, getRulesMetadata } from "@/server/calendar/rules";
+import { validateEventRule, getRulesMetadata, minDurationRule, minDaysToNextRule } from "@/server/calendar/rules";
 import type {
   IAcademicYearMigrationResult,
   IAcademicYearValidationResult,
@@ -56,7 +56,6 @@ export class CalendarService {
       id: 0,
       name: parsed.name,
       objective: parsed.objective,
-      daysBetweenOccurrences: parsed.daysBetweenOccurrences,
       category: parsed.category,
       classification: parsed.classification,
       status: parsed.status,
@@ -67,6 +66,8 @@ export class CalendarService {
         description: occurrence.description,
         startDate: toIsoString(occurrence.startDate),
         endDate: toIsoString(occurrence.endDate),
+        minDays: occurrence.minDays,
+        minDaysToNext: occurrence.minDaysToNext,
       })),
       user: request.auth.user,
     };
@@ -95,7 +96,6 @@ export class CalendarService {
       id: eventId,
       name: parsed.name,
       objective: parsed.objective,
-      daysBetweenOccurrences: parsed.daysBetweenOccurrences,
       category: parsed.category,
       classification: parsed.classification,
       status: parsed.status,
@@ -106,6 +106,8 @@ export class CalendarService {
         description: occurrence.description,
         startDate: toIsoString(occurrence.startDate),
         endDate: toIsoString(occurrence.endDate),
+        minDays: occurrence.minDays,
+        minDaysToNext: occurrence.minDaysToNext,
       })),
       user: existing.user,
     };
@@ -349,6 +351,8 @@ export class CalendarService {
         description: occurrence.description,
         startDate: shiftDateByYears(occurrence.startDate, delta),
         endDate: shiftDateByYears(occurrence.endDate, delta),
+        minDays: occurrence.minDays,
+        minDaysToNext: occurrence.minDaysToNext,
       })),
     };
   }
@@ -357,7 +361,6 @@ export class CalendarService {
     return JSON.stringify({
       name: event.name,
       objective: event.objective,
-      daysBetweenOccurrences: event.daysBetweenOccurrences,
       academicYearStart: getEventAcademicYearStart({ occurrences: event.occurrences }),
       category: event.category,
       classification: event.classification,
@@ -373,12 +376,33 @@ export class CalendarService {
   }
 
   private collectEventRuleIssues(event: IEvent, academicYearStart: number, allEvents: IEvent[], vacations: IVacationPeriod[] = []): ICalendarRuleIssue[] {
-    if (!event.rules || event.rules.length === 0) return [];
-
     const context = { allEvents, academicYearStart, vacations };
     const issues: ICalendarRuleIssue[] = [];
 
-    for (const occurrence of event.occurrences) {
+    const sortedOccurrences = [...event.occurrences].sort(
+      (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
+    );
+
+    for (let i = 0; i < sortedOccurrences.length; i++) {
+      const occurrence = sortedOccurrences[i];
+
+      for (const builtInRule of [minDurationRule, minDaysToNextRule]) {
+        for (const v of builtInRule.validate(event, occurrence, {}, context)) {
+          issues.push({
+            eventId: event.id,
+            eventName: event.name,
+            occurrenceId: occurrence.id,
+            occurrenceDescription: occurrence.description,
+            academicYearStart,
+            date: v.date,
+            ruleType: builtInRule.id,
+            fieldLabelKey: v.fieldLabelKey,
+            messageKey: v.messageKey,
+            messageParams: v.messageParams,
+          });
+        }
+      }
+
       for (const rule of event.rules) {
         const violations = validateEventRule(rule, event, occurrence, context);
 
