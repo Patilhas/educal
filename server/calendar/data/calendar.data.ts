@@ -57,6 +57,18 @@ export class CalendarData {
         return parsed;
     }
 
+    // Reads the current DB inside the write queue, applies the mutator, and persists.
+    private async persistDb(mutate: (db: ICalendarDb) => ICalendarDb): Promise<void> {
+        this.writeQueue = this.writeQueue.then(async () => {
+            const db = (await this.redis.get(CALENDAR_REDIS_DB_KEY)) as ICalendarDb;
+            const nextDb = mutate(db);
+            await this.redis.set(CALENDAR_REDIS_DB_KEY, JSON.stringify(nextDb));
+            this.cachedDb = clone(nextDb);
+            this.lastCacheValidationAt = Date.now();
+        });
+        await this.writeQueue;
+    }
+
     // ─── Reference data ────────────────────────────────────────────────────────
 
     async listCategories(): Promise<ICategory[]> {
@@ -146,39 +158,36 @@ export class CalendarData {
     }
 
     async replaceEvent(eventId: number, event: IEvent) {
-        const db = await this.readDb();
-
-        for (let i = 0; i < db.academicYears.length; i++) {
-            const ay = db.academicYears[i];
-            const idx = ay.events.findIndex((item) => item.id === eventId);
-            if (idx >= 0) {
-                const nextAcademicYears = [...db.academicYears];
-                const nextEvents = [...ay.events];
-                nextEvents[idx] = event;
-                nextAcademicYears[i] = { ...ay, events: nextEvents };
-
-                await this.persistDb({ ...db, academicYears: nextAcademicYears });
-                return clone(event);
+        let result: IEvent | null = null;
+        await this.persistDb((db) => {
+            for (let i = 0; i < db.academicYears.length; i++) {
+                const ay = db.academicYears[i];
+                const idx = ay.events.findIndex((item) => item.id === eventId);
+                if (idx >= 0) {
+                    const nextAcademicYears = [...db.academicYears];
+                    const nextEvents = [...ay.events];
+                    nextEvents[idx] = event;
+                    nextAcademicYears[i] = { ...ay, events: nextEvents };
+                    result = clone(event);
+                    return { ...db, academicYears: nextAcademicYears };
+                }
             }
-        }
-
-        return null;
+            return db;
+        });
+        return result;
     }
 
     async deleteEvent(eventId: number) {
-        const db = await this.readDb();
-
         let found = false;
-        const nextAcademicYears = db.academicYears.map((ay) => {
-            const filtered = ay.events.filter((e) => e.id !== eventId);
-            if (filtered.length !== ay.events.length) found = true;
-            return { ...ay, events: filtered };
+        await this.persistDb((db) => {
+            const nextAcademicYears = db.academicYears.map((ay) => {
+                const filtered = ay.events.filter((e) => e.id !== eventId);
+                if (filtered.length !== ay.events.length) found = true;
+                return { ...ay, events: filtered };
+            });
+            return found ? { ...db, academicYears: nextAcademicYears } : db;
         });
-
-        if (!found) return false;
-
-        await this.persistDb({ ...db, academicYears: nextAcademicYears });
-        return true;
+        return found;
     }
 
     // ─── Vacations ─────────────────────────────────────────────────────────────
@@ -197,51 +206,42 @@ export class CalendarData {
     }
 
     async upsertVacation(academicYearStart: number, vacation: IVacationPeriod): Promise<IVacationPeriod> {
-        const db = await this.readDb();
-        const ayIndex = db.academicYears.findIndex((a) => a.startYear === academicYearStart);
-
-        let nextAcademicYears;
-        if (ayIndex >= 0) {
-            const ay = db.academicYears[ayIndex];
-            const existing = (ay.vacations ?? []).findIndex((v) => v.id === vacation.id);
-            const nextVacations = existing >= 0
-                ? (ay.vacations ?? []).map((v, i) => (i === existing ? vacation : v))
-                : [...(ay.vacations ?? []), vacation];
-            nextAcademicYears = [...db.academicYears];
-            nextAcademicYears[ayIndex] = { ...ay, vacations: nextVacations };
-        } else {
-            const range = getAcademicYearRange(academicYearStart);
-            nextAcademicYears = [{ ...range, vacations: [vacation], events: [] }, ...db.academicYears];
-        }
-
-        await this.persistDb({ ...db, academicYears: nextAcademicYears });
+        await this.persistDb((db) => {
+            const ayIndex = db.academicYears.findIndex((a) => a.startYear === academicYearStart);
+            let nextAcademicYears;
+            if (ayIndex >= 0) {
+                const ay = db.academicYears[ayIndex];
+                const existing = (ay.vacations ?? []).findIndex((v) => v.id === vacation.id);
+                const nextVacations = existing >= 0
+                    ? (ay.vacations ?? []).map((v, i) => (i === existing ? vacation : v))
+                    : [...(ay.vacations ?? []), vacation];
+                nextAcademicYears = [...db.academicYears];
+                nextAcademicYears[ayIndex] = { ...ay, vacations: nextVacations };
+            } else {
+                const range = getAcademicYearRange(academicYearStart);
+                nextAcademicYears = [{ ...range, vacations: [vacation], events: [] }, ...db.academicYears];
+            }
+            return { ...db, academicYears: nextAcademicYears };
+        });
         return clone(vacation);
     }
 
     async deleteVacation(academicYearStart: number, vacationId: string): Promise<boolean> {
-        const db = await this.readDb();
-        const ayIndex = db.academicYears.findIndex((a) => a.startYear === academicYearStart);
-        if (ayIndex < 0) return false;
+        let found = false;
+        await this.persistDb((db) => {
+            const ayIndex = db.academicYears.findIndex((a) => a.startYear === academicYearStart);
+            if (ayIndex < 0) return db;
 
-        const ay = db.academicYears[ayIndex];
-        const filtered = (ay.vacations ?? []).filter((v) => v.id !== vacationId);
-        if (filtered.length === (ay.vacations ?? []).length) return false;
+            const ay = db.academicYears[ayIndex];
+            const filtered = (ay.vacations ?? []).filter((v) => v.id !== vacationId);
+            if (filtered.length === (ay.vacations ?? []).length) return db;
 
-        const nextAcademicYears = [...db.academicYears];
-        nextAcademicYears[ayIndex] = { ...ay, vacations: filtered };
-        await this.persistDb({ ...db, academicYears: nextAcademicYears });
-        return true;
-    }
-
-    private async persistDb(nextDb: ICalendarDb): Promise<void> {
-        this.writeQueue = this.writeQueue.then(async () => {
-            await this.redis.set(CALENDAR_REDIS_DB_KEY, JSON.stringify(nextDb));
-
-            this.cachedDb = clone(nextDb);
-            this.lastCacheValidationAt = Date.now();
+            found = true;
+            const nextAcademicYears = [...db.academicYears];
+            nextAcademicYears[ayIndex] = { ...ay, vacations: filtered };
+            return { ...db, academicYears: nextAcademicYears };
         });
-
-        await this.writeQueue;
+        return found;
     }
 }
 

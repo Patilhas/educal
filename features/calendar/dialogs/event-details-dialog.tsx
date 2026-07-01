@@ -141,7 +141,7 @@ export default function EventDetailsDialog({ event, occurrence, children }: IPro
                 {t("calendar.dialogs.eventDetails.fields.rules")}
               </p>
               <div className="space-y-2">
-                {event.rules.map((rule, index) => {
+                {(event.rules ?? []).map((rule, index) => {
                   const meta = eventEnums.rules.find((r) => r.id === rule.type);
                   if (!meta) return null;
                   return (

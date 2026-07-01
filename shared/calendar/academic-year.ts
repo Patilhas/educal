@@ -28,10 +28,10 @@ export const getEventAcademicYearStart = (event: Pick<IEvent, "occurrences">): n
 export const shiftDateByYears = (dateValue: string, years: number): string => {
   const source = new Date(dateValue);
   const target = new Date(dateValue);
-  target.setFullYear(source.getFullYear() + years);
+  target.setUTCFullYear(source.getUTCFullYear() + years);
 
-  if (target.getMonth() !== source.getMonth()) {
-    target.setDate(0);
+  if (target.getUTCMonth() !== source.getUTCMonth()) {
+    target.setUTCDate(0);
   }
 
   return target.toISOString();

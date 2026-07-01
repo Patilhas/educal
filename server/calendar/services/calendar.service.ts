@@ -185,6 +185,9 @@ export class CalendarService {
       createdVacations++;
     }
 
+    // Re-fetch after vacation migration so rule checks see the newly migrated vacations
+    const updatedTargetVacations = await calendarData.listVacations(targetAcademicYearStart);
+
     // Events Migration
     const allEvents = await calendarData.listEvents();
 
@@ -215,7 +218,7 @@ export class CalendarService {
       const saved = await calendarData.insertEventIntoAcademicYear(migratedEvent, targetAcademicYearStart);
       existingSignatures.add(signature);
       createdEvents += 1;
-      issues.push(...this.collectEventRuleIssues(saved, targetAcademicYearStart, allEvents, targetVacations));
+      issues.push(...this.collectEventRuleIssues(saved, targetAcademicYearStart, allEvents, updatedTargetVacations));
     }
 
     return {
@@ -403,7 +406,7 @@ export class CalendarService {
         }
       }
 
-      for (const rule of event.rules) {
+      for (const rule of (event.rules ?? [])) {
         const violations = validateEventRule(rule, event, occurrence, context);
 
         for (const v of violations) {

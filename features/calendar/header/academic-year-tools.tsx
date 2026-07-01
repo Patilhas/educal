@@ -41,7 +41,7 @@ import { useTranslations } from "@/i18n/use-translations";
 export function AcademicYearTools() {
   const router = useRouter();
   const { t } = useTranslations();
-  const { academicYearStart, selectedDate, setSelectedDate, canEditEvents, events } = useCalendar();
+  const { academicYearStart, selectedDate, setSelectedDate, canEditEvents, allEvents } = useCalendar();
   const [isValidating, setIsValidating] = useState(false);
   const [isMigrating, setIsMigrating] = useState(false);
   const [validationResult, setValidationResult] =
@@ -201,9 +201,10 @@ export function AcademicYearTools() {
                     {t("calendar.academicYearTools.report.noIssues")}
                   </div>
                 ) : (
-                  report.issues.map((issue) => {
-                    const event = events.find((e) => e.id === issue.eventId);
+                  report.issues.map((issue, index) => {
+                    const event = allEvents.find((e) => e.id === issue.eventId);
                     const occurrence = event?.occurrences.find((o) => o.id === issue.occurrenceId);
+                    const issueKey = `${index}-${issue.eventId}-${issue.occurrenceId}-${issue.ruleType}-${issue.date}`;
                     const card = (
                       <div className="rounded-lg border p-3 transition-colors data-[clickable=true]:cursor-pointer data-[clickable=true]:hover:bg-muted/50" data-clickable={!!event}>
                         <div className="flex flex-wrap items-center gap-2">
@@ -224,14 +225,14 @@ export function AcademicYearTools() {
                     );
                     return event ? (
                       <EventDetailsDialog
-                        key={`${issue.eventId}-${issue.occurrenceId}-${issue.ruleType}-${issue.date}`}
+                        key={issueKey}
                         event={event}
                         occurrence={occurrence}
                       >
                         {card}
                       </EventDetailsDialog>
                     ) : (
-                      <div key={`${issue.eventId}-${issue.occurrenceId}-${issue.ruleType}-${issue.date}`}>
+                      <div key={issueKey}>
                         {card}
                       </div>
                     );

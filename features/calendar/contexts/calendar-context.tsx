@@ -93,7 +93,9 @@ export function CalendarProvider({
   view?: TCalendarView;
   badge?: "dot" | "colored";
 }) {
-  registerRuleTranslations(initialEventEnums.rules);
+  useMemo(() => {
+    registerRuleTranslations(initialEventEnums.rules);
+  }, [initialEventEnums.rules]);
 
   const [settings, setSettings] = useLocalStorage<CalendarSettings>(
     "calendar-settings",
