@@ -139,7 +139,7 @@ export default function AgendaEvents() {
                           <p className="text-sm">
                             {format(occurrence.startDate, "MM/dd/yyyy")}
                           </p>
-                          <span className="text-sm">às</span>
+                          <span className="text-sm">{t("calendar.dialogs.eventDetails.fields.at")}</span>
                           <p className="text-sm">
                             {formatTime(occurrence.startDate, use24HourFormat)}
                           </p>

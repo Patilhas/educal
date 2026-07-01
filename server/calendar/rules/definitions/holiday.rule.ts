@@ -1,0 +1,61 @@
+import { parseISO, eachDayOfInterval } from "date-fns";
+import Holidays from "date-holidays";
+import type { IRuleDefinition, IRuleViolation } from "../types";
+import type { IEvent, IOccurrence } from "@/shared/calendar/types";
+
+const hd = new Holidays("PT", { languages: "pt" });
+
+type HolidayConfig = { checkStart: boolean; checkEnd: boolean; checkRange: boolean };
+
+export const holidayRule: IRuleDefinition = {
+  id: "holiday",
+  fields: [
+    { id: "checkStart", type: "checkbox", defaultValue: true },
+    { id: "checkEnd",   type: "checkbox", defaultValue: true },
+    { id: "checkRange", type: "checkbox", defaultValue: false },
+  ],
+  translations: {
+    pt: {
+      label: "Feriado",
+      fields: {
+        checkStart: "Verificar início",
+        checkEnd: "Verificar fim",
+        checkRange: "Verificar período",
+      },
+      fieldLabels: {
+        start: "Início",
+        end: "Fim",
+        range: "Período",
+      },
+      messages: {
+        startIsHoliday: "O início coincide com o feriado {holidayName}",
+        endIsHoliday: "O fim coincide com o feriado {holidayName}",
+        rangeHasHoliday: "O período inclui o feriado {holidayName}",
+      },
+    },
+  },
+  validate(_event: IEvent, occurrence: IOccurrence, config: Record<string, unknown>): IRuleViolation[] {
+    const { checkStart, checkEnd, checkRange } = config as HolidayConfig;
+    const violations: IRuleViolation[] = [];
+
+    if (checkStart) {
+      const data = hd.isHoliday(parseISO(occurrence.startDate));
+      if (data) violations.push({ fieldLabelKey: "start", date: occurrence.startDate, messageKey: "startIsHoliday", messageParams: { holidayName: data[0].name } });
+    }
+    if (checkEnd) {
+      const data = hd.isHoliday(parseISO(occurrence.endDate));
+      if (data) violations.push({ fieldLabelKey: "end", date: occurrence.endDate, messageKey: "endIsHoliday", messageParams: { holidayName: data[0].name } });
+    }
+    if (checkRange) {
+      for (const day of eachDayOfInterval({ start: parseISO(occurrence.startDate), end: parseISO(occurrence.endDate) })) {
+        const data = hd.isHoliday(day);
+        if (data) {
+          violations.push({ fieldLabelKey: "range", date: day.toISOString(), messageKey: "rangeHasHoliday", messageParams: { holidayName: data[0].name } });
+          break;
+        }
+      }
+    }
+
+    return violations;
+  },
+};

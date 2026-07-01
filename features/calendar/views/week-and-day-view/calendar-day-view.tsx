@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { DayPicker } from "@/components/ui/day-picker";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
+import { useTranslations } from "@/i18n/use-translations";
 
 import { groupOccurrences } from "@/features/calendar/helpers";
 import type { IEvent, IOccurrence } from "@/shared/calendar/types";
@@ -21,6 +22,7 @@ interface IProps {
 export default function CalendarDayView({ singleDayOccurrences, multiDayOccurrences }: IProps) {
   const { selectedDate, setSelectedDate, users, use24HourFormat } =
     useCalendar();
+  const { t } = useTranslations();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const hours = Array.from({ length: 24 }, (_, i) => i);
@@ -141,12 +143,12 @@ export default function CalendarDayView({ singleDayOccurrences, multiDayOccurren
               </span>
 
               <p className="text-sm font-semibold text-foreground">
-                A acontecer
+                {t("calendar.views.day.happeningNow")}
               </p>
             </div>
           ) : (
             <p className="p-4 text-center text-sm italic text-muted-foreground">
-              Nenhum evento a acontecer no momento
+              {t("calendar.views.day.noEventsNow")}
             </p>
           )}
 

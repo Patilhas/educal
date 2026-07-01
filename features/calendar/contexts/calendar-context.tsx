@@ -9,14 +9,17 @@ import {
   updateOccurrenceRequest,
 } from "@/features/calendar/client-requests";
 import { useLocalStorage } from "@/features/calendar/hooks";
-import type { IEvent, IEventEnums, TEventCategory } from "@/shared/calendar/types";
+import { getEventAcademicYearStart } from "@/shared/calendar/academic-year";
+import type { IEvent, IEventEnums, IVacationPeriod, TEventCategory } from "@/shared/calendar/types";
 import type { IUser } from "@/shared/user/types";
 import { canManageCalendarEvents } from "@/shared/user/roles";
 import { getEventColorByCategory } from "@/features/calendar/helpers";
 import type { TCalendarView, TEventColor } from "@/features/calendar/types";
+import { registerRuleTranslations } from "@/i18n/register-rules";
 
 interface ICalendarContext {
   selectedDate: Date;
+  academicYearStart: number;
   view: TCalendarView;
   setView: (view: TCalendarView) => void;
   agendaModeGroupBy: "date" | "category";
@@ -36,6 +39,11 @@ interface ICalendarContext {
   canEditEvents: boolean;
   eventEnums: IEventEnums;
   events: IEvent[];
+  allEvents: IEvent[];
+  vacations: IVacationPeriod[];
+  addVacation: (v: IVacationPeriod) => void;
+  replaceVacation: (v: IVacationPeriod) => void;
+  removeVacation: (id: string) => void;
   addEvent: (event: IEvent) => Promise<void>;
   updateEvent: (event: IEvent) => Promise<void>;
   updateOccurrence: (params: {
@@ -72,6 +80,7 @@ export function CalendarProvider({
   currentUser,
   events,
   initialEventEnums,
+  initialVacationsByYear = {},
   badge = "colored",
   view = "day",
 }: {
@@ -80,9 +89,14 @@ export function CalendarProvider({
   currentUser: IUser | null;
   events: IEvent[];
   initialEventEnums: IEventEnums;
+  initialVacationsByYear?: Record<number, IVacationPeriod[]>;
   view?: TCalendarView;
   badge?: "dot" | "colored";
 }) {
+  useMemo(() => {
+    registerRuleTranslations(initialEventEnums.rules);
+  }, [initialEventEnums.rules]);
+
   const [settings, setSettings] = useLocalStorage<CalendarSettings>(
     "calendar-settings",
     {
@@ -112,7 +126,9 @@ export function CalendarProvider({
   const [selectedCategories, setSelectedCategories] = useState<TEventCategory[]>([]);
 
   const [allEvents, setAllEvents] = useState<IEvent[]>(events || []);
+  const [vacationsByYear, setVacationsByYear] = useState<Record<number, IVacationPeriod[]>>(initialVacationsByYear);
   const canEditEvents = currentUser ? canManageCalendarEvents(currentUser.role) : false;
+  const academicYearStart = selectedDate.getFullYear();
 
   const categoryColorMap = useMemo(
     () =>
@@ -214,6 +230,29 @@ export function CalendarProvider({
     setAllEvents((prev) => prev.filter((event) => event.id !== eventId));
   };
 
+  const addVacation = (v: IVacationPeriod) => {
+    setVacationsByYear((prev) => ({
+      ...prev,
+      [academicYearStart]: [...(prev[academicYearStart] ?? []), v],
+    }));
+  };
+
+  const replaceVacation = (v: IVacationPeriod) => {
+    setVacationsByYear((prev) => ({
+      ...prev,
+      [academicYearStart]: (prev[academicYearStart] ?? []).map((item) =>
+        item.id === v.id ? v : item,
+      ),
+    }));
+  };
+
+  const removeVacation = (id: string) => {
+    setVacationsByYear((prev) => ({
+      ...prev,
+      [academicYearStart]: (prev[academicYearStart] ?? []).filter((v) => v.id !== id),
+    }));
+  };
+
   const clearFilter = () => {
     setSelectedCategories([]);
     setSelectedUserId("all");
@@ -225,13 +264,21 @@ export function CalendarProvider({
         selectedCategories.length === 0 || selectedCategories.includes(event.category);
       const matchesUser =
         selectedUserId === "all" || event.user.id === selectedUserId;
+      const matchesAcademicYear =
+        getEventAcademicYearStart(event) === academicYearStart;
 
-      return matchesCategory && matchesUser;
+      return matchesCategory && matchesUser && matchesAcademicYear;
     });
-  }, [allEvents, selectedCategories, selectedUserId]);
+  }, [allEvents, selectedCategories, selectedUserId, academicYearStart]);
+
+  const vacations = useMemo(
+    () => vacationsByYear[academicYearStart] ?? [],
+    [vacationsByYear, academicYearStart],
+  );
 
   const value = {
     selectedDate,
+    academicYearStart,
     setSelectedDate: handleSelectDate,
     selectedUserId,
     setSelectedUserId,
@@ -245,12 +292,17 @@ export function CalendarProvider({
     filterEventsBySelectedCategories,
     filterEventsBySelectedUser,
     events: filteredEvents,
+    allEvents,
     view: currentView,
     use24HourFormat,
     toggleTimeFormat,
     setView,
     agendaModeGroupBy,
     setAgendaModeGroupBy,
+    vacations,
+    addVacation,
+    replaceVacation,
+    removeVacation,
     addEvent,
     updateEvent,
     updateOccurrence,

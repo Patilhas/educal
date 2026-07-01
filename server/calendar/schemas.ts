@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { calendarData } from "@/server/calendar/data/calendar.data";
 import { DomainError } from "@/server/shared/domain-error";
+import { SERVER_RULES } from "@/server/calendar/rules";
 
 const dateLikeString = z
   .string()
@@ -15,6 +16,8 @@ export const occurrencePayloadSchema = z
     description: z.string().min(1),
     startDate: dateLikeString,
     endDate: dateLikeString,
+    minDays: z.number().int().positive().optional(),
+    minDaysToNext: z.number().int().positive().optional(),
   })
   .refine((value) => new Date(value.endDate) > new Date(value.startDate), {
     message: "A data de fim deve ser posterior à data de início",
@@ -56,11 +59,23 @@ export async function buildEventPayloadSchema() {
   return z.object({
     name: z.string().min(1),
     objective: z.string().min(1),
-    daysBetweenOccurrences: z.string().regex(/^\d*$/),
+    academicYearStart: z.number().int().positive().optional(),
     category: z.enum(categoryValues as [string, ...string[]]),
     classification: z.enum(classificationValues as [string, ...string[]]),
     status: z.enum(statusValues as [string, ...string[]]),
     responsible: z.enum(responsibleValues as [string, ...string[]]),
+    rules: z.array(
+      z.object({
+        type: z.string().refine(
+          (t) => SERVER_RULES.some((r) => r.id === t),
+          "Tipo de regra inválido",
+        ),
+        config: z.record(z.string(), z.unknown()),
+      }),
+    ).optional().default([]).refine(
+      (rules) => new Set(rules.map((r) => r.type)).size === rules.length,
+      "Não podem existir regras duplicadas",
+    ),
     occurrences: z.array(occurrencePayloadSchema).min(1),
   });
 }
@@ -70,3 +85,14 @@ export const patchOccurrenceSchema = z.object({
   startDate: dateLikeString.optional(),
   endDate: dateLikeString.optional(),
 });
+
+export const vacationPayloadSchema = z
+  .object({
+    label: z.string().min(1),
+    startDate: dateLikeString,
+    endDate: dateLikeString,
+  })
+  .refine((v) => new Date(v.endDate) > new Date(v.startDate), {
+    message: "A data de fim deve ser posterior à data de início",
+    path: ["endDate"],
+  });

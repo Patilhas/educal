@@ -10,6 +10,7 @@ import { EventListDialog } from "@/features/calendar/dialogs/events-list-dialog"
 import { DroppableArea } from "@/features/calendar/dnd/droppable-area";
 import { getMonthCellEvents } from "@/features/calendar/helpers";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
+import { useTranslations } from "@/i18n/use-translations";
 import { useMediaQuery } from "@/features/calendar/hooks";
 import type { ICalendarCell, IEvent, IOccurrence } from "@/shared/calendar/types";
 import { EventBullet } from "@/features/calendar/views/month-view/event-bullet";
@@ -33,6 +34,7 @@ export function DayCell({ cell, occurrences, eventPositions }: IProps) {
   const { day, currentMonth, date } = cell;
   const isMobile = useMediaQuery("(max-width: 768px)");
   const { getEventColor, canEditEvents } = useCalendar();
+  const { t } = useTranslations();
 
   const { cellOccurrences, currentCellMonth } = useMemo(() => {
     const cellOccurrences = getMonthCellEvents(date, occurrences, eventPositions);
@@ -127,7 +129,7 @@ export function DayCell({ cell, occurrences, eventPositions }: IProps) {
                   className="border opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                 >
                   <Plus className="h-4 w-4" />
-                  <span className="max-sm:hidden">Adicionar Evento</span>
+                  <span className="max-sm:hidden">{t("calendar.header.addEvent")}</span>
                 </Button>
               </AddEditEventDialog>
             </div>
