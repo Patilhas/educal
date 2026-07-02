@@ -1,3 +1,6 @@
+import { config } from "dotenv";
+config({ path: ".env.local" });
+
 async function main(): Promise<void> {
   const { Redis } = await import("@upstash/redis");
   const { db } = await import("@/db/client");
