@@ -1,3 +1,3 @@
-import { CalendarRepositoryRedis } from "@/server/calendar/data/calendar.repository.redis";
+import { createCalendarRepository } from "@/server/shared/data/data-layer";
 
-export const calendarData = new CalendarRepositoryRedis();
+export const calendarData = createCalendarRepository();

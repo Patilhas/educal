@@ -1,5 +1,4 @@
-import { AuthRepositoryRedis } from "@/server/auth/data/auth.repository.redis";
+import { createAuthRepository } from "@/server/shared/data/data-layer";
 
-export const authData = new AuthRepositoryRedis();
-
+export const authData = createAuthRepository();
 
