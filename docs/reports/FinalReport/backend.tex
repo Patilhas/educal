@@ -1,0 +1,80 @@
+%
+% Chapter 4 - Backend
+%
+\chapter{Backend} \label{cap:backend}
+
+This chapter details the backend implementation of EduCal, covering its layered organization, authentication, authorization, error handling, and testing approach.
+
+\section{Organization} \label{sec:backend-organization}
+
+The backend is organized per feature (\texttt{auth}, \texttt{calendar}) under \texttt{server/}, each following the same three-layer structure -- Controller, Service, and Data -- plus a \texttt{server/shared/} module for cross-cutting concerns (the API response envelope, domain error type, and the data-layer factory). This mirrors the Controller-Service-Repository pattern used since the initial implementation: controllers such as \texttt{authController} and \texttt{calendarController} act as orchestrators that parse and validate the incoming HTTP request and hand off to the corresponding service, keeping the route handlers in \texttt{app/api/**/route.ts} as thin wrappers, for example:
+
+\begin{verbatim}
+export const GET = withApiAuth(async () => calendarController.listEvents());
+export const POST = withApiAuth(async (request) => calendarController.createEvent(request));
+\end{verbatim}
+
+\section{Authentication} \label{sec:backend-authentication}
+
+Passwords are never stored in plain text: they are hashed with Node.js's built-in \texttt{crypto} module~\cite{nodejscrypto} using \texttt{scrypt}, a per-password random 16-byte salt, and a 64-byte derived key, stored as \texttt{scrypt\$salt\$hash}. Password verification uses a constant-time comparison (\texttt{crypto.timingSafeEqual}) to reduce the risk of timing attacks.
+
+On login, the service generates a random 48-byte, base64url-encoded session token and persists it, together with its expiration, in the \texttt{sessions} table. Two expiration policies are supported: a short-lived session (1 day) by default, or a 30-day session when the user selects ``Remember Me'' (\texttt{staySignedIn}). The session token is sent to the browser as a cookie that is \texttt{HttpOnly} (not accessible to client-side scripts, mitigating XSS-based token theft), \texttt{Secure} in production, and \texttt{SameSite=Lax}~\cite{owasp}; the cookie itself only carries a \texttt{maxAge} when ``Remember Me'' is selected, otherwise it is a session-only cookie. On every authenticated request, the session is also validated server-side against its stored expiration, and expired sessions are deleted rather than just ignored.
+
+\section{Error Handling} \label{sec:backend-error-handling}
+
+API responses follow a consistent envelope: successful responses return \texttt{\{ data: ... \}}, and failures return \texttt{\{ error: \{ code, message, details \} \}}. Domain-level failures are raised as a typed \texttt{DomainError} (with an error code such as \texttt{UNAUTHORIZED}, \texttt{FORBIDDEN}, \texttt{NOT\_FOUND}, or \texttt{CONFLICT}, and an HTTP status), and Zod validation failures are caught and converted into a \texttt{VALIDATION\_ERROR} response with a structured, field-level breakdown of what failed. Every controller method funnels its errors through this single \texttt{fail()} helper, which guarantees the frontend always receives a predictable error shape to parse and display, regardless of which layer raised the error.
+
+\section{Role-Based Access Control} \label{sec:backend-rbac}
+
+Three roles are supported -- \texttt{viewer}, \texttt{editor}, and \texttt{admin} -- ordered in a strict hierarchy. Calendar-editing operations (creating, updating, or deleting events, occurrences, and vacation periods, and running the migration engine) require at least the \texttt{editor} role; user management requires the \texttt{admin} role. Authentication itself is enforced by HTTP-level middleware (\texttt{withApiAuth}/\texttt{withApiAuthContext}) that resolves the session cookie into a user and rejects unauthenticated requests before they reach a controller; role checks are then applied one layer down, inside the services.
+
+Beyond the basic role hierarchy, the system enforces three self-management invariants to prevent an institution from locking itself out of administration:
+\begin{itemize}
+    \item an administrator cannot demote their own account away from \texttt{admin};
+    \item an administrator cannot delete their own account;
+    \item the last remaining administrator cannot be demoted or deleted -- the service counts existing admins before allowing either operation and rejects it if only one would remain.
+\end{itemize}
+
+\section{Layers} \label{sec:backend-layers}
+
+\subsection{Controller} \label{sec:backend-controller}
+Controllers (\texttt{server/auth/controllers/}, \texttt{server/calendar/controllers/}) are the entry point for each API route. They parse and validate route parameters and the request body, invoke the corresponding service method, and translate the result -- or any error thrown -- into an HTTP response using the shared \texttt{ok()}/\texttt{fail()} helpers. This is also where the session cookie is set on login and cleared on logout.
+
+\subsection{Service} \label{sec:backend-service}
+Services (\texttt{server/auth/services/auth.service.ts}, \texttt{server/calendar/services/calendar.service.ts}) hold all business logic and authorization checks, and are the bridge between the controllers and the data layer. This is where the RBAC invariants described in Section~\ref{sec:backend-rbac} are enforced, and where the two central pieces of calendar business logic live: the Migration Engine (Section~\ref{sec:migration-engine}) and the Business Rule Engine (Section~\ref{sec:rule-engine}).
+
+\subsection{Data} \label{sec:backend-data}
+The data layer (\texttt{server/auth/data/}, \texttt{server/calendar/data/}) exposes a repository interface (\texttt{IAuthRepository}, \texttt{ICalendarRepository}) per feature, abstracting all storage access. Services depend only on this interface, never on a concrete database client, which is what enables the pluggable PostgreSQL/Redis backend described in Section~\ref{sec:data-access}.
+
+\section{Migration Engine} \label{sec:migration-engine}
+
+The migration of the academic calendar from one year to the next is implemented as a single service operation (\texttt{CalendarService.migrateAcademicYear}), exposed to editors and administrators through dedicated ``Validate'' and ``Migrate'' actions in the calendar header (Section~\ref{sec:frontend-academic-year-tools}).
+
+\begin{itemize}
+    \item \textbf{Vacation periods first:} for the target academic year (source year $+\ 1$), the engine migrates vacation periods before events, shifting each period's dates forward by one year so that subsequent rule checks against the target year already see the correct vacation windows.
+    \item \textbf{Idempotent event migration:} every source-year event is fingerprinted from a fixed subset of its fields (name, objective, category, classification, status, responsible, owner, and each occurrence's description and dates -- deliberately excluding database-generated ids). If an equivalent event already exists in the target year, it is skipped; otherwise it is cloned and inserted. This makes the operation safe to run more than once without creating duplicates.
+    \item \textbf{Date shifting and leap years:} each occurrence's dates are shifted forward by one calendar year. The 29th of February is handled explicitly: if shifting the year would otherwise roll the date over into March (because the target year is not a leap year), the date is instead clamped back to the 28th of February.
+    \item \textbf{Validation, not silent correction:} immediately after an event is migrated, the full business rule set (Section~\ref{sec:rule-engine}) is run against it, and any violations -- such as an occurrence now falling on a weekend or holiday -- are collected into a structured report returned to the caller. The engine deliberately does not auto-correct these conflicts; resolving them is left as a manual, user-driven step, guided by the issue report shown in the application (Section~\ref{sec:frontend-academic-year-tools}). The same rule-checking logic also powers the standalone ``Validate'' action, which runs a read-only check without migrating anything.
+\end{itemize}
+
+\section{Business Rule Engine} \label{sec:rule-engine}
+
+A modular rule engine validates event occurrences against configurable institutional constraints. Each rule is a self-contained unit implementing a shared interface (a \texttt{validate} function that receives the event, the occurrence, its configuration, and validation context such as vacation periods and other events); the engine itself has no knowledge of what a rule checks, it only calls this function and collects the result. Rules are registered in a single, central list that the engine iterates over -- there is no branching logic deciding which rule applies, so new institutional rules can be added by writing one new file and registering it, without touching the migration or validation logic. This same rule registry also drives the rule-configuration UI in the event form (Section~\ref{sec:frontend-event-dialogs}), which reads each rule's field metadata to render the correct input controls.
+
+Seven rules are currently implemented:
+
+\begin{itemize}
+    \item \textbf{Weekend:} flags occurrences whose start, end, or intermediate dates fall on a Saturday or Sunday.
+    \item \textbf{Holiday:} flags occurrences that coincide with Portuguese national holidays.
+    \item \textbf{Vacation period:} flags occurrences that overlap a registered school vacation period for that academic year.
+    \item \textbf{Event no-overlap:} flags occurrences whose overall date span overlaps the span of other, user-selected events.
+    \item \textbf{Minimum gap to event:} enforces a minimum number of working days between the end of one event and the start of a related, user-selected event.
+    \item \textbf{Minimum duration:} an always-on, built-in rule enforcing a minimum calendar-day duration for an occurrence, driven by the occurrence's own \texttt{minDays} field.
+    \item \textbf{Minimum gap to next occurrence:} an always-on, built-in rule enforcing a minimum working-day gap between consecutive occurrences of the same event, driven by \texttt{minDaysToNext}.
+\end{itemize}
+
+The first five rules are selectively enabled and parameterized per event through the event creation and editing interface; the last two are always active for every occurrence and are not exposed in the rule-configuration UI (they are marked \texttt{hidden} in the rule metadata). All rules are advisory: none of them block the creation, editing, or migration of an event -- violations are surfaced for manual review rather than enforced automatically. This business-rule layer is distinct from the structural, blocking validation performed by Zod on every API request (e.g. ensuring an occurrence's end date is later than its start date).
+
+\section{Tests} \label{sec:backend-tests}
+
+The project does not currently have an automated test suite -- there is no test framework configured (no unit, integration, or end-to-end tests), and testing has been carried out manually throughout development: exercising each functional requirement's flows (event and occurrence CRUD, the migration engine, rule validation, login, and user management) directly through the application's UI and, for API endpoints, through direct HTTP requests. This is an accepted limitation of the current delivery; introducing automated tests is not part of the scope of this final report.

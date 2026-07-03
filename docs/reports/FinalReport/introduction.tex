@@ -1,0 +1,49 @@
+%
+% Chapter 1 - Introduction
+%
+\chapter{Introduction} \label{cap:intro}
+
+As part of the Bachelor's Degree in Computer Science, Networks, and Telecommunications Engineering, this report details the development of the final course project entitled EduCal -- Academic Planning Application. The project, carried out during the 2025-2026 academic year, arises from the need to optimize the management of institutional services that involve critical planning, execution, and improvement activities.
+
+Currently, these activities take place on dates set annually. However, there is no tool to facilitate the transition from one calendar year to the next while respecting specific criteria and deadlines. The current scenario for planning annual tasks is based on dense and complex spreadsheets. Although detailed, these tools are prone to filling errors and require an exhaustive manual effort to replicate the network of objectives, requesters, and instructions in the new school year.
+
+\section{Motivation} \label{sec:motivation}
+
+The EduCal project aims to replace this manual process with an intelligent web-based application. Unlike general-purpose calendars, which are well suited for personal scheduling but lack specific institutional logic, EduCal is designed specifically for academic planning through several key differentiators.
+
+Primarily, it uses a hierarchical event model where an ``Event'' represents a high-level academic objective linked to multiple independent ``Occurrences,'' allowing complex metadata, such as institutional classifications and assigned responsible personnel, to be attached to each entry. Furthermore, the system's central value proposition is the Migration Engine, which does not simply copy events from one year to the next, but recalculates the following year's calendar by automatically shifting dates according to configurable rules, such as avoiding weekends or national holidays. Additionally, EduCal includes institutional workflow metadata, such as planning status and responsibility tracking, to support the day-to-day management of the calendar.
+
+Given the nature of the project, its initial deployment is expected to take place within ISEL's services. To this end, the solution was developed using modern technologies such as Next.js~\cite{nextjs} and PostgreSQL~\cite{postgresql}, and designed to be hosted on the institution's internal network. The application implements a decoupled architecture that separates business logic from data storage, ensuring high maintainability and allowing the underlying storage technology to change without affecting the rest of the system.
+
+%TODO(Daniel): confirmar se esta motivação/contexto institucional ainda está atualizada, ou se há mais alguma coisa a acrescentar sobre o contexto do ISEL.
+
+\section{System Requirements} \label{sec:requirements}
+
+To ensure the EduCal application effectively addresses the identified problems and achieves its core objectives, a detailed set of requirements was defined. These specifications served as the technical blueprint for the development process, categorizing the system's needs into functional capabilities and non-functional quality standards.
+
+\subsection{Functional Requirements} \label{sec:functional-requirements}
+
+Functional requirements outline the specific features, tasks, and behaviors the platform must provide to satisfy user needs. These define exactly what the system does, ranging from the fundamental management of academic events to the automated execution of the migration engine.
+
+\begin{itemize}
+    \item \textbf{RF01 -- Event and Occurrence Management:} the system must allow the creation and management of events that have multiple annual occurrences, each with its own descriptions and dates.
+    \item \textbf{RF02 -- Migration Engine:} it must be possible to transfer the event history from one academic year to the next, automatically validating the resulting dates.
+    \item \textbf{RF03 -- Rule Configuration:} the system must allow flexible business rules (e.g.\ working days, minimum gaps) to be defined, which the migration engine and event editor must respect.
+    \item \textbf{RF04 -- Notification Templates:} the platform must allow the configuration of email or other text templates associated with events for sending proactive notifications.
+    \item \textbf{RF05 -- Schedule Export (Optional):} the system must generate an academic calendar in PDF format for institutional distribution.
+    \item \textbf{RF06 -- Profile Access Control (Optional):} multiple user roles must be supported to ensure data security -- a Viewer with read-only access to consult planning and schedules, and an Editor/Administrator with full permissions to perform CRUD operations, configure rules, and run the migration engine.
+\end{itemize}
+
+\subsection{Non-Functional Requirements} \label{sec:non-functional-requirements}
+
+Non-functional requirements specify the quality attributes, constraints, and performance criteria of the system. Rather than focusing on specific behaviors, they define how the system performs, ensuring that the application is secure, maintainable, and provides a good user experience.
+
+\begin{itemize}
+    \item \textbf{RNF01 -- Data Integrity:} the rules for business days, holidays, and school vacation periods must be respected during the migration process.
+    \item \textbf{RNF02 -- Usability:} the interface must be intuitive and capable of presenting the necessary density of information across multiple calendar views.
+    \item \textbf{RNF03 -- Architecture and Scalability:} the system must be modular and scalable, ensuring fast access to extensive calendars and allowing storage technology to evolve independently of business logic.
+\end{itemize}
+
+\section{Report Organization} \label{sec:organization}
+
+The remainder of this report is organized as follows. Chapter~\ref{cap:background} describes the problem being addressed, centered on the limitations of the spreadsheet-based process currently used by ISEL's academic services. Chapter~\ref{cap:architecture} presents the system architecture, including the technology stack and the Entity-Relationship data model. Chapter~\ref{cap:backend} details the backend implementation, covering its layered organization, authentication and access control mechanisms, the Migration Engine, and the Business Rule Engine. Chapter~\ref{cap:frontend} describes every screen and dialog of the frontend, its structural organization, and how it communicates with the backend. Chapter~\ref{cap:deployment} discusses the deployment strategy and current infrastructure. Chapter~\ref{cap:schedule} presents the project schedule. Finally, Chapter~\ref{cap:conclusion} summarizes which requirements were delivered and which were not, and closes the report.

@@ -1,0 +1,16 @@
+%
+% Chapter 6 - Deployment and Infrastructure
+%
+\chapter{Deployment and Infrastructure} \label{cap:deployment}
+
+\section{Current Infrastructure} \label{sec:current-infra}
+
+During development, EduCal was run and previewed using \textbf{Vercel}, the managed hosting platform built by the creators of Next.js. Being a zero-configuration target for Next.js applications, Vercel made it possible to get a working, publicly reachable deployment of each iteration of the application with minimal setup, which was useful for reviewing progress throughout the project without needing to provision any institutional infrastructure up front. The PostgreSQL database is accessed through a single \texttt{DATABASE\_URL} connection string, keeping the application decoupled from where the database itself is actually hosted.
+
+Locally, the project is run with the standard Next.js toolchain, managed through \texttt{pnpm}: \texttt{pnpm dev} for the development server, and \texttt{pnpm build}/\texttt{pnpm start} to build and run a production Node.js server. There is currently no containerization (no Dockerfile) and no continuous integration/deployment pipeline configured in the repository -- builds and database migrations (\texttt{pnpm run db:migrate}) are run manually.
+
+\section{Deployment Roadmap} \label{sec:deployment-roadmap}
+
+Because EduCal manages institutional academic planning data, the intended production deployment is a virtual machine hosted within \textbf{ISEL's own internal network}, rather than a third-party cloud platform, so that both the application and the database remain under the institution's direct control. This VM would host the Next.js application (built and run with \texttt{pnpm build}/\texttt{pnpm start}) alongside the PostgreSQL instance.
+
+This step has not been carried out yet: no VM has been provisioned or configured as part of this project's delivery, and there is no containerization or deployment automation in place to support it. Setting up the ISEL VM, migrating the database to it, and defining a repeatable deployment process are the concrete next steps once such infrastructure is made available by the institution.

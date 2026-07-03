@@ -1,0 +1,94 @@
+%
+% Chapter 5 - Frontend
+%
+\chapter{Frontend} \label{cap:frontend}
+
+This chapter describes the frontend implementation of EduCal: how the codebase is organized, how it communicates with the backend, and every screen and dialog that makes up the application.
+
+\section{Structural Organization} \label{sec:frontend-organization}
+
+EduCal is a single Next.js application (App Router) that hosts both frontend and backend, rather than two separate projects. The \texttt{app/} directory is kept as a thin routing layer (the calendar home page, the login page, the admin users page, and the API route handlers under \texttt{app/api/}), while the actual UI is organized by feature under \texttt{features/}: \texttt{features/calendar/} (the calendar itself -- views, dialogs, header controls, drag-and-drop, and settings), \texttt{features/auth/} (the login form), and \texttt{features/admin-users/} (the user management dashboard). Reusable, feature-agnostic UI primitives (buttons, dialogs, forms, selects, etc., from shadcn/ui) live under \texttt{components/ui/}, and code shared between the client and the server (types, Zod schemas, role logic) lives under \texttt{shared/}.
+
+\section{API Communication Architecture} \label{sec:frontend-api}
+
+EduCal deliberately does not use HTTP API routes for reading data. Server components fetch data directly by calling backend services -- \texttt{features/calendar/requests.ts}, marked \texttt{"server-only"}, is invoked once from the \texttt{Calendar} server component, and the resulting data (events, users, enum values, vacations) is passed down as initial props into a React context provider (\texttt{CalendarProvider}). This avoids an unnecessary network round-trip for the common case of simply loading the calendar.
+
+Mutations (creating or editing an event, logging in, managing users) do go through HTTP: a shared fetch wrapper (\texttt{lib/api-client.ts}) centralizes this logic. It attaches the JSON content type, unwraps the \texttt{\{ data: ... \}} envelope on success, and on failure parses the backend's \texttt{\{ error: \{ code, message, details \} \}} envelope (Chapter~\ref{cap:backend}) into a JavaScript error carrying a user-facing, translated message. Feature-specific request modules (\texttt{features/calendar/client-requests.ts}, \texttt{features/admin-users/client-requests.ts}) build on top of this wrapper for each mutation endpoint. Components call these functions inside a try/catch block and surface the result as a toast notification (success or error) using \texttt{sonner}, giving the user immediate feedback without a full page reload.
+
+\section{Web Application} \label{sec:frontend-web-app}
+
+\subsection{Navigation and Access Control} \label{sec:frontend-navigation}
+The application has three main routes: the calendar (\texttt{/}), the login page (\texttt{/login}), and the admin users page (\texttt{/admin/users}). Route-level access control is handled entirely on the server, in the page component itself, rather than by a client-side auth context: \texttt{app/page.tsx} resolves the current session and redirects to \texttt{/login} if none exists, before any calendar markup is ever sent to the client; \texttt{app/login/page.tsx} redirects an already-authenticated user straight to \texttt{/}; and \texttt{app/admin/users/page.tsx} redirects to \texttt{/login} if unauthenticated and to \texttt{/} if the current user is not an \texttt{admin}. On the calendar page, once the session check passes, the actual event/user/enum/vacation data is fetched inside the \texttt{Calendar} component behind a \texttt{Suspense} boundary, which shows a loading skeleton while it resolves.
+
+\subsection{Authentication} \label{sec:frontend-auth}
+Figure~\ref{fig:login} shows the login form, which has three fields: \texttt{email}, \texttt{password}, and a ``Remember Me'' checkbox (\texttt{staySignedIn}, checked by default) that controls how long the session cookie persists (Section~\ref{sec:backend-authentication}). Fields are validated client-side with the same Zod schema shape used server-side, highlighting invalid fields in red. On submit, the button switches to a disabled ``submitting…'' state; on success the app navigates back to the calendar and refreshes its server components so the newly authenticated session is picked up immediately; on failure, the server's error message is shown inline below the form, rather than as a toast.
+
+%TODO(Daniel): falta a imagem de login.
+\begin{figure}[h]
+\begin{center}
+%\resizebox{100mm}{!}{\includegraphics{./figures/login.png}}
+\end{center}
+\caption{Login interface.}\label{fig:login}
+\end{figure}
+
+\subsection{Calendar Interface} \label{sec:frontend-calendar-ui}
+The interactive calendar (Figure~\ref{fig:calendar}) is the core of the application. Its header is split into two rows: a top row with a ``Today'' shortcut and a date navigator (showing the current month/year, an event-count badge for the visible period, and previous/next controls), and an actions row containing the category filter, the Agenda/Day/Week/Month/Year view switcher, the academic-year tools (Section~\ref{sec:frontend-academic-year-tools}), a user filter, the ``Add Event'' button, and the settings menu.
+
+The five views (\textbf{Agenda}, \textbf{Day}, \textbf{Week}, \textbf{Month}, \textbf{Year}) offer different levels of temporal density, from a scrollable list grouped by date or category (Agenda) to a full-year grid overview (Year). Within the day/week grid views, occurrences can be rescheduled directly by dragging them to a different time slot, or resized to change their duration, both implemented with the native HTML5 drag-and-drop API and animated with \texttt{framer-motion}; both actions persist immediately through the mutation flow described in Section~\ref{sec:frontend-api}. When a month-view day has more occurrences than can be shown inline, an ``+N more'' control opens a simple list dialog for that day, from which any occurrence can be opened in full detail.
+
+Two controls narrow down what is shown: a category filter (multi-select dropdown, one entry per \texttt{Category}, each with its colored dot) and a user filter (single-select, showing every user's avatar and name, defaulting to ``All users''). A settings menu offers independent toggles for dark/light theme, category badge style (colored block vs. small dot), 12/24-hour time format, and how the Agenda view groups events (by date or by category) -- all persisted locally per browser.
+
+%TODO(Daniel): falta a imagem do calendário (vista de mês).
+\begin{figure}[h]
+\begin{center}
+%\resizebox{140mm}{!}{\includegraphics{./figures/calendar-month-view.png}}
+\end{center}
+\caption{Main calendar interface (Month view).}\label{fig:calendar}
+\end{figure}
+
+\subsection{Event Management Dialogs} \label{sec:frontend-event-dialogs}
+Event and occurrence management is built around a small set of focused dialogs.
+
+The \textbf{Add/Edit Event dialog} (Figure~\ref{fig:add-edit-event}) is a single form reused for both creating and editing an event, visible only to users with editor-level access or higher. It is split into an event-level panel -- \texttt{name}, \texttt{objective}, and \texttt{category}/\texttt{classification}/\texttt{status}/\texttt{responsible} (each a dropdown populated from the corresponding lookup table) -- and an occurrence panel, where occurrences are added and removed freely as a repeatable list (at least one is always required), each with its own \texttt{description}, \texttt{start}/\texttt{end date-time}, and optional minimum-duration/minimum-gap-to-next-occurrence constraints. A dedicated ``Rules'' panel lets the user attach any of the five configurable business rules (Section~\ref{sec:rule-engine}) to the event from a dropdown; each added rule renders its own input controls generated from that rule's field metadata -- checkboxes, number inputs, or an event picker, depending on the rule -- and can be removed independently. All fields are validated with Zod before submission, including a check that every occurrence's end date is after its start date.
+
+%TODO(Daniel): falta a imagem do diálogo "Add/Edit Event".
+\begin{figure}[h]
+\begin{center}
+%\resizebox{140mm}{!}{\includegraphics{./figures/add-edit-event-dialog.png}}
+\end{center}
+\caption{Add/Edit Event dialog.}\label{fig:add-edit-event}
+\end{figure}
+
+The \textbf{Event Details dialog} is the read-only counterpart, opened when a user clicks an occurrence anywhere in the calendar. It shows the event's name, category/classification/status badges, its objective, who created it, the selected occurrence's dates, every occurrence in a scrollable grid, and a summary of the rules attached to the event, in the same terms an end user configured them in. Users with edit rights see shortcuts here to open the Edit dialog or delete the event directly.
+
+Deleting an event goes through a dedicated \textbf{confirmation dialog} (a destructive-styled button that opens an alert requiring explicit confirmation) before the event and all of its occurrences are removed, since occurrence deletion cascades from the event at the database level (Section~\ref{sec:data-model}).
+
+%TODO(Daniel): falta a imagem do "Event Details dialog" (e opcionalmente a de confirmação de delete).
+\begin{figure}[h]
+\begin{center}
+%\resizebox{140mm}{!}{\includegraphics{./figures/event-details-dialog.png}}
+\end{center}
+\caption{Event Details dialog.}\label{fig:event-details}
+\end{figure}
+
+\subsection{Academic Year Tools} \label{sec:frontend-academic-year-tools}
+The academic-year tools, part of the calendar's actions bar, let the user pick an academic year and run the migration workflow described in Section~\ref{sec:migration-engine}: a ``Validate'' action checks the selected year's events against every business rule without changing anything, and a ``Migrate'' action (available to editors and administrators) runs the full migration from that year into the next. Both actions share a single results modal (Figure~\ref{fig:migration-report}): if no rule violations were found, it shows a simple confirmation banner; otherwise, each violation is listed as its own card with the rule that was broken, the affected event and occurrence, a human-readable explanation, and the offending date -- clicking a card opens that event directly in the Event Details dialog. A separate ``Vacations'' action opens a dedicated dialog for managing that academic year's vacation periods (label and date range), with full create/edit/delete support for users with edit rights.
+
+%TODO(Daniel): falta a imagem do modal de resultados de Validate/Migrate, e opcionalmente do diálogo de Vacations.
+\begin{figure}[h]
+\begin{center}
+%\resizebox{140mm}{!}{\includegraphics{./figures/migration-report.png}}
+\end{center}
+\caption{Validation/migration results modal.}\label{fig:migration-report}
+\end{figure}
+
+\subsection{User Management Dashboard} \label{sec:frontend-user-mgmt}
+The administrative dashboard (Figure~\ref{fig:user-mgmt}), accessible only to administrators, lists every user in a table (name, email, role, profile picture, and actions) and supports full CRUD. Creating a user requires name, email, role, an optional profile picture path, and a password; editing reuses the same form inline below the table and only sends the fields that actually changed, with the password left blank meaning ``keep the current password''. Every mutation gives immediate feedback via toast notifications, and deleting a user is confirmed before proceeding. The delete action is disabled for the currently logged-in administrator's own row, reinforcing the ``cannot delete self'' invariant already enforced on the backend (Section~\ref{sec:backend-rbac}).
+
+%TODO(Daniel): falta a imagem do dashboard de gestão de utilizadores.
+\begin{figure}[h]
+\begin{center}
+%\resizebox{140mm}{!}{\includegraphics{./figures/user-management.png}}
+\end{center}
+\caption{User management dashboard.}\label{fig:user-mgmt}
+\end{figure}
