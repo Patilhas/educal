@@ -9,10 +9,9 @@ To ensure the project's viability, maintainability, and security, the architectu
 
 EduCal follows a three-tier architecture that separates presentation, business logic, and data storage.
 
-%TODO(Daniel): falta a figura "System Architecture Diagram" (Figura 1 do relatório antigo, em Word). Preciso da imagem para colocar em ./figures/.
 \begin{figure}[h]
 \begin{center}
-%\resizebox{130mm}{!}{\includegraphics{./figures/architecture-diagram.png}}
+\resizebox{130mm}{!}{\includegraphics{./figures/system_architecture.png}}
 \end{center}
 \caption{System architecture diagram.}\label{fig:architecture}
 \end{figure}
@@ -25,7 +24,7 @@ As illustrated in Figure~\ref{fig:architecture}, the system is organized into th
     \item \textbf{Data Layer (DB):} a PostgreSQL relational database provides persistent storage for events, occurrences, and system configuration, accessed through the Drizzle ORM.
 \end{itemize}
 
-All components outlined in this architecture have been implemented, including the production PostgreSQL database. The data access layer isolates all storage behind a single point in the code, so business services never talk to the database directly -- this is what makes it possible to keep an alternative, JSON-based storage backend for development and testing without any changes to the business logic, API routes, or frontend (see Section~\ref{sec:data-access}).
+All components outlined in this architecture have been implemented, including the production PostgreSQL database. The data access layer isolates all storage behind a single point in the code, so business services never talk to the database directly. This is what makes it possible to keep an alternative, JSON-based storage backend for development and testing without any changes to the business logic, API routes, or frontend (see Section~\ref{sec:data-access}).
 
 \section{Technology Stack} \label{sec:tech-stack}
 
@@ -134,4 +133,4 @@ The \textbf{User} and \textbf{Session} entities manage multi-role access control
 
 The data access layer isolates all storage behind a repository interface per feature (\texttt{IAuthRepository}, \texttt{ICalendarRepository}), so that business services only ever call the interface, never a concrete database client. Two concrete implementations exist for each interface: a PostgreSQL implementation built on Drizzle ORM (\texttt{AuthRepositoryPostgres}, \texttt{CalendarRepositoryPostgres}), used in production, and a JSON-backed implementation on top of Upstash Redis (\texttt{AuthRepositoryRedis}, \texttt{CalendarRepositoryRedis}), kept as a lightweight alternative for development and demos.
 
-Which implementation is used is decided by a small factory, selected through the \texttt{DATA\_LAYER} environment variable: any value other than the literal \texttt{"redis"} (including the variable being unset) resolves to PostgreSQL. Because every business service depends only on the repository interface, switching between the two backends requires no change to controllers, services, API routes, or the frontend -- only the environment variable changes. This design was validated in practice during development, when the project moved from the JSON-backed mock data used while building the business logic to the production PostgreSQL database without touching the migration engine, the rule engine, or any UI code.
+Which implementation is used is decided by a small factory, selected through the \texttt{DATA\_LAYER} environment variable: any value other than the literal \texttt{"redis"} (including the variable being unset) resolves to PostgreSQL. Because every business service depends only on the repository interface, switching between the two backends requires no change to controllers, services, API routes, or the frontend; only the environment variable changes. This design was validated in practice during development, when the project moved from the JSON-backed mock data used while building the business logic to the production PostgreSQL database without touching the migration engine, the rule engine, or any UI code.

@@ -3,19 +3,17 @@
 %
 \chapter{Introduction} \label{cap:intro}
 
-As part of the Bachelor's Degree in Computer Science, Networks, and Telecommunications Engineering, this report details the development of the final course project entitled EduCal -- Academic Planning Application. The project, carried out during the 2025-2026 academic year, arises from the need to optimize the management of institutional services that involve critical planning, execution, and improvement activities.
+As part of the Bachelor's Degree in Computer Science, Networks, and Telecommunications Engineering, this report details the development of the final course project entitled EduCal, an Academic Planning Application. The project, carried out during the 2025-2026 academic year, arises from the need to optimize the management of institutional services that involve critical planning, execution, and improvement activities.
 
 Currently, these activities take place on dates set annually. However, there is no tool to facilitate the transition from one calendar year to the next while respecting specific criteria and deadlines. The current scenario for planning annual tasks is based on dense and complex spreadsheets. Although detailed, these tools are prone to filling errors and require an exhaustive manual effort to replicate the network of objectives, requesters, and instructions in the new school year.
 
 \section{Motivation} \label{sec:motivation}
 
-The EduCal project aims to replace this manual process with an intelligent web-based application. Unlike general-purpose calendars, which are well suited for personal scheduling but lack specific institutional logic, EduCal is designed specifically for academic planning through several key differentiators.
+The EduCal project aims to replace this manual process with a web-based application. Unlike general-purpose calendars, which are well suited for personal scheduling but lack specific institutional logic, EduCal is designed specifically for academic planning through several key differentiators.
 
-Primarily, it uses a hierarchical event model where an ``Event'' represents a high-level academic objective linked to multiple independent ``Occurrences,'' allowing complex metadata, such as institutional classifications and assigned responsible personnel, to be attached to each entry. Furthermore, the system's central value proposition is the Migration Engine, which does not simply copy events from one year to the next, but recalculates the following year's calendar by automatically shifting dates according to configurable rules, such as avoiding weekends or national holidays. Additionally, EduCal includes institutional workflow metadata, such as planning status and responsibility tracking, to support the day-to-day management of the calendar.
+Primarily, it uses a hierarchical event model where an ``Event'' represents a high-level academic objective linked to multiple independent ``Occurrences,'' allowing complex metadata, such as institutional classifications and assigned responsible personnel, to be attached to each entry. Furthermore, the project's core functionality is the Migration Engine, which does not simply copy events from one year to the next, but clones the following year's calendar and shifts each occurrence's dates forward by one year. The engine does not itself correct dates that fall on a weekend, a national holiday, or a vacation period; instead, it runs the configurable business rules against the migrated calendar and reports any such violations for manual review. Additionally, EduCal includes institutional workflow metadata, such as planning status and responsibility tracking, to support the day-to-day management of the calendar.
 
-Given the nature of the project, its initial deployment is expected to take place within ISEL's services. To this end, the solution was developed using modern technologies such as Next.js~\cite{nextjs} and PostgreSQL~\cite{postgresql}, and designed to be hosted on the institution's internal network. The application implements a decoupled architecture that separates business logic from data storage, ensuring high maintainability and allowing the underlying storage technology to change without affecting the rest of the system.
-
-%TODO(Daniel): confirmar se esta motivação/contexto institucional ainda está atualizada, ou se há mais alguma coisa a acrescentar sobre o contexto do ISEL.
+Given the nature of the project, its initial deployment is expected to take place within ISEL's services. To this end, the solution was developed using Next.js~\cite{nextjs} and PostgreSQL~\cite{postgresql}, and designed to be hosted on the institution's internal network. The application implements a decoupled architecture that separates business logic from data storage, allowing the underlying storage technology to change without affecting the rest of the system.
 
 \section{System Requirements} \label{sec:requirements}
 
@@ -26,12 +24,12 @@ To ensure the EduCal application effectively addresses the identified problems a
 Functional requirements outline the specific features, tasks, and behaviors the platform must provide to satisfy user needs. These define exactly what the system does, ranging from the fundamental management of academic events to the automated execution of the migration engine.
 
 \begin{itemize}
-    \item \textbf{RF01 -- Event and Occurrence Management:} the system must allow the creation and management of events that have multiple annual occurrences, each with its own descriptions and dates.
-    \item \textbf{RF02 -- Migration Engine:} it must be possible to transfer the event history from one academic year to the next, automatically validating the resulting dates.
-    \item \textbf{RF03 -- Rule Configuration:} the system must allow flexible business rules (e.g.\ working days, minimum gaps) to be defined, which the migration engine and event editor must respect.
-    \item \textbf{RF04 -- Notification Templates:} the platform must allow the configuration of email or other text templates associated with events for sending proactive notifications.
-    \item \textbf{RF05 -- Schedule Export (Optional):} the system must generate an academic calendar in PDF format for institutional distribution.
-    \item \textbf{RF06 -- Profile Access Control (Optional):} multiple user roles must be supported to ensure data security -- a Viewer with read-only access to consult planning and schedules, and an Editor/Administrator with full permissions to perform CRUD operations, configure rules, and run the migration engine.
+    \item \textbf{RF01, Event and Occurrence Management:} the system must allow the creation and management of events that have multiple annual occurrences, each with its own descriptions and dates.
+    \item \textbf{RF02, Migration Engine:} it must be possible to transfer the event history from one academic year to the next, automatically validating the resulting dates.
+    \item \textbf{RF03, Rule Configuration:} the system must allow flexible business rules (e.g.\ working days, minimum gaps) to be defined, which the migration engine and event editor must respect.
+    \item \textbf{RF04, Notification Templates:} the platform must allow the configuration of email or other text templates associated with events for sending proactive notifications.
+    \item \textbf{RF05, Schedule Export:} the system must generate an academic calendar in PDF format for institutional distribution.
+    \item \textbf{RF06, Profile Access Control:} multiple user roles must be supported to ensure data security, namely a Viewer with read-only access to consult planning and schedules, and an Editor/Administrator with full permissions to perform CRUD operations, configure rules, and run the migration engine.
 \end{itemize}
 
 \subsection{Non-Functional Requirements} \label{sec:non-functional-requirements}
@@ -39,9 +37,9 @@ Functional requirements outline the specific features, tasks, and behaviors the 
 Non-functional requirements specify the quality attributes, constraints, and performance criteria of the system. Rather than focusing on specific behaviors, they define how the system performs, ensuring that the application is secure, maintainable, and provides a good user experience.
 
 \begin{itemize}
-    \item \textbf{RNF01 -- Data Integrity:} the rules for business days, holidays, and school vacation periods must be respected during the migration process.
-    \item \textbf{RNF02 -- Usability:} the interface must be intuitive and capable of presenting the necessary density of information across multiple calendar views.
-    \item \textbf{RNF03 -- Architecture and Scalability:} the system must be modular and scalable, ensuring fast access to extensive calendars and allowing storage technology to evolve independently of business logic.
+    \item \textbf{RNF01, Data Integrity:} business days, holidays, and school vacation periods must be validated against the migration process, so that any resulting conflict is reported rather than passed through unnoticed.
+    \item \textbf{RNF02, Usability:} the interface must be intuitive and capable of presenting the necessary density of information across multiple calendar views.
+    \item \textbf{RNF03, Architecture and Scalability:} the system must be modular and scalable, ensuring fast access to extensive calendars and allowing storage technology to evolve independently of business logic.
 \end{itemize}
 
 \section{Report Organization} \label{sec:organization}

@@ -5,9 +5,9 @@
 
 \section{Current Infrastructure} \label{sec:current-infra}
 
-During development, EduCal was run and previewed using \textbf{Vercel}, the managed hosting platform built by the creators of Next.js. Being a zero-configuration target for Next.js applications, Vercel made it possible to get a working, publicly reachable deployment of each iteration of the application with minimal setup, which was useful for reviewing progress throughout the project without needing to provision any institutional infrastructure up front. The PostgreSQL database is accessed through a single \texttt{DATABASE\_URL} connection string, keeping the application decoupled from where the database itself is actually hosted.
+During development, EduCal was run and previewed using \textbf{Vercel}, the hosting platform built by the creators of Next.js. It requires minimal configuration for Next.js applications, which made it possible to get a working, publicly reachable deployment of each iteration of the application without needing to provision any institutional infrastructure up front. The PostgreSQL database is accessed through a single \texttt{DATABASE\_URL} connection string, keeping the application decoupled from where the database itself is actually hosted.
 
-Locally, the project is run with the standard Next.js toolchain, managed through \texttt{pnpm}: \texttt{pnpm dev} for the development server, and \texttt{pnpm build}/\texttt{pnpm start} to build and run a production Node.js server. There is currently no containerization (no Dockerfile) and no continuous integration/deployment pipeline configured in the repository -- builds and database migrations (\texttt{pnpm run db:migrate}) are run manually.
+Locally, the project is run with the standard Next.js toolchain, managed through \texttt{pnpm}: \texttt{pnpm dev} for the development server, and \texttt{pnpm build}/\texttt{pnpm start} to build and run a production Node.js server. There is currently no containerization (no Dockerfile) and no continuous integration/deployment pipeline configured in the repository; builds and database migrations (\texttt{pnpm run db:migrate}) are run manually.
 
 \section{Deployment Roadmap} \label{sec:deployment-roadmap}
 
