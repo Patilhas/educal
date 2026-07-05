@@ -1,0 +1,136 @@
+%
+% Chapter 3 - System Architecture and Design
+%
+\chapter{System Architecture and Design} \label{cap:architecture}
+
+To ensure the project's viability, maintainability, and security, the architecture was designed around technologies that are widely adopted in the industry and that allow the application to be hosted within ISEL's own infrastructure.
+
+\section{Global System Overview} \label{sec:system-overview}
+
+EduCal follows a three-tier architecture that separates presentation, business logic, and data storage.
+
+\begin{figure}[h]
+\begin{center}
+\resizebox{130mm}{!}{\includegraphics{./figures/system_architecture.png}}
+\end{center}
+\caption{System architecture diagram.}\label{fig:architecture}
+\end{figure}
+
+As illustrated in Figure~\ref{fig:architecture}, the system is organized into three layers:
+
+\begin{itemize}
+    \item \textbf{Presentation Layer (Frontend):} built with Next.js and React, it manages the state of the complex calendar views (Agenda, Day, Week, Month, and Year) and provides specialized interfaces for event and occurrence management, such as dynamic forms for multi-occurrence events.
+    \item \textbf{Logic Layer (Backend):} implemented as Next.js API routes backed by a Controller-Service-Data structure (detailed in Chapter~\ref{cap:backend}). The controllers act as the entry point, ensuring only authenticated users with the required role can modify the institutional calendar; the services hold the core business logic, including the Migration Engine (RF02) and the Business Rule Engine (RF03); and the data layer abstracts all communication with the underlying storage.
+    \item \textbf{Data Layer (DB):} a PostgreSQL relational database provides persistent storage for events, occurrences, and system configuration, accessed through the Drizzle ORM.
+\end{itemize}
+
+All components outlined in this architecture have been implemented, including the production PostgreSQL database. The data access layer isolates all storage behind a single point in the code, so business services never talk to the database directly. This is what makes it possible to keep an alternative, JSON-based storage backend for development and testing without any changes to the business logic, API routes, or frontend (see Section~\ref{sec:data-access}).
+
+\section{Technology Stack} \label{sec:tech-stack}
+
+\subsection{Backend}
+The backend is built on \textbf{Next.js}~\cite{nextjs} (v16, App Router), using its API routes as the HTTP entry point rather than a separate server framework. Data persistence uses \textbf{PostgreSQL}~\cite{postgresql} through \textbf{Drizzle ORM}, a TypeScript-first ORM that provides both a relational query API and raw SQL migrations (\texttt{drizzle-kit}). Request payloads are validated end-to-end with \textbf{Zod}, including schemas that are built dynamically from live database values (e.g. valid event categories). Password hashing uses Node.js's built-in \texttt{crypto} module~\cite{nodejscrypto} (scrypt), and session cookies follow the \texttt{Secure}/\texttt{HttpOnly} guidance from the OWASP Session Management Cheat Sheet~\cite{owasp}. National holiday and business-day calculations use the \texttt{date-fns} and \texttt{date-holidays} libraries.
+
+\subsection{Frontend}
+The frontend is built with \textbf{React 19} inside the same Next.js application (no separate frontend project), styled with \textbf{Tailwind CSS v4} and the \textbf{shadcn/ui} component library (built on Radix UI primitives). Forms use \textbf{react-hook-form} together with Zod resolvers for validation, \textbf{sonner} provides toast notifications for asynchronous feedback, and \textbf{framer-motion} drives the calendar's drag-and-drop and transition animations. The project uses \textbf{pnpm} as its package manager and \textbf{TypeScript} throughout both the frontend and backend.
+
+\section{Data Model and Entity-Relationship Diagram} \label{sec:data-model}
+
+To support automated year-to-year migration and rule validation, a relational database schema was designed and implemented with Drizzle ORM, visually outlined in the Entity-Relationship Diagram in Figure~\ref{fig:er-diagram}, generated directly from the Drizzle schema definitions (\texttt{db/schema/auth.schema.ts}, \texttt{db/schema/calendar.schema.ts}, \texttt{db/schema/relations.ts}).
+
+\begin{figure}[h]
+\begin{center}
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+    entity/.style={draw, rectangle, rounded corners=1pt, align=left, font=\footnotesize, text width=3.3cm, inner sep=2mm, fill=white},
+    cascade/.style={thick},
+    restrict/.style={thick, dashed},
+    label/.style={fill=white, inner sep=1pt, font=\tiny},
+]
+
+% --- coordinates (center-to-center; entity boxes are drawn on top afterwards) ---
+\coordinate (events) at (0,0);
+\coordinate (academicyears) at (-6,4.5);
+\coordinate (users) at (6,4.5);
+\coordinate (vacationperiods) at (-6,7.8);
+\coordinate (sessions) at (6,7.8);
+\coordinate (categories) at (-9,-4.5);
+\coordinate (classifications) at (-3,-4.5);
+\coordinate (statuses) at (3,-4.5);
+\coordinate (responsibles) at (9,-4.5);
+\coordinate (occurrences) at (-3,-8);
+\coordinate (rules) at (3,-8);
+
+% --- relationships (drawn first, so entity boxes below cover the line ends) ---
+\draw[cascade] (academicyears) -- (events) node[label, midway] {1:N};
+\draw[cascade] (academicyears) -- (vacationperiods) node[label, midway] {1:N};
+\draw[restrict] (users) -- (events) node[label, midway] {1:N};
+\draw[cascade] (users) -- (sessions) node[label, midway] {1:N};
+\draw[restrict] (events) -- (categories) node[label, midway] {N:1};
+\draw[restrict] (events) -- (classifications) node[label, midway] {N:1};
+\draw[restrict] (events) -- (statuses) node[label, midway] {N:1};
+\draw[restrict] (events) -- (responsibles) node[label, midway] {N:1};
+\draw[cascade] (events) -- (occurrences) node[label, midway] {1:N};
+\draw[cascade] (events) -- (rules) node[label, midway] {1:N};
+
+% --- entities ---
+\node[entity] at (events) {%
+    \textbf{events}\\
+    \rule{3.1cm}{0.4pt}\\
+    \underline{id} (PK)\\
+    academic\_year\_start (FK)\\
+    category (FK)\\
+    classification (FK)\\
+    status (FK)\\
+    responsible (FK)\\
+    user\_id (FK)
+};
+\node[entity] at (academicyears) {\textbf{academic\_years}\\ \rule{3.1cm}{0.4pt}\\ \underline{start\_year} (PK)};
+\node[entity] at (users) {\textbf{users}\\ \rule{3.1cm}{0.4pt}\\ \underline{id} (PK)};
+\node[entity] at (vacationperiods) {\textbf{vacation\_periods}\\ \rule{3.1cm}{0.4pt}\\ \underline{id} (PK)\\ academic\_year\_start (FK)};
+\node[entity] at (sessions) {\textbf{sessions}\\ \rule{3.1cm}{0.4pt}\\ \underline{token} (PK)\\ user\_id (FK)};
+\node[entity] at (categories) {\textbf{categories}\\ \rule{3.1cm}{0.4pt}\\ \underline{value} (PK)};
+\node[entity] at (classifications) {\textbf{classifications}\\ \rule{3.1cm}{0.4pt}\\ \underline{value} (PK)};
+\node[entity] at (statuses) {\textbf{statuses}\\ \rule{3.1cm}{0.4pt}\\ \underline{name} (PK)};
+\node[entity] at (responsibles) {\textbf{responsibles}\\ \rule{3.1cm}{0.4pt}\\ \underline{value} (PK)};
+\node[entity] at (occurrences) {\textbf{event\_occurrences}\\ \rule{3.1cm}{0.4pt}\\ \underline{id} (PK)\\ event\_id (FK)};
+\node[entity] at (rules) {\textbf{event\_rules}\\ \rule{3.1cm}{0.4pt}\\ \underline{id} (PK)\\ event\_id (FK)};
+
+% --- legend ---
+\node[draw, align=left, font=\tiny, anchor=south west, fill=white] at (-9.3,9.4) {
+    \tikz{\draw[cascade] (0,0) -- (0.5,0);} ON DELETE CASCADE \\
+    \tikz{\draw[restrict] (0,0) -- (0.5,0);} ON DELETE NO ACTION (restrict)
+};
+\end{tikzpicture}%
+}
+\end{center}
+\caption{Entity-Relationship Diagram, generated from the Drizzle schema. Solid lines are foreign keys with \texttt{ON DELETE CASCADE}; dashed lines are \texttt{ON DELETE NO ACTION} (the referenced row cannot be deleted while still in use).}\label{fig:er-diagram}
+\end{figure}
+
+\subsection{Core Scheduling Entities} \label{sec:core-entities}
+
+The system's core logic centers on the relationship between events and occurrences, plus the \texttt{academic\_years} table that anchors both to a specific year:
+
+\begin{itemize}
+    \item \textbf{Academic Year:} keyed by its start year, stores a label and the concrete \texttt{start\_date}/\texttt{end\_date} that bound the academic year.
+    \item \textbf{Event:} stores high-level metadata such as the objective, category, classification, status, responsible party, and the academic year and user that own it.
+    \item \textbf{Occurrence:} a concrete instance of an event, with its own \texttt{start\_date} and \texttt{end\_date}, and optional \texttt{min\_days}/\texttt{min\_days\_to\_next} constraints. Each event can have multiple occurrences, and every occurrence is deleted automatically (\texttt{ON DELETE CASCADE}) when its parent event is deleted.
+\end{itemize}
+
+\subsection{Classification and Management} \label{sec:classification-entities}
+
+To facilitate filtering and institutional reporting, the system uses four normalization/lookup tables referenced by events: \textbf{Category} (which also stores a \texttt{color}, used to render the category badges and filter dots in the calendar UI, Section~\ref{sec:frontend-calendar-ui}), \textbf{Classification}, \textbf{Status}, and \textbf{Responsible}. Each event references one value from each of these tables, allowing events to be categorized (e.g. ``TFM'', ``Candidaturas''), tracked through a planning workflow status (e.g. ``Por Fazer'', ``Em Curso'', ``Feito''), and attributed to an owning department (e.g. ``Serviços Académicos'', ``Conselho Pedagógico''). Unlike the scheduling entities above, these reference tables are not cascade-deleted: a category, classification, status, or responsible value that is still referenced by an event cannot be removed, which prevents institutional data from silently losing its classification.
+
+\subsection{Automation and Business Rules} \label{sec:automation-entities}
+
+Each event can have zero or more \textbf{Event Rules} attached (\texttt{event\_rules} table), storing a rule \texttt{type} and a JSON \texttt{config} object. These rows are what the Business Rule Engine evaluates for that event (Section~\ref{sec:rule-engine}); the \textbf{Vacation Period} table, scoped to an academic year, stores the school vacation periods that both the rule engine and the migration engine consult.
+
+\subsection{Security and Auditing} \label{sec:security-entities}
+
+The \textbf{User} and \textbf{Session} entities manage multi-role access control. The User table stores a \texttt{scrypt}-hashed password and a role (\texttt{viewer}, \texttt{editor}, or \texttt{admin}); the Session table tracks active session tokens and their expiration, and is deleted automatically when its owning user is deleted. Every Event additionally stores the \texttt{user\_id} of its creator, providing a basic audit trail of who owns each entry in the calendar.
+
+\section{Data Access Strategy} \label{sec:data-access}
+
+The data access layer isolates all storage behind a repository interface per feature (\texttt{IAuthRepository}, \texttt{ICalendarRepository}), so that business services only ever call the interface, never a concrete database client. Two concrete implementations exist for each interface: a PostgreSQL implementation built on Drizzle ORM (\texttt{AuthRepositoryPostgres}, \texttt{CalendarRepositoryPostgres}), used in production, and a JSON-backed implementation on top of Upstash Redis (\texttt{AuthRepositoryRedis}, \texttt{CalendarRepositoryRedis}), kept as a lightweight alternative for development and demos.
+
+Which implementation is used is decided by a small factory, selected through the \texttt{DATA\_LAYER} environment variable: any value other than the literal \texttt{"redis"} (including the variable being unset) resolves to PostgreSQL. Because every business service depends only on the repository interface, switching between the two backends requires no change to controllers, services, API routes, or the frontend; only the environment variable changes. This design was validated in practice during development, when the project moved from the JSON-backed mock data used while building the business logic to the production PostgreSQL database without touching the migration engine, the rule engine, or any UI code.

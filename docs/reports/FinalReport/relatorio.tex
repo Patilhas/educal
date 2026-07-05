@@ -1,0 +1,167 @@
+% Classe do documento e parâmetros gerais.
+\documentclass[a4paper,openright,twoside,11pt]{report}
+
+% Packages utilizadas e respetivos parâmetros.
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\addto{\captionsenglish}{\renewcommand{\bibname}{References}}
+\addto{\captionsenglish}{\renewcommand{\contentsname}{Table of Contents}}
+\addto{\captionsenglish}{\renewcommand{\appendixname}{Appendix}}
+
+\usepackage{lipsum} % gerador de texto
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage{tikz}
+\usepackage[Algoritmo]{algorithm}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
+\renewcommand{\algorithmicrequire}{\textbf{Dados: }}
+\renewcommand{\algorithmicensure}{\textbf{Resultado: }}
+
+% Definições das dimensões das páginas
+\setlength{\textheight}{24.00cm}
+\setlength{\textwidth}{15.50cm}
+\setlength{\topmargin}{0.35cm}
+\setlength{\headheight}{0cm}
+\setlength{\headsep}{0cm}
+\setlength{\oddsidemargin}{0.25cm}
+\setlength{\evensidemargin}{0.25cm}
+
+%\renewcommand{\baselinestretch}{1}
+
+% Página inicial (capa)
+\title{
+   \vspace{-50mm}
+   \begin{minipage}[l]{\textwidth}
+      \hspace{-20mm}\resizebox{75mm}{!}{\includegraphics{./figures/logoISELnew2.png}}\\
+   \end{minipage}\\[20mm]
+   {\bf EduCal}\\[5mm]
+   Academic Planning Application
+}
+
+% Nome dos autores (um por linha)
+\author{
+\begin{tabular}{ll}
+             & Daniel Santos \\[50mm]
+\end{tabular}}
+
+\date{
+\begin{tabular}{ll}
+  {Orientadores:} & Filipe Freitas \\
+                  & Sandra Ferreira\\
+\end{tabular}\\[10mm]
+Relatório do projeto realizado no âmbito de Projeto\\
+Licenciatura em Engenharia Informática, Redes e Telecomunicações\\[20mm]
+Julho de 2026}
+
+
+\begin{document}
+\pagenumbering{roman}
+\thispagestyle{empty}
+\maketitle
+
+\baselineskip 18pt % line spacing: 12pt for single, 18pt for 1 1/2, and 24pt for double spacing
+
+\newpage
+\thispagestyle{empty}
+% Fim da contracapa
+
+% Página com identificação completa (número e nome) e assinaturas do(s) estudante(s) e do(s) orientador(es)
+\cleardoublepage
+\setcounter{page}{1}
+\begin{center}
+\textsc{\LARGE Instituto Superior de Engenharia de Lisboa}\\[50mm]
+
+{\huge \bf EduCal}\\[5mm]
+{\LARGE Academic Planning Application}\\[20mm]
+
+\begin{tabular}{rl}
+  51701  & Daniel Rodrigues Santos\\[10mm]
+           & \rule{75mm}{0.5pt}\\
+\end{tabular}\\[10mm]
+
+\begin{tabular}{rl}
+  Orientadores: & Filipe Bastos de Freitas\\[10mm]
+                & \rule{75mm}{0.5pt}\\[5mm]
+                & Sandra Cristina Pereira Ferreira Neves\\[10mm]
+                & \rule{75mm}{0.5pt}\\
+\end{tabular}\\[10mm]
+
+Relatório do projeto realizado no âmbito de Projeto\\
+Licenciatura em Engenharia Informática, Redes e Telecomunicações\\[20mm]
+Julho de 2026\\
+\end{center}
+
+% Página de resumo em Inglês
+\cleardoublepage
+\chapter*{Abstract}
+ISEL's academic services currently plan recurring institutional activities, such as application periods, enrolments, exams, and their associated deadlines, using spreadsheets. This process requires the entire calendar to be manually rebuilt every academic year, with every date individually checked against weekends, holidays, and vacation periods, making it slow and prone to error. EduCal is a web application that replaces this manual process with a structured, rule-aware academic planning tool. Events are modeled hierarchically, with each high-level academic objective linked to one or more dated occurrences carrying institutional metadata such as category, status, and responsible department. Its central feature, the Migration Engine, transfers the calendar from one academic year to the next, idempotently cloning events and shifting their dates forward by one year, while a modular Business Rule Engine checks the result against configurable institutional constraints, namely weekends, national holidays, vacation periods, and minimum gaps between events, surfacing violations for manual review rather than silently correcting them. The system is built with Next.js and PostgreSQL, and secures access through a role-based authentication system (Viewer, Editor, Administrator). At the conclusion of the project, event management, the migration engine, the rule engine, and role-based access control are fully implemented and in use; notification templates and PDF schedule export, both part of the original scope, were not delivered.
+
+\textbf{Keywords:} academic planning; calendar management; business rule engine; Next.js; PostgreSQL.
+
+% Página de resumo em Português
+\cleardoublepage
+\chapter*{Resumo}
+Os serviços académicos do ISEL planeiam atualmente atividades institucionais recorrentes, como candidaturas, matrículas, exames e os respetivos prazos, recorrendo a folhas de cálculo. Este processo obriga a reconstruir manualmente todo o calendário em cada ano letivo, com cada data a ser verificada individualmente contra fins de semana, feriados e períodos de férias, tornando o processo lento e sujeito a erros. O EduCal é uma aplicação web que substitui este processo manual por uma ferramenta de planeamento académico estruturada e sensível a regras institucionais. Os eventos são modelados de forma hierárquica, em que cada objetivo académico de alto nível está associado a uma ou mais ocorrências datadas, com metadados institucionais como categoria, estado e responsável. A sua funcionalidade central, o Motor de Migração, transfere o calendário de um ano letivo para o seguinte, clonando eventos de forma idempotente e avançando as suas datas em um ano, enquanto um Motor de Regras de Negócio modular valida o resultado face a restrições institucionais configuráveis, nomeadamente fins de semana, feriados nacionais, períodos de férias e intervalos mínimos entre eventos, assinalando violações para revisão manual em vez de as corrigir silenciosamente. O sistema foi desenvolvido com Next.js e PostgreSQL, e protege o acesso através de um sistema de autenticação baseado em papéis (Visualizador, Editor, Administrador). À conclusão do projeto, a gestão de eventos, o motor de migração, o motor de regras e o controlo de acesso baseado em papéis encontram-se totalmente implementados e em uso; os templates de notificações e a exportação de calendários em PDF, ambos previstos no âmbito inicial, não foram entregues.
+
+\textbf{Palavras-chave:} planeamento académico; gestão de calendário; motor de regras de negócio; Next.js; PostgreSQL.
+
+%{\bf Palavras-chave:} lista de palavras-chave separadas por ;.
+
+%% Página de agradecimentos
+%\cleardoublepage
+%\chapter*{Agradecimentos}
+%Texto dos agradecimentos. É opcional.\\
+
+%% Página sobreutilização de IA
+%\cleardoublepage
+%\chapter*{Utilização de Inteligência Artificial}
+%Neste trabalho foram utilizadas ferramentas de inteligência artificial generativa, designadamente...\\
+% Descrever as ferramentas utilizadas, a finalidade e extensão do uso e os comandos (prompts) mais relevantes, se aplicável.
+
+% Geração do índice de conteúdos
+\cleardoublepage
+\tableofcontents \cleardoublepage
+
+% Geração do índice de figuras e de tabelas
+%\listoffigures \cleardoublepage
+%\listoftables \cleardoublepage
+
+% Reiniciar a numeração de páginas
+\setcounter{page}{1}
+\pagenumbering{arabic}
+
+% Capitulo 1
+\include{introduction}
+
+% Capitulo 2
+\include{background}
+
+% Capitulo 3
+\include{architecture}
+
+% Capitulo 4
+\include{backend}
+
+% Capitulo 5
+\include{frontend}
+
+% Capitulo 6
+\include{deployment}
+
+% Capitulo 7
+\include{schedule}
+
+% Capitulo 8
+\include{conclusion}
+
+% Referências
+\bibliographystyle{unsrt}
+\bibliography{referencias}
+\addcontentsline{toc}{chapter}{Refer\^{e}ncias}
+
+% Apêndices (opcional)
+%\appendix
+%\include{apendiceex}
+
+\end{document}
