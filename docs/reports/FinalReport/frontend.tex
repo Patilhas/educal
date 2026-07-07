@@ -25,73 +25,120 @@ The application has three main routes: the calendar (\texttt{/}), the login page
 \subsection{Authentication} \label{sec:frontend-auth}
 Figure~\ref{fig:login} shows the login form, which has three fields: \texttt{email}, \texttt{password}, and a ``Remember Me'' checkbox (\texttt{staySignedIn}, checked by default) that controls how long the session cookie persists (Section~\ref{sec:backend-authentication}). Fields are validated client-side with the same Zod schema shape used server-side, highlighting invalid fields in red. On submit, the button switches to a disabled ``submitting…'' state; on success the app navigates back to the calendar and refreshes its server components so the newly authenticated session is picked up immediately; on failure, the server's error message is shown inline below the form, rather than as a toast.
 
-\begin{figure}[h]
+\begin{figure}[htbp]
 \begin{center}
 \resizebox{100mm}{!}{\includegraphics{./figures/app_screenshots/login_interface.png}}
 \end{center}
 \caption{Login interface.}\label{fig:login}
 \end{figure}
+\FloatBarrier
 
 \subsection{Calendar Interface} \label{sec:frontend-calendar-ui}
 The interactive calendar (Figure~\ref{fig:calendar}) is the core of the application. Its header is split into two rows: a top row with a ``Today'' shortcut and a date navigator (showing the current month/year, an event-count badge for the visible period, and previous/next controls), and an actions row containing the category filter, the Agenda/Day/Week/Month/Year view switcher, the academic-year tools (Section~\ref{sec:frontend-academic-year-tools}), a user filter, the ``Add Event'' button, and the settings menu.
 
 The five views (\textbf{Agenda}, \textbf{Day}, \textbf{Week}, \textbf{Month}, \textbf{Year}) offer different levels of temporal density, from a scrollable list grouped by date or category (Agenda) to a full-year grid overview (Year). Within the day/week grid views, occurrences can be rescheduled directly by dragging them to a different time slot, or resized to change their duration, both implemented with the native HTML5 drag-and-drop API and animated with \texttt{framer-motion}; both actions persist immediately through the mutation flow described in Section~\ref{sec:frontend-api}. When a month-view day has more occurrences than can be shown inline, an ``+N more'' control opens a simple list dialog for that day, from which any occurrence can be opened in full detail.
 
+Code Example~\ref{lst:draggable-event} shows the \texttt{DraggableEvent} component that wraps every occurrence block shown in the day and week views, connecting the browser's native drag events to the shared drag-and-drop context.
+
+\begin{lstlisting}[caption={[The DraggableEvent wrapper component.]{The \texttt{DraggableEvent} wrapper component (\texttt{features/calendar/dnd/draggable-event.tsx}).}}, label={lst:draggable-event}]
+export function DraggableEvent({
+  event,
+  occurrence,
+  children,
+  className,
+}: DraggableEventProps) {
+  const { canEditEvents } = useCalendar();
+  const { startDrag, endDrag, isDragging, draggedOccurrence } = useDragDrop();
+
+  if (!canEditEvents) {
+    return <>{children}</>;
+  }
+
+  const isCurrentlyDragged =
+    isDragging && draggedOccurrence?.occurrence.id === occurrence.id;
+
+  return (
+    <motion.div
+      className={`${className || ""} ${
+        isCurrentlyDragged ? "opacity-50 cursor-grabbing" : "cursor-grab"
+      }`}
+      draggable
+      onClick={(e) => e.stopPropagation()}
+      onDragStart={(e) => {
+        (e as DragEvent).dataTransfer!.setData("text/plain", occurrence.id);
+        startDrag(event, occurrence);
+      }}
+      onDragEnd={() => endDrag()}
+    >
+      {children}
+    </motion.div>
+  );
+}
+\end{lstlisting}
+
+The component reads two pieces of shared state: \texttt{canEditEvents} from the calendar context, which it uses to fall back to rendering its children unwrapped, with no drag handlers attached at all, for users without editing rights; and \texttt{useDragDrop}, a context that tracks which single occurrence, across the whole calendar body, is currently being dragged. Setting the native \texttt{draggable} attribute on a \texttt{motion.div} lets \texttt{framer-motion} animate the wrapper, dimming it to 50\% opacity while it is the one being dragged, while still relying on the browser's own HTML5 drag-and-drop events, \texttt{onDragStart} and \texttt{onDragEnd}, to notify the context when a drag begins and ends. The component only originates the drag: the drop target and the resulting date/time update are handled by the companion \texttt{DroppableArea} component and the \texttt{updateOccurrence} mutation (Section~\ref{sec:frontend-api}), keeping each of the two halves of the interaction in its own, independently reusable component.
+
 Two controls narrow down what is shown: a category filter (multi-select dropdown, one entry per \texttt{Category}, each with its colored dot) and a user filter (single-select, showing every user's avatar and name, defaulting to ``All users''). A settings menu offers independent toggles for dark/light theme, category badge style (colored block vs. small dot), 12/24-hour time format, and how the Agenda view groups events (by date or by category), all persisted locally per browser.
 
-\begin{figure}[h]
+\begin{figure}[htbp]
 \begin{center}
 \resizebox{140mm}{!}{\includegraphics{./figures/app_screenshots/calendar_View.png}}
 \end{center}
 \caption{Main calendar interface (Month view).}\label{fig:calendar}
 \end{figure}
+\FloatBarrier
 
 \subsection{Event Management Dialogs} \label{sec:frontend-event-dialogs}
 Event and occurrence management is built around a small set of focused dialogs.
 
 The \textbf{Add/Edit Event dialog} (Figure~\ref{fig:add-edit-event}) is a single form reused for both creating and editing an event, visible only to users with editor-level access or higher. It is split into an event-level panel, with \texttt{name}, \texttt{objective}, and \texttt{category}/\texttt{classification}/\texttt{status}/\texttt{responsible} (each a dropdown populated from the corresponding lookup table), and an occurrence panel, where occurrences are added and removed freely as a repeatable list (at least one is always required), each with its own \texttt{description}, \texttt{start}/\texttt{end date-time}, and optional minimum-duration/minimum-gap-to-next-occurrence constraints. A dedicated ``Rules'' panel lets the user attach any of the five configurable business rules (Section~\ref{sec:rule-engine}) to the event from a dropdown; each added rule renders its own input controls generated from that rule's field metadata, namely checkboxes, number inputs, or an event picker, depending on the rule, and can be removed independently. All fields are validated with Zod before submission, including a check that every occurrence's end date is after its start date.
 
-\begin{figure}[h]
+\begin{figure}[htbp]
 \begin{center}
 \resizebox{140mm}{!}{\includegraphics{./figures/app_screenshots/add_edit_event.png}}
 \end{center}
 \caption{Add/Edit Event dialog.}\label{fig:add-edit-event}
 \end{figure}
+\FloatBarrier
 
 The \textbf{Event Details dialog} is the read-only counterpart, opened when a user clicks an occurrence anywhere in the calendar. It shows the event's name, category/classification/status badges, its objective, who created it, the selected occurrence's dates, every occurrence in a scrollable grid, and a summary of the rules attached to the event, in the same terms an end user configured them in. Users with edit rights see shortcuts here to open the Edit dialog or delete the event directly.
 
 Deleting an event goes through a dedicated \textbf{confirmation dialog} (a destructive-styled button that opens an alert requiring explicit confirmation) before the event and all of its occurrences are removed, since occurrence deletion cascades from the event at the database level (Section~\ref{sec:data-model}).
 
-\begin{figure}[h]
+\begin{figure}[htbp]
 \begin{center}
 \resizebox{140mm}{!}{\includegraphics{./figures/app_screenshots/event_details.png}}
 \end{center}
 \caption{Event Details dialog.}\label{fig:event-details}
 \end{figure}
+\FloatBarrier
 
 \subsection{Academic Year Tools} \label{sec:frontend-academic-year-tools}
 The academic-year tools, part of the calendar's actions bar, let the user pick an academic year and run the migration workflow described in Section~\ref{sec:migration-engine}: a ``Validate'' action checks the selected year's events against every business rule without changing anything, and a ``Migrate'' action (available to editors and administrators) runs the full migration from that year into the next. Both actions share a single results modal (Figure~\ref{fig:migration-report}): if no rule violations were found, it shows a simple confirmation banner; otherwise, each violation is listed as its own card with the rule that was broken, the affected event and occurrence, a human-readable explanation, and the offending date, and clicking a card opens that event directly in the Event Details dialog. A separate ``Vacations'' action opens a dedicated dialog (Figure~\ref{fig:vacations}) for managing that academic year's vacation periods (label and date range), with full create/edit/delete support for users with edit rights.
 
-\begin{figure}[h]
+\begin{figure}[htbp]
 \begin{center}
 \resizebox{!}{110mm}{\includegraphics{./figures/app_screenshots/rules_validate.png}}
 \end{center}
 \caption{Validation/migration results modal.}\label{fig:migration-report}
 \end{figure}
+\FloatBarrier
 
-\begin{figure}[h]
+\begin{figure}[htbp]
 \begin{center}
 \resizebox{70mm}{!}{\includegraphics{./figures/app_screenshots/vacations_dialog.png}}
 \end{center}
 \caption{Vacation periods dialog.}\label{fig:vacations}
 \end{figure}
+\FloatBarrier
 
 \subsection{User Management Dashboard} \label{sec:frontend-user-mgmt}
 The administrative dashboard (Figure~\ref{fig:user-mgmt}), accessible only to administrators, lists every user in a table (name, email, role, profile picture, and actions) and supports full CRUD. Creating a user requires name, email, role, an optional profile picture path, and a password; editing reuses the same form inline below the table and only sends the fields that actually changed, with the password left blank meaning ``keep the current password''. Every mutation gives immediate feedback via toast notifications, and deleting a user is confirmed before proceeding. The delete action is disabled for the currently logged-in administrator's own row, reinforcing the ``cannot delete self'' invariant already enforced on the backend (Section~\ref{sec:backend-rbac}).
 
-\begin{figure}[h]
+\begin{figure}[htbp]
 \begin{center}
 \resizebox{110mm}{!}{\includegraphics{./figures/app_screenshots/user_management.png}}
 \end{center}
 \caption{User management dashboard.}\label{fig:user-mgmt}
 \end{figure}
+\FloatBarrier

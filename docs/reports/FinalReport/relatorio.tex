@@ -10,13 +10,74 @@
 
 \usepackage{lipsum} % gerador de texto
 \usepackage{graphicx}
+\usepackage{placeins} % \FloatBarrier: keeps figures from drifting past the
+                       % point they're declared, without forcing blank gaps
+                       % the way a strict [H] placement would
 \usepackage{url}
 \usepackage{tikz}
+\usetikzlibrary{shapes.geometric,calc}
 \usepackage[Algoritmo]{algorithm}
 \usepackage{algorithmicx}
 \usepackage{algpseudocode}
 \renewcommand{\algorithmicrequire}{\textbf{Dados: }}
 \renewcommand{\algorithmicensure}{\textbf{Resultado: }}
+
+% Código-fonte (listagens numeradas, referenciáveis como figuras)
+\usepackage{xcolor}
+\usepackage{listings} % numbers listings per chapter automatically in report class
+\usepackage{caption}
+% Ragged-right only for code listing captions: their unbreakable \texttt{path}
+% tokens otherwise get stretched across a justified two-line caption.
+\captionsetup[lstlisting]{justification=raggedright, singlelinecheck=false}
+
+\definecolor{codebg}{RGB}{245,245,245}
+\definecolor{codekeyword}{RGB}{0,0,180}
+\definecolor{codecomment}{RGB}{110,110,110}
+\definecolor{codestring}{RGB}{0,120,0}
+
+\lstdefinelanguage{TypeScript}{
+    keywords={const, let, var, function, return, if, else, for, while, class,
+        interface, type, export, import, from, extends, implements, new, this,
+        typeof, async, await, public, private, protected, readonly, enum, as,
+        in, of, void, null, undefined, true, false, default, throw, try, catch,
+        string, number, boolean, any, unknown, never, satisfies},
+    keywordstyle=\color{codekeyword}\bfseries,
+    sensitive=true,
+    comment=[l]{//},
+    morecomment=[s]{/*}{*/},
+    commentstyle=\color{codecomment}\itshape,
+    string=[b]",
+    morestring=[b]',
+    morestring=[b]`,
+    stringstyle=\color{codestring},
+}
+
+\lstset{
+    language=TypeScript,
+    backgroundcolor=\color{codebg},
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    breakatwhitespace=false,
+    showstringspaces=false,
+    numbers=left,
+    numberstyle=\tiny\color{black!50},
+    frame=single,
+    rulecolor=\color{black!30},
+    tabsize=2,
+    captionpos=b,
+    columns=flexible,
+    literate=
+        {á}{{\'a}}1 {à}{{\`a}}1 {â}{{\^a}}1 {ã}{{\~a}}1
+        {Á}{{\'A}}1 {À}{{\`A}}1 {Â}{{\^A}}1 {Ã}{{\~A}}1
+        {é}{{\'e}}1 {ê}{{\^e}}1 {É}{{\'E}}1 {Ê}{{\^E}}1
+        {í}{{\'i}}1 {Í}{{\'I}}1
+        {ó}{{\'o}}1 {ô}{{\^o}}1 {õ}{{\~o}}1 {Ó}{{\'O}}1 {Ô}{{\^O}}1 {Õ}{{\~O}}1
+        {ú}{{\'u}}1 {Ú}{{\'U}}1
+        {ç}{{\c c}}1 {Ç}{{\c C}}1,
+}
+
+\renewcommand{\lstlistingname}{Code Example}
+\renewcommand{\lstlistlistingname}{List of Code Examples}
 
 % Definições das dimensões das páginas
 \setlength{\textheight}{24.00cm}
@@ -123,8 +184,9 @@ Os serviços académicos do ISEL planeiam atualmente atividades institucionais r
 \cleardoublepage
 \tableofcontents \cleardoublepage
 
-% Geração do índice de figuras e de tabelas
-%\listoffigures \cleardoublepage
+% Geração do índice de figuras e do índice de exemplos de código
+\listoffigures \cleardoublepage
+\lstlistoflistings \cleardoublepage
 %\listoftables \cleardoublepage
 
 % Reiniciar a numeração de páginas

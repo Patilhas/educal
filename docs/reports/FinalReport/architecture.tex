@@ -9,12 +9,13 @@ To ensure the project's viability, maintainability, and security, the architectu
 
 EduCal follows a three-tier architecture that separates presentation, business logic, and data storage.
 
-\begin{figure}[h]
+\begin{figure}[htbp]
 \begin{center}
 \resizebox{130mm}{!}{\includegraphics{./figures/system_architecture.png}}
 \end{center}
 \caption{System architecture diagram.}\label{fig:architecture}
 \end{figure}
+\FloatBarrier
 
 As illustrated in Figure~\ref{fig:architecture}, the system is organized into three layers:
 
@@ -38,63 +39,71 @@ The frontend is built with \textbf{React 19} inside the same Next.js application
 
 To support automated year-to-year migration and rule validation, a relational database schema was designed and implemented with Drizzle ORM, visually outlined in the Entity-Relationship Diagram in Figure~\ref{fig:er-diagram}, generated directly from the Drizzle schema definitions (\texttt{db/schema/auth.schema.ts}, \texttt{db/schema/calendar.schema.ts}, \texttt{db/schema/relations.ts}).
 
-\begin{figure}[h]
+\begin{figure}[htbp]
 \begin{center}
 \resizebox{\textwidth}{!}{%
 \begin{tikzpicture}[
-    entity/.style={draw, rectangle, rounded corners=1pt, align=left, font=\footnotesize, text width=3.3cm, inner sep=2mm, fill=white},
+    entity/.style={draw, rectangle, rounded corners=1pt, align=center, font=\footnotesize\bfseries, text width=2.6cm, inner sep=2mm, fill=white},
+    relationship/.style={draw, diamond, aspect=2.4, font=\tiny, inner sep=0pt, align=center, fill=white},
     cascade/.style={thick},
     restrict/.style={thick, dashed},
-    label/.style={fill=white, inner sep=1pt, font=\tiny},
+    card/.style={fill=white, inner sep=1pt, font=\tiny},
 ]
 
-% --- coordinates (center-to-center; entity boxes are drawn on top afterwards) ---
-\coordinate (events) at (0,0);
-\coordinate (academicyears) at (-6,4.5);
-\coordinate (users) at (6,4.5);
-\coordinate (vacationperiods) at (-6,7.8);
-\coordinate (sessions) at (6,7.8);
-\coordinate (categories) at (-9,-4.5);
-\coordinate (classifications) at (-3,-4.5);
-\coordinate (statuses) at (3,-4.5);
-\coordinate (responsibles) at (9,-4.5);
-\coordinate (occurrences) at (-3,-8);
-\coordinate (rules) at (3,-8);
-
-% --- relationships (drawn first, so entity boxes below cover the line ends) ---
-\draw[cascade] (academicyears) -- (events) node[label, midway] {1:N};
-\draw[cascade] (academicyears) -- (vacationperiods) node[label, midway] {1:N};
-\draw[restrict] (users) -- (events) node[label, midway] {1:N};
-\draw[cascade] (users) -- (sessions) node[label, midway] {1:N};
-\draw[restrict] (events) -- (categories) node[label, midway] {N:1};
-\draw[restrict] (events) -- (classifications) node[label, midway] {N:1};
-\draw[restrict] (events) -- (statuses) node[label, midway] {N:1};
-\draw[restrict] (events) -- (responsibles) node[label, midway] {N:1};
-\draw[cascade] (events) -- (occurrences) node[label, midway] {1:N};
-\draw[cascade] (events) -- (rules) node[label, midway] {1:N};
-
 % --- entities ---
-\node[entity] at (events) {%
-    \textbf{events}\\
-    \rule{3.1cm}{0.4pt}\\
-    \underline{id} (PK)\\
-    academic\_year\_start (FK)\\
-    category (FK)\\
-    classification (FK)\\
-    status (FK)\\
-    responsible (FK)\\
-    user\_id (FK)
-};
-\node[entity] at (academicyears) {\textbf{academic\_years}\\ \rule{3.1cm}{0.4pt}\\ \underline{start\_year} (PK)};
-\node[entity] at (users) {\textbf{users}\\ \rule{3.1cm}{0.4pt}\\ \underline{id} (PK)};
-\node[entity] at (vacationperiods) {\textbf{vacation\_periods}\\ \rule{3.1cm}{0.4pt}\\ \underline{id} (PK)\\ academic\_year\_start (FK)};
-\node[entity] at (sessions) {\textbf{sessions}\\ \rule{3.1cm}{0.4pt}\\ \underline{token} (PK)\\ user\_id (FK)};
-\node[entity] at (categories) {\textbf{categories}\\ \rule{3.1cm}{0.4pt}\\ \underline{value} (PK)};
-\node[entity] at (classifications) {\textbf{classifications}\\ \rule{3.1cm}{0.4pt}\\ \underline{value} (PK)};
-\node[entity] at (statuses) {\textbf{statuses}\\ \rule{3.1cm}{0.4pt}\\ \underline{name} (PK)};
-\node[entity] at (responsibles) {\textbf{responsibles}\\ \rule{3.1cm}{0.4pt}\\ \underline{value} (PK)};
-\node[entity] at (occurrences) {\textbf{event\_occurrences}\\ \rule{3.1cm}{0.4pt}\\ \underline{id} (PK)\\ event\_id (FK)};
-\node[entity] at (rules) {\textbf{event\_rules}\\ \rule{3.1cm}{0.4pt}\\ \underline{id} (PK)\\ event\_id (FK)};
+\node[entity] (events) at (0,0) {Event};
+\node[entity] (academicyears) at (-6,4.5) {Academic Year};
+\node[entity] (users) at (6,4.5) {User};
+\node[entity] (vacationperiods) at (-6,7.8) {Vacation Period};
+\node[entity] (sessions) at (6,7.8) {Session};
+\node[entity] (categories) at (-9,-4.5) {Category};
+\node[entity] (classifications) at (-3,-4.5) {Classification};
+\node[entity] (statuses) at (3,-4.5) {Status};
+\node[entity] (responsibles) at (9,-4.5) {Responsible};
+\node[entity] (occurrences) at (-2.0,-10) {Occurrence};
+\node[entity] (rules) at (2,-10) {Event Rule};
+
+\node[relationship] (rel-ay-events) at ($(academicyears)!0.5!(events)$) {has};
+\node[relationship] (rel-ay-vac) at ($(academicyears)!0.5!(vacationperiods)$) {has};
+\node[relationship] (rel-users-events) at ($(users)!0.5!(events)$) {creates};
+\node[relationship] (rel-users-sessions) at ($(users)!0.5!(sessions)$) {authenticates};
+\node[relationship] (rel-events-cat) at ($(events)!0.5!(categories)$) {categorized\_as};
+\node[relationship] (rel-events-class) at ($(events)!0.5!(classifications)$) {classified\_as};
+\node[relationship] (rel-events-status) at ($(events)!0.5!(statuses)$) {has\_status};
+\node[relationship] (rel-events-resp) at ($(events)!0.5!(responsibles)$) {assigned\_to};
+\node[relationship] (rel-events-occ) at ($(events)!0.68!(occurrences)$) {has};
+\node[relationship] (rel-events-rules) at ($(events)!0.68!(rules)$) {has};
+
+% --- edges: entity -- diamond -- entity, with cardinalities near each entity end ---
+\draw[cascade] (academicyears) -- (rel-ay-events) node[card, pos=0.2] {1};
+\draw[cascade] (rel-ay-events) -- (events) node[card, pos=0.8] {N};
+
+\draw[cascade] (academicyears) -- (rel-ay-vac) node[card, pos=0.2] {1};
+\draw[cascade] (rel-ay-vac) -- (vacationperiods) node[card, pos=0.8] {N};
+
+\draw[restrict] (users) -- (rel-users-events) node[card, pos=0.2] {1};
+\draw[restrict] (rel-users-events) -- (events) node[card, pos=0.8] {N};
+
+\draw[cascade] (users) -- (rel-users-sessions) node[card, pos=0.2] {1};
+\draw[cascade] (rel-users-sessions) -- (sessions) node[card, pos=0.8] {N};
+
+\draw[restrict] (events) -- (rel-events-cat) node[card, pos=0.2] {N};
+\draw[restrict] (rel-events-cat) -- (categories) node[card, pos=0.8] {1};
+
+\draw[restrict] (events) -- (rel-events-class) node[card, pos=0.2] {N};
+\draw[restrict] (rel-events-class) -- (classifications) node[card, pos=0.8] {1};
+
+\draw[restrict] (events) -- (rel-events-status) node[card, pos=0.2] {N};
+\draw[restrict] (rel-events-status) -- (statuses) node[card, pos=0.8] {1};
+
+\draw[restrict] (events) -- (rel-events-resp) node[card, pos=0.2] {N};
+\draw[restrict] (rel-events-resp) -- (responsibles) node[card, pos=0.8] {1};
+
+\draw[cascade] (events) -- (rel-events-occ) node[card, pos=0.2] {1};
+\draw[cascade] (rel-events-occ) -- (occurrences) node[card, pos=0.8] {N};
+
+\draw[cascade] (events) -- (rel-events-rules) node[card, pos=0.2] {1};
+\draw[cascade] (rel-events-rules) -- (rules) node[card, pos=0.8] {N};
 
 % --- legend ---
 \node[draw, align=left, font=\tiny, anchor=south west, fill=white] at (-9.3,9.4) {
@@ -104,8 +113,11 @@ To support automated year-to-year migration and rule validation, a relational da
 \end{tikzpicture}%
 }
 \end{center}
-\caption{Entity-Relationship Diagram, generated from the Drizzle schema. Solid lines are foreign keys with \texttt{ON DELETE CASCADE}; dashed lines are \texttt{ON DELETE NO ACTION} (the referenced row cannot be deleted while still in use).}\label{fig:er-diagram}
+\caption{Entity-Relationship Diagram, derived from the Drizzle schema.}\label{fig:er-diagram}
 \end{figure}
+\FloatBarrier
+
+Each diamond names the relationship between the two entities it connects, with cardinalities (1/N) marked at each end. Solid lines are foreign keys with \texttt{ON DELETE CASCADE}; dashed lines are \texttt{ON DELETE NO ACTION} (the referenced row cannot be deleted while still in use).
 
 \subsection{Core Scheduling Entities} \label{sec:core-entities}
 
