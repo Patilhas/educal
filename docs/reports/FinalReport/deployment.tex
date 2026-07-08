@@ -5,12 +5,28 @@
 
 \section{Current Infrastructure} \label{sec:current-infra}
 
-During development, EduCal was run and previewed using \textbf{Vercel}, the hosting platform built by the creators of Next.js. It requires minimal configuration for Next.js applications, which made it possible to get a working, publicly reachable deployment of each iteration of the application without needing to provision any institutional infrastructure up front. The PostgreSQL database is accessed through a single \texttt{DATABASE\_URL} connection string, keeping the application decoupled from where the database itself is actually hosted.
+During development, EduCal was run and previewed using \textbf{Vercel}, the hosting platform built by the creators of Next.js. It requires minimal configuration for Next.js applications, which made it possible to get a working, publicly reachable preview of each iteration of the application without needing to provision any institutional infrastructure up front.
 
-Locally, the project is run with the standard Next.js toolchain, managed through \texttt{pnpm}: \texttt{pnpm dev} for the development server, and \texttt{pnpm build}/\texttt{pnpm start} to build and run a production Node.js server. There is currently no containerization (no Dockerfile) and no continuous integration/deployment pipeline configured in the repository; builds and database migrations (\texttt{pnpm run db:migrate}) are run manually.
+Provisioning a remote PostgreSQL server for this preview deployment was not warranted at this stage of the project, so the Vercel deployment instead runs on the JSON-blob-backed Redis implementation (\texttt{DATA\_LAYER=redis}, Section~\ref{sec:data-access}), avoiding the need for a remote database server entirely. PostgreSQL itself was used and tested only against a local instance throughout development; the ISEL virtual machine described below is intended to be the first environment where it runs continuously.
+
+Locally, the project is run with the standard Next.js toolchain, managed through \texttt{pnpm}: \texttt{pnpm dev} for the development server, and \texttt{pnpm build}/\texttt{pnpm start} to build and run a production Node.js server, with database migrations (\texttt{pnpm run db:migrate}) run manually against whichever backend is configured.
 
 \section{Deployment Roadmap} \label{sec:deployment-roadmap}
 
-Because EduCal manages institutional academic planning data, the intended production deployment is a virtual machine hosted within \textbf{ISEL's own internal network}, rather than a third-party cloud platform, so that both the application and the database remain under the institution's direct control. This VM would host the Next.js application (built and run with \texttt{pnpm build}/\texttt{pnpm start}) alongside the PostgreSQL instance.
+Because EduCal manages institutional academic planning data, the intended production deployment is a single virtual machine hosted within \textbf{ISEL's own internal network}, rather than a third-party cloud platform, so that both the application and its data remain under the institution's direct control. This VM would host both the Next.js application (built and run with \texttt{pnpm build}/\texttt{pnpm start}) and the PostgreSQL instance.
 
-This step has not been carried out yet: no VM has been provisioned or configured as part of this project's delivery, and there is no containerization or deployment automation in place to support it. Setting up the ISEL VM, migrating the database to it, and defining a repeatable deployment process are the concrete next steps once such infrastructure is made available by the institution.
+A single VM, rather than two separate machines for the application and the database, is the intended setup. At the scale EduCal is designed for, a single institution's academic staff, splitting the two across separate VMs would add operational overhead (two machines to provision, patch, and monitor instead of one) and network configuration (securing traffic between them) without a corresponding benefit: that split earns its complexity when the application and database need to scale independently, for example running several application instances behind a load balancer against one shared database, which is not a requirement here. Colocating both keeps the surface ISEL's IT staff need to secure and maintain down to a single machine, at the cost of the application and database competing for the same CPU, memory, and disk, an acceptable trade-off given the expected load.
+
+This step has not been carried out yet: no VM has been provisioned or configured as part of this project's delivery. Setting it up is expected to follow these steps:
+
+\begin{enumerate}
+    \item Receive the VM from ISEL's IT department, provisioned with a Linux distribution, and confirm its network reachability (whether it is reachable only within ISEL's internal network, or also externally, which determines whether a reverse proxy/TLS setup is needed).
+    \item Install Node.js (the version this project targets), \texttt{pnpm}, and a PostgreSQL server on the VM.
+    \item Create the application's PostgreSQL database and role, and configure \texttt{DATABASE\_URL} and the remaining environment variables in a \texttt{.env} file local to the VM, never committed to version control.
+    \item Run the Drizzle migrations (\texttt{pnpm run db:migrate}) against this new database to create the schema, followed by \texttt{pnpm run db:seed} to populate the reference lookup tables (categories, classifications, statuses, responsibles) and create the initial administrator account.
+    \item Build the application (\texttt{pnpm build}) and run it as a persistent background service, for example via a process manager such as \texttt{pm2} or a \texttt{systemd} unit, so that it restarts automatically on crash or VM reboot.
+    \item Configure a reverse proxy (e.g. Nginx) in front of the Node.js process to handle TLS termination and serve the application on the standard HTTPS port, under whatever internal hostname ISEL assigns it.
+    \item Set up a recurring backup schedule for the PostgreSQL database (e.g. a nightly \texttt{pg\_dump} to institutional storage), since this is the point where data loss becomes a real institutional risk once the calendar is in active use.
+\end{enumerate}
+
+These steps, along with defining a repeatable deployment process for future updates, are the concrete next steps once the VM is made available by the institution.

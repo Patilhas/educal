@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { canManageCalendarEvents } from "@/shared/user/roles";
 import { getAcademicYearRange, getEventAcademicYearStart, shiftDateByYears } from "@/shared/calendar/academic-year";
 import { validateEventRule, getRulesMetadata, minDurationRule, minDaysToNextRule } from "@/server/calendar/rules";
 import type {
@@ -10,7 +9,6 @@ import type {
   IVacationPeriod,
   IOccurrence,
 } from "@/shared/calendar/types";
-import type { IUser } from "@/shared/user/types";
 import {
   buildEventPayloadSchema,
   vacationPayloadSchema,
@@ -19,9 +17,14 @@ import {
 import { calendarData } from "@/server/calendar/data/calendar.data";
 import type { IRequestWithAuth } from "@/server/auth/session";
 import { DomainError } from "@/server/shared/domain-error";
+import { withRolePolicy, type TRolePolicy } from "@/server/shared/authorize";
 
 const toIsoString = (dateValue: string) => new Date(dateValue).toISOString();
 
+// Methods below still take `request`/`requestUser` even where the method body no
+// longer reads it: withRolePolicy's role extractor reads args[0] positionally for
+// every method gated by the policy at the bottom of this file. Unused ones are
+// prefixed with `_` and kept in the signature for that reason.
 export class CalendarService {
   async listEvents(): Promise<IEvent[]> {
     return calendarData.listEvents();
@@ -46,7 +49,6 @@ export class CalendarService {
   }
 
   async createEvent(request: IRequestWithAuth, payload: unknown): Promise<IEvent> {
-    this.ensureCanManageEvents(request.auth.user.role);
     const schema = await buildEventPayloadSchema();
     const parsed = schema.parse(payload);
     const academicYearStart =
@@ -75,8 +77,7 @@ export class CalendarService {
     return calendarData.insertEventIntoAcademicYear(newEvent, academicYearStart);
   }
 
-  async updateEvent(request: IRequestWithAuth, eventId: number, payload: unknown): Promise<IEvent> {
-    this.ensureCanManageEvents(request.auth.user.role);
+  async updateEvent(_request: IRequestWithAuth, eventId: number, payload: unknown): Promise<IEvent> {
     const schema = await buildEventPayloadSchema();
     const parsed = schema.extend({ id: z.number().int().positive().optional() }).parse(payload);
 
@@ -157,11 +158,9 @@ export class CalendarService {
   }
 
   async migrateAcademicYear(
-    request: IRequestWithAuth,
+    _request: IRequestWithAuth,
     sourceAcademicYearStart: number,
   ): Promise<IAcademicYearMigrationResult> {
-    this.ensureCanManageEvents(request.auth.user.role);
-
     const targetAcademicYearStart = sourceAcademicYearStart + 1;
 
     // Vacations migration
@@ -237,11 +236,10 @@ export class CalendarService {
   }
 
   async createVacation(
-    request: IRequestWithAuth,
+    _request: IRequestWithAuth,
     academicYearStart: number,
     payload: unknown,
   ): Promise<IVacationPeriod> {
-    this.ensureCanManageEvents(request.auth.user.role);
     const parsed = vacationPayloadSchema.parse(payload);
     return calendarData.upsertVacation(academicYearStart, {
       id: crypto.randomUUID(),
@@ -252,12 +250,11 @@ export class CalendarService {
   }
 
   async updateVacation(
-    request: IRequestWithAuth,
+    _request: IRequestWithAuth,
     academicYearStart: number,
     vacationId: string,
     payload: unknown,
   ): Promise<IVacationPeriod> {
-    this.ensureCanManageEvents(request.auth.user.role);
     const parsed = vacationPayloadSchema.parse(payload);
     return calendarData.upsertVacation(academicYearStart, {
       id: vacationId,
@@ -268,19 +265,17 @@ export class CalendarService {
   }
 
   async deleteVacation(
-    request: IRequestWithAuth,
+    _request: IRequestWithAuth,
     academicYearStart: number,
     vacationId: string,
   ): Promise<void> {
-    this.ensureCanManageEvents(request.auth.user.role);
     const removed = await calendarData.deleteVacation(academicYearStart, vacationId);
     if (!removed) {
       throw new DomainError("NOT_FOUND", 404, "Período de férias não encontrado");
     }
   }
 
-  async deleteEvent(request: IRequestWithAuth, eventId: number): Promise<void> {
-    this.ensureCanManageEvents(request.auth.user.role);
+  async deleteEvent(_request: IRequestWithAuth, eventId: number): Promise<void> {
     const removed = await calendarData.deleteEvent(eventId);
     if (!removed) {
       throw new DomainError("NOT_FOUND", 404, "Evento não encontrado");
@@ -288,12 +283,11 @@ export class CalendarService {
   }
 
   async updateOccurrence(
-    request: IRequestWithAuth,
+    _request: IRequestWithAuth,
     eventId: number,
     occurrenceId: string,
     payload: unknown,
   ): Promise<IEvent> {
-    this.ensureCanManageEvents(request.auth.user.role);
     const parsed = patchOccurrenceSchema.parse(payload);
 
     if (!parsed.startDate && !parsed.endDate && !parsed.description) {
@@ -428,16 +422,25 @@ export class CalendarService {
 
     return issues;
   }
-
-  private ensureCanManageEvents(role: IUser["role"]) {
-    if (!canManageCalendarEvents(role)) {
-      throw new DomainError(
-        "FORBIDDEN",
-        403,
-        "É necessário ter pelo menos o role editor para alterar eventos",
-      );
-    }
-  }
 }
 
-export const calendarService = new CalendarService();
+const calendarServiceInstance = new CalendarService();
+
+export const calendarService = withRolePolicy(
+  calendarServiceInstance,
+  {
+    listEvents: "any",
+    listEnums: "any",
+    createEvent: "editor",
+    updateEvent: "editor",
+    validateAcademicYear: "any",
+    migrateAcademicYear: "editor",
+    listAllVacations: "any",
+    createVacation: "editor",
+    updateVacation: "editor",
+    deleteVacation: "editor",
+    deleteEvent: "editor",
+    updateOccurrence: "editor",
+  } satisfies Partial<Record<keyof CalendarService, TRolePolicy>>,
+  (args) => (args[0] as IRequestWithAuth).auth.user.role,
+);

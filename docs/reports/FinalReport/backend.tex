@@ -7,16 +7,47 @@ This chapter details the backend implementation of EduCal, covering its layered 
 
 \section{Organization} \label{sec:backend-organization}
 
-The backend is organized per feature (\texttt{auth}, \texttt{calendar}) under \texttt{server/}, each following the same three-layer structure of Controller, Service, and Data, plus a \texttt{server/shared/} module for cross-cutting concerns (the API response envelope, domain error type, and the data-layer factory). This mirrors the Controller-Service-Repository pattern used since the initial implementation: controllers such as \texttt{authController} and \texttt{calendarController} act as orchestrators that parse and validate the incoming HTTP request and hand off to the corresponding service, keeping the route handlers in \texttt{app/api/**/route.ts} as thin wrappers, for example:
+The backend is organized per feature (\texttt{auth}, \texttt{calendar}) under \texttt{server/}, each following the same three-layer structure of Controller, Service, and Data, plus a \texttt{server/shared/} module for cross-cutting concerns (the API response envelope, domain error type, and the data-layer factory). This mirrors the Controller-Service-Repository pattern used since the initial implementation: controllers such as \texttt{authController} and \texttt{calendarController} act as orchestrators that parse and validate the incoming HTTP request and hand off to the corresponding service, keeping the route handlers in \texttt{app/api/**/route.ts} as thin wrappers, as shown in Code Example~\ref{lst:api-route}.
 
-\begin{verbatim}
-export const GET = withApiAuth(async () => calendarController.listEvents());
-export const POST = withApiAuth(async (request) => calendarController.createEvent(request));
-\end{verbatim}
+\begin{lstlisting}[caption={[Calendar events API route.]{Calendar events API route (\texttt{app/api/events/route.ts}): each HTTP verb is wired directly to a controller method, behind the authentication middleware.}}, label={lst:api-route}]
+export const GET = withApiAuth(async () => {
+  return calendarController.listEvents();
+});
+
+export const POST = withApiAuth(async (request) => {
+  return calendarController.createEvent(request);
+});
+\end{lstlisting}
+
+Neither handler parses the request itself, checks the role, or catches errors: \texttt{withApiAuth} (Section~\ref{sec:backend-authentication}) resolves the session cookie into a user before either handler runs, and every failure, whether it comes from validation, authorization, or the database, is funnelled through the controller's own \texttt{fail()} call (Section~\ref{sec:backend-error-handling}). This keeps every route file in \texttt{app/api/} at a near-identical, one-line shape, regardless of which feature or HTTP verb it implements.
 
 \section{Authentication} \label{sec:backend-authentication}
 
-Passwords are never stored in plain text: they are hashed with Node.js's built-in \texttt{crypto} module~\cite{nodejscrypto} using \texttt{scrypt}, a per-password random 16-byte salt, and a 64-byte derived key, stored as \texttt{scrypt\$salt\$hash}. Password verification uses a constant-time comparison (\texttt{crypto.timingSafeEqual}) to reduce the risk of timing attacks.
+Passwords are never stored in plain text: they are hashed with Node.js's built-in \texttt{crypto} module~\cite{nodejscrypto} using \texttt{scrypt}, a per-password random 16-byte salt, and a 64-byte derived key, stored as \texttt{scrypt\$salt\$hash}. Password verification uses a constant-time comparison (\texttt{crypto.timingSafeEqual}) to reduce the risk of timing attacks. Code Example~\ref{lst:crypto} shows the implementation of both functions.
+
+\begin{lstlisting}[caption={[Password hashing and verification.]{Password hashing and verification (\texttt{server/auth/crypto.ts}).}}, label={lst:crypto}]
+export const hashPassword = (password: string): string => {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const hash = crypto.scryptSync(password, salt, 64).toString("hex");
+  return `scrypt$${salt}$${hash}`;
+};
+
+export const verifyPassword = (password: string, encodedHash: string): boolean => {
+  const [algorithm, salt, storedHash] = encodedHash.split("$");
+  if (algorithm !== "scrypt" || !salt || !storedHash) {
+    return false;
+  }
+
+  const computedHash = crypto.scryptSync(password, salt, 64).toString("hex");
+  if (computedHash.length !== storedHash.length) return false;
+  return crypto.timingSafeEqual(
+    Buffer.from(storedHash, "hex"),
+    Buffer.from(computedHash, "hex"),
+  );
+};
+\end{lstlisting}
+
+\texttt{hashPassword} generates a fresh random salt for every password and derives a 64-byte key with \texttt{scryptSync}, encoding the algorithm tag, salt, and derived key into the single \texttt{\$}-delimited string that is stored in the \texttt{users.password\_hash} column. \texttt{verifyPassword} parses that string back into its three parts, rejecting anything not tagged \texttt{scrypt} or missing a segment, then re-derives the hash from the candidate password using the stored salt and compares it against the stored hash with \texttt{crypto.timingSafeEqual}. Comparing the two hashes' lengths before calling \texttt{timingSafeEqual} avoids that function throwing on mismatched buffer sizes, while still not leaking any timing information for hashes of equal length.
 
 On login, the service generates a random 48-byte, base64url-encoded session token and persists it, together with its expiration, in the \texttt{sessions} table. Two expiration policies are supported: a short-lived session (1 day) by default, or a 30-day session when the user selects ``Remember Me'' (\texttt{staySignedIn}). The session token is sent to the browser as a cookie that is \texttt{HttpOnly} (not accessible to client-side scripts, mitigating XSS-based token theft), \texttt{Secure} in production, and \texttt{SameSite=Lax}~\cite{owasp}; the cookie itself only carries a \texttt{maxAge} when ``Remember Me'' is selected, otherwise it is a session-only cookie. On every authenticated request, the session is also validated server-side against its stored expiration, and expired sessions are deleted rather than just ignored.
 
@@ -57,9 +88,75 @@ The migration of the academic calendar from one year to the next is implemented 
     \item \textbf{Validation, not automatic correction:} immediately after an event is migrated, the full business rule set (Section~\ref{sec:rule-engine}) is run against it, and any violations, such as an occurrence now falling on a weekend or holiday, are collected into a structured report returned to the caller. The engine does not shift dates to avoid these conflicts; resolving them is left as a manual, user-driven step, guided by the issue report shown in the application (Section~\ref{sec:frontend-academic-year-tools}). The same rule-checking logic also powers the standalone ``Validate'' action, which runs a read-only check without migrating anything.
 \end{itemize}
 
+Code Example~\ref{lst:shift-date} shows \texttt{shiftDateByYears}, the pure function every occurrence's start and end dates are passed through during migration, which implements the leap-year clamping described above.
+
+\begin{lstlisting}[caption={[Date shifting with leap-year clamping.]{Date shifting with leap-year clamping (\texttt{shared/calendar/academic-year.ts}).}}, label={lst:shift-date}]
+export const shiftDateByYears = (dateValue: string, years: number): string => {
+  const source = new Date(dateValue);
+  const target = new Date(dateValue);
+  target.setUTCFullYear(source.getUTCFullYear() + years);
+
+  if (target.getUTCMonth() !== source.getUTCMonth()) {
+    target.setUTCDate(0);
+  }
+
+  return target.toISOString();
+};
+\end{lstlisting}
+
+Adding one year to a date is not simply incrementing its year component: calling \texttt{setUTCFullYear} on the 29th of February of a leap year silently rolls the date forward into the 1st of March whenever the target year is not itself a leap year, since the 29th of February does not exist there. The function detects this by checking whether the resulting month still matches the source month; if it does not, the date is rolled back with \texttt{setUTCDate(0)}, which JavaScript resolves to the last day of the previous month, that is, the 28th of February. Every other date is left unaffected, since shifting a day that exists in every year by whole years never changes its month.
+
 \section{Business Rule Engine} \label{sec:rule-engine}
 
 A modular rule engine validates event occurrences against configurable institutional constraints. Each rule is a self-contained unit implementing a shared interface (a \texttt{validate} function that receives the event, the occurrence, its configuration, and validation context such as vacation periods and other events); the engine itself has no knowledge of what a rule checks, it only calls this function and collects the result. Rules are registered in a single, central list that the engine iterates over, with no branching logic deciding which rule applies, so new institutional rules can be added by writing one new file and registering it, without touching the migration or validation logic. This same rule registry also drives the rule-configuration UI in the event form (Section~\ref{sec:frontend-event-dialogs}), which reads each rule's field metadata to render the correct input controls.
+
+Code Example~\ref{lst:weekend-rule} shows one rule in full, the Weekend rule, which flags an occurrence whose start date, end date, or any date spanned by a multi-day occurrence, falls on a Saturday or Sunday.
+
+\begin{lstlisting}[caption={[The Weekend rule definition.]{The Weekend rule definition (\texttt{server/calendar/rules/definitions/weekend.rule.ts}).}}, label={lst:weekend-rule}]
+export const weekendRule: IRuleDefinition = {
+  id: "weekend",
+  fields: [
+    { id: "checkStart", type: "checkbox", defaultValue: true },
+    { id: "checkEnd",   type: "checkbox", defaultValue: true },
+    { id: "checkRange", type: "checkbox", defaultValue: false },
+  ],
+  translations: {
+    pt: {
+      label: "Fim de semana",
+      fields: { checkStart: "Verificar início", checkEnd: "Verificar fim", checkRange: "Verificar período" },
+      fieldLabels: { start: "Início", end: "Fim", range: "Período" },
+      messages: {
+        startIsWeekend: "O início coincide com um fim de semana",
+        endIsWeekend: "O fim coincide com um fim de semana",
+        rangeHasWeekend: "O período inclui um dia de fim de semana",
+      },
+    },
+  },
+  validate(_event, occurrence, config) {
+    const { checkStart, checkEnd, checkRange } = config as WeekendConfig;
+    const violations: IRuleViolation[] = [];
+
+    if (checkStart && isWeekend(parseISO(occurrence.startDate))) {
+      violations.push({ fieldLabelKey: "start", date: occurrence.startDate, messageKey: "startIsWeekend" });
+    }
+    if (checkEnd && isWeekend(parseISO(occurrence.endDate))) {
+      violations.push({ fieldLabelKey: "end", date: occurrence.endDate, messageKey: "endIsWeekend" });
+    }
+    if (checkRange) {
+      for (const day of eachDayOfInterval({ start: parseISO(occurrence.startDate), end: parseISO(occurrence.endDate) })) {
+        if (isWeekend(day)) {
+          violations.push({ fieldLabelKey: "range", date: day.toISOString(), messageKey: "rangeHasWeekend" });
+          break;
+        }
+      }
+    }
+
+    return violations;
+  },
+};
+\end{lstlisting}
+
+The \texttt{id} is the stable key stored in \texttt{event\_rules.type} and used to dispatch validation; \texttt{fields} declares the rule's three independent toggles, checking the start date, the end date, and every date in between, together with their default values, which the event form (Section~\ref{sec:frontend-event-dialogs}) reads to render the matching checkboxes with no rule-specific UI code required; \texttt{translations} supplies every user-facing string the rule needs, from its display label to one message per kind of violation, keyed by locale; and \texttt{validate} is the pure function the engine calls with the event, one of its occurrences, and this rule's configuration, returning zero or more violations. Each violation carries a message key and the specific field and date that triggered it, rather than a pre-formatted string, so the frontend can translate and render it consistently with every other rule (Section~\ref{sec:frontend-academic-year-tools}).
 
 Seven rules are currently implemented:
 

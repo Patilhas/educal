@@ -1,6 +1,5 @@
 import crypto from "node:crypto";
 import type { IUser, IUserWithEmail } from "@/shared/user/types";
-import { hasRoleAtLeast } from "@/shared/user/roles";
 import {
   createUserPayloadSchema,
   updateUserPayloadSchema,
@@ -10,10 +9,15 @@ import { hashPassword, normalizeEmail, verifyPassword } from "@/server/auth/cryp
 import { loginPayloadSchema } from "@/server/auth/schemas";
 import { DomainError } from "@/server/shared/domain-error";
 import { toCalendarUser, toUserWithEmail } from "@/server/auth/types";
+import { withRolePolicy, type TRolePolicy } from "@/server/shared/authorize";
 
 const STAY_SIGNED_IN_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24;
 
+// Methods below still take `requestUser` even where the method body no longer
+// reads it: withRolePolicy's role extractor reads args[0] positionally for
+// every method gated by the policy at the bottom of this file. Unused ones are
+// prefixed with `_` and kept in the signature for that reason.
 export class AuthService {
   async login(payload: unknown) {
     const parsed = loginPayloadSchema.parse(payload);
@@ -81,14 +85,12 @@ export class AuthService {
     return users.map(toCalendarUser);
   }
 
-  async listUsers(requestUser: IUser): Promise<IUserWithEmail[]> {
-    this.ensureAdmin(requestUser);
+  async listUsers(_requestUser: IUser): Promise<IUserWithEmail[]> {
     const users = await authData.listUsers();
     return users.map(toUserWithEmail);
   }
 
-  async createUser(requestUser: IUser, payload: unknown): Promise<IUserWithEmail> {
-    this.ensureAdmin(requestUser);
+  async createUser(_requestUser: IUser, payload: unknown): Promise<IUserWithEmail> {
     const parsed = createUserPayloadSchema.parse(payload);
     const normalizedEmail = normalizeEmail(parsed.email);
 
@@ -114,8 +116,6 @@ export class AuthService {
     userId: string,
     payload: unknown,
   ): Promise<IUserWithEmail> {
-    this.ensureAdmin(requestUser);
-
     const existing = await authData.findUserById(userId);
     if (!existing) {
       throw new DomainError("NOT_FOUND", 404, "Utilizador não encontrado");
@@ -162,8 +162,6 @@ export class AuthService {
   }
 
   async deleteUser(requestUser: IUser, userId: string): Promise<void> {
-    this.ensureAdmin(requestUser);
-
     if (requestUser.id === userId) {
       throw new DomainError("FORBIDDEN", 403, "Não pode apagar o seu próprio utilizador");
     }
@@ -187,15 +185,23 @@ export class AuthService {
 
     await authData.deleteSessionsByUserId(userId);
   }
-
-
-  private ensureAdmin(user: IUser) {
-    if (!hasRoleAtLeast(user.role, "admin")) {
-      throw new DomainError("FORBIDDEN", 403, "Apenas administradores podem gerir utilizadores");
-    }
-  }
 }
 
-export const authService = new AuthService();
+const authServiceInstance = new AuthService();
+
+export const authService = withRolePolicy(
+  authServiceInstance,
+  {
+    login: "any",
+    logout: "any",
+    getUserBySessionToken: "any",
+    listCalendarUsers: "any",
+    listUsers: "admin",
+    createUser: "admin",
+    updateUser: "admin",
+    deleteUser: "admin",
+  } satisfies Partial<Record<keyof AuthService, TRolePolicy>>,
+  (args) => (args[0] as IUser).role,
+);
 
 
