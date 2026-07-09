@@ -26,14 +26,15 @@ vi.mock("@/server/calendar/data/calendar.data", () => ({
 vi.mock("@/server/notifications/data/notification.data", () => ({
   notificationData: {
     listAll: async () => structuredClone(fakeNotificationDb.records),
-    insert: async (record: { id: string; occurrenceId: string; occurrenceStartDateAtGen: string; leadDaysAtGen: number | null; createdAt: string }) => {
-      fakeNotificationDb.records.push(record);
+    insertMany: async (records: { id: string; occurrenceId: string; occurrenceStartDateAtGen: string; leadDaysAtGen: number | null; createdAt: string }[]) => {
+      fakeNotificationDb.records.push(...records);
     },
-    deleteByOccurrenceId: async (occurrenceId: string) => {
+    deleteManyByOccurrenceIds: async (occurrenceIds: string[]) => {
+      const idSet = new Set(occurrenceIds);
       const removedIds = fakeNotificationDb.records
-        .filter((r) => r.occurrenceId === occurrenceId)
+        .filter((r) => idSet.has(r.occurrenceId))
         .map((r) => r.id);
-      fakeNotificationDb.records = fakeNotificationDb.records.filter((r) => r.occurrenceId !== occurrenceId);
+      fakeNotificationDb.records = fakeNotificationDb.records.filter((r) => !idSet.has(r.occurrenceId));
       fakeNotificationDb.reads = fakeNotificationDb.reads.filter((r) => !removedIds.includes(r.notificationId));
     },
     listReadNotificationIdsForUser: async (userId: string) =>

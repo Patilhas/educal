@@ -4,17 +4,16 @@ import { notificationData } from "@/server/notifications/data/notification.data"
 import { withRolePolicy, type TRolePolicy } from "@/server/shared/authorize";
 import type { IRequestWithAuth } from "@/server/auth/session";
 import type { IEvent } from "@/shared/calendar/types";
+import type { NotificationRecord } from "@/server/notifications/types";
 import type { INotification } from "@/shared/notifications/types";
 
 export class NotificationService {
+  private ensureGeneratedQueue: Promise<unknown> = Promise.resolve();
+
   async listMine(request: IRequestWithAuth): Promise<INotification[]> {
     const events = await calendarData.listEvents();
-    await this.ensureGenerated(events);
-
-    const [records, readIds] = await Promise.all([
-      notificationData.listAll(),
-      notificationData.listReadNotificationIdsForUser(request.auth.user.id),
-    ]);
+    const records = await this.runEnsureGenerated(events);
+    const readIds = await notificationData.listReadNotificationIdsForUser(request.auth.user.id);
 
     const readSet = new Set(readIds);
     const occurrenceIndex = new Map<string, { eventId: number; eventName: string; description: string; startDate: string }>();
@@ -54,10 +53,10 @@ export class NotificationService {
   }
 
   async markAllRead(request: IRequestWithAuth): Promise<void> {
-    const [records, readIds] = await Promise.all([
-      notificationData.listAll(),
-      notificationData.listReadNotificationIdsForUser(request.auth.user.id),
-    ]);
+    const events = await calendarData.listEvents();
+    const records = await this.runEnsureGenerated(events);
+    const readIds = await notificationData.listReadNotificationIdsForUser(request.auth.user.id);
+
     const readSet = new Set(readIds);
     const unreadIds = records.map((record) => record.id).filter((id) => !readSet.has(id));
 
@@ -66,10 +65,18 @@ export class NotificationService {
     }
   }
 
-  private async ensureGenerated(events: IEvent[]): Promise<void> {
+  private runEnsureGenerated(events: IEvent[]): Promise<NotificationRecord[]> {
+    const result = this.ensureGeneratedQueue.then(() => this.ensureGenerated(events));
+    this.ensureGeneratedQueue = result.catch(() => undefined);
+    return result;
+  }
+
+  private async ensureGenerated(events: IEvent[]): Promise<NotificationRecord[]> {
     const records = await notificationData.listAll();
     const byOccurrenceId = new Map(records.map((record) => [record.occurrenceId, record]));
     const occurrenceIds = new Set<string>();
+    const toDelete = new Set<string>();
+    const toInsert: NotificationRecord[] = [];
     const now = new Date();
 
     for (const event of events) {
@@ -78,12 +85,13 @@ export class NotificationService {
         const effectiveLeadDays = occurrence.notifyDaysBeforeOverride ?? event.notifyDaysBefore;
         const existing = byOccurrenceId.get(occurrence.id);
 
-        if (
-          existing &&
+        const isStale =
+          existing !== undefined &&
           (existing.occurrenceStartDateAtGen !== occurrence.startDate ||
-            existing.leadDaysAtGen !== (effectiveLeadDays ?? null))
-        ) {
-          await notificationData.deleteByOccurrenceId(occurrence.id);
+            existing.leadDaysAtGen !== (effectiveLeadDays ?? null));
+
+        if (isStale) {
+          toDelete.add(occurrence.id);
           byOccurrenceId.delete(occurrence.id);
         }
 
@@ -96,22 +104,29 @@ export class NotificationService {
           occurrenceStartDate > now &&
           countWorkingDaysBetween(now, occurrenceStartDate) <= effectiveLeadDays
         ) {
-          await notificationData.insert({
+          const record: NotificationRecord = {
             id: crypto.randomUUID(),
             occurrenceId: occurrence.id,
             occurrenceStartDateAtGen: occurrence.startDate,
             leadDaysAtGen: effectiveLeadDays,
             createdAt: new Date().toISOString(),
-          });
+          };
+          toInsert.push(record);
+          byOccurrenceId.set(occurrence.id, record);
         }
       }
     }
 
     for (const record of records) {
       if (!occurrenceIds.has(record.occurrenceId)) {
-        await notificationData.deleteByOccurrenceId(record.occurrenceId);
+        toDelete.add(record.occurrenceId);
       }
     }
+
+    await notificationData.deleteManyByOccurrenceIds([...toDelete]);
+    await notificationData.insertMany(toInsert);
+
+    return records.filter((record) => !toDelete.has(record.occurrenceId)).concat(toInsert);
   }
 }
 

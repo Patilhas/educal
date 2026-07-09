@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import EventDetailsDialog from "@/features/calendar/dialogs/event-details-dialog";
@@ -17,15 +18,26 @@ export function NotificationEventOpener() {
     : undefined;
   const occurrence = event?.occurrences?.find((o) => o.id === openOccurrenceId);
 
-  if (!event) return null;
-
-  const handleOpenChange = (open: boolean) => {
-    if (open) return;
+  const clearParams = () => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("openEventId");
     params.delete("openOccurrenceId");
     const query = params.toString();
     router.replace(query ? `/?${query}` : "/");
+  };
+
+  useEffect(() => {
+    if (openEventId && !event) {
+      clearParams();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openEventId, event]);
+
+  if (!event) return null;
+
+  const handleOpenChange = (open: boolean) => {
+    if (open) return;
+    clearParams();
   };
 
   return (

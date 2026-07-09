@@ -46,22 +46,25 @@ export class NotificationRepositoryRedis implements INotificationRepository {
     return clone(db.notifications);
   }
 
-  async insert(record: NotificationRecord): Promise<void> {
+  async insertMany(records: NotificationRecord[]): Promise<void> {
+    if (records.length === 0) return;
     await this.persistDb((db) => {
-      if (db.notifications.some((n) => n.occurrenceId === record.occurrenceId)) {
-        return db;
-      }
-      return { ...db, notifications: [...db.notifications, record] };
+      const existingOccurrenceIds = new Set(db.notifications.map((n) => n.occurrenceId));
+      const toAdd = records.filter((record) => !existingOccurrenceIds.has(record.occurrenceId));
+      if (toAdd.length === 0) return db;
+      return { ...db, notifications: [...db.notifications, ...toAdd] };
     });
   }
 
-  async deleteByOccurrenceId(occurrenceId: string): Promise<void> {
+  async deleteManyByOccurrenceIds(occurrenceIds: string[]): Promise<void> {
+    if (occurrenceIds.length === 0) return;
     await this.persistDb((db) => {
-      const toDelete = db.notifications.filter((n) => n.occurrenceId === occurrenceId);
+      const idSet = new Set(occurrenceIds);
+      const toDelete = db.notifications.filter((n) => idSet.has(n.occurrenceId));
       if (toDelete.length === 0) return db;
       const deletedIds = new Set(toDelete.map((n) => n.id));
       return {
-        notifications: db.notifications.filter((n) => n.occurrenceId !== occurrenceId),
+        notifications: db.notifications.filter((n) => !idSet.has(n.occurrenceId)),
         reads: db.reads.filter((r) => !deletedIds.has(r.notificationId)),
       };
     });

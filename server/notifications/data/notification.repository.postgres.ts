@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { db } from "@/db/client";
 import { notifications, notificationReads } from "@/db/schema/notification.schema";
 import type { INotificationRepository } from "@/server/notifications/data/notification.repository";
@@ -20,21 +20,25 @@ export class NotificationRepositoryPostgres implements INotificationRepository {
     return rows.map(toDomainRecord);
   }
 
-  async insert(record: NotificationRecord): Promise<void> {
+  async insertMany(records: NotificationRecord[]): Promise<void> {
+    if (records.length === 0) return;
     await db
       .insert(notifications)
-      .values({
-        id: record.id,
-        occurrenceId: record.occurrenceId,
-        occurrenceStartDateAtGen: new Date(record.occurrenceStartDateAtGen),
-        leadDaysAtGen: record.leadDaysAtGen,
-        createdAt: new Date(record.createdAt),
-      })
+      .values(
+        records.map((record) => ({
+          id: record.id,
+          occurrenceId: record.occurrenceId,
+          occurrenceStartDateAtGen: new Date(record.occurrenceStartDateAtGen),
+          leadDaysAtGen: record.leadDaysAtGen,
+          createdAt: new Date(record.createdAt),
+        })),
+      )
       .onConflictDoNothing({ target: notifications.occurrenceId });
   }
 
-  async deleteByOccurrenceId(occurrenceId: string): Promise<void> {
-    await db.delete(notifications).where(eq(notifications.occurrenceId, occurrenceId));
+  async deleteManyByOccurrenceIds(occurrenceIds: string[]): Promise<void> {
+    if (occurrenceIds.length === 0) return;
+    await db.delete(notifications).where(inArray(notifications.occurrenceId, occurrenceIds));
   }
 
   async listReadNotificationIdsForUser(userId: string): Promise<string[]> {

@@ -74,7 +74,7 @@ export default function AddEditEventDialog({ children, startDate, startTime, eve
     [event, initialDates],
   );
 
-  const form = useForm<TEventFormData>({
+  const form = useForm({
     resolver: zodResolver(eventSchema),
     defaultValues,
   });
@@ -113,8 +113,16 @@ export default function AddEditEventDialog({ children, startDate, startTime, eve
   };
 
   useEffect(() => {
-    form.reset(defaultValues);
-  }, [defaultValues, form]);
+    // Resetting whenever `defaultValues` changes reference (rather than only
+    // when the dialog opens) would wipe in-progress edits any time an
+    // ancestor re-renders with a new `event`/`startTime` object while the
+    // dialog is still open - form.reset() only makes sense at the moment we
+    // start editing a (possibly new) target.
+    if (isOpen) {
+      form.reset(defaultValues);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   const onSubmit = async (values: TEventFormData) => {
     try {
@@ -333,18 +341,18 @@ export default function AddEditEventDialog({ children, startDate, startTime, eve
                 <FormField
                   control={form.control}
                   name="notifyDaysBefore"
-                  render={({ field }) => (
+                  render={({ field, fieldState }) => (
                     <FormItem>
                       <FormLabel>{t("calendar.dialogs.addEditEvent.fields.notifyDaysBefore")}</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
-                          min={1}
                           placeholder={t("calendar.dialogs.addEditEvent.fields.notifyDaysBeforePlaceholder")}
-                          value={field.value ?? ""}
-                          onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+                          {...field}
+                          className={fieldState.invalid ? "border-red-500" : ""}
                         />
                       </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -533,54 +541,54 @@ export default function AddEditEventDialog({ children, startDate, startTime, eve
                       <FormField
                         control={form.control}
                         name={`occurrences.${index}.minDays`}
-                        render={({ field }) => (
+                        render={({ field, fieldState }) => (
                           <FormItem>
                             <FormLabel>{t("calendar.dialogs.addEditEvent.occurrences.minDays")}</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
-                                min={1}
                                 placeholder={t("calendar.dialogs.addEditEvent.occurrences.minDaysPlaceholder")}
-                                value={field.value ?? ""}
-                                onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+                                {...field}
+                                className={fieldState.invalid ? "border-red-500" : ""}
                               />
                             </FormControl>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />
                       <FormField
                         control={form.control}
                         name={`occurrences.${index}.minDaysToNext`}
-                        render={({ field }) => (
+                        render={({ field, fieldState }) => (
                           <FormItem>
                             <FormLabel>{t("calendar.dialogs.addEditEvent.occurrences.minDaysToNext")}</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
-                                min={1}
                                 placeholder={t("calendar.dialogs.addEditEvent.occurrences.minDaysToNextPlaceholder")}
-                                value={field.value ?? ""}
-                                onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+                                {...field}
+                                className={fieldState.invalid ? "border-red-500" : ""}
                               />
                             </FormControl>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />
                       <FormField
                         control={form.control}
                         name={`occurrences.${index}.notifyDaysBeforeOverride`}
-                        render={({ field }) => (
+                        render={({ field, fieldState }) => (
                           <FormItem>
                             <FormLabel>{t("calendar.dialogs.addEditEvent.occurrences.notifyDaysBeforeOverride")}</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
-                                min={1}
                                 placeholder={t("calendar.dialogs.addEditEvent.occurrences.notifyDaysBeforeOverridePlaceholder")}
-                                value={field.value ?? ""}
-                                onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+                                {...field}
+                                className={fieldState.invalid ? "border-red-500" : ""}
                               />
                             </FormControl>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />
