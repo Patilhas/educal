@@ -44,6 +44,7 @@ function toDomainEvent(row: EventWithRelations): IEvent {
     classification: row.classification,
     status: row.status,
     responsible: row.responsible,
+    notifyDaysBefore: row.notifyDaysBefore ?? undefined,
     rules: row.rules.map((r): IEventRule => ({ type: r.type, config: r.config })),
     occurrences: row.occurrences
       .slice()
@@ -56,6 +57,7 @@ function toDomainEvent(row: EventWithRelations): IEvent {
           endDate: o.endDate.toISOString(),
           minDays: o.minDays ?? undefined,
           minDaysToNext: o.minDaysToNext ?? undefined,
+          notifyDaysBeforeOverride: o.notifyDaysBeforeOverride ?? undefined,
         }),
       ),
     user: {
@@ -127,6 +129,7 @@ export class CalendarRepositoryPostgres implements ICalendarRepository {
         classification: event.classification,
         status: event.status,
         responsible: event.responsible,
+        notifyDaysBefore: event.notifyDaysBefore ?? null,
         userId: event.user.id,
       });
 
@@ -147,6 +150,7 @@ export class CalendarRepositoryPostgres implements ICalendarRepository {
           classification: event.classification,
           status: event.status,
           responsible: event.responsible,
+          notifyDaysBefore: event.notifyDaysBefore ?? null,
           userId: event.user.id,
         })
         .where(eq(events.id, eventId))
@@ -254,6 +258,7 @@ export class CalendarRepositoryPostgres implements ICalendarRepository {
           endDate: new Date(o.endDate),
           minDays: o.minDays ?? null,
           minDaysToNext: o.minDaysToNext ?? null,
+          notifyDaysBeforeOverride: o.notifyDaysBeforeOverride ?? null,
         })),
       );
     }
