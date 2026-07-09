@@ -14,6 +14,7 @@ export const createEventSchema = (t: Translator) => {
       endDate: z.date(t("calendar.dialogs.addEditEvent.validations.occurrenceEndDateRequired")),
       minDays: z.number().int().positive().optional(),
       minDaysToNext: z.number().int().positive().optional(),
+      notifyDaysBeforeOverride: z.number().int().positive().optional(),
     })
     .refine((occurrence) => occurrence.endDate > occurrence.startDate, {
       message: t("calendar.dialogs.addEditEvent.validations.occurrenceEndAfterStart"),
@@ -29,6 +30,7 @@ export const createEventSchema = (t: Translator) => {
       .min(1, t("calendar.dialogs.addEditEvent.validations.classificationRequired")),
     status: z.string().min(1, t("calendar.dialogs.addEditEvent.validations.statusRequired")),
     responsible: z.string().min(1, t("calendar.dialogs.addEditEvent.validations.responsibleRequired")),
+    notifyDaysBefore: z.number().int().positive().optional(),
     rules: z.array(
       z.object({
         type: z.string().min(1),

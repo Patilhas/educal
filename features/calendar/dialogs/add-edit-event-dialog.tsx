@@ -329,6 +329,25 @@ export default function AddEditEventDialog({ children, startDate, startTime, eve
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name="notifyDaysBefore"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("calendar.dialogs.addEditEvent.fields.notifyDaysBefore")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={1}
+                          placeholder={t("calendar.dialogs.addEditEvent.fields.notifyDaysBeforePlaceholder")}
+                          value={field.value ?? ""}
+                          onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
               </div>
 
 
@@ -510,7 +529,7 @@ export default function AddEditEventDialog({ children, startDate, startTime, eve
                       )}
                     />
 
-                    <div className="grid gap-3 grid-cols-2">
+                    <div className="grid gap-3 grid-cols-3">
                       <FormField
                         control={form.control}
                         name={`occurrences.${index}.minDays`}
@@ -540,6 +559,24 @@ export default function AddEditEventDialog({ children, startDate, startTime, eve
                                 type="number"
                                 min={1}
                                 placeholder={t("calendar.dialogs.addEditEvent.occurrences.minDaysToNextPlaceholder")}
+                                value={field.value ?? ""}
+                                onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`occurrences.${index}.notifyDaysBeforeOverride`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t("calendar.dialogs.addEditEvent.occurrences.notifyDaysBeforeOverride")}</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min={1}
+                                placeholder={t("calendar.dialogs.addEditEvent.occurrences.notifyDaysBeforeOverridePlaceholder")}
                                 value={field.value ?? ""}
                                 onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
                               />

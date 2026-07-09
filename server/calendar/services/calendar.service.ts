@@ -62,6 +62,7 @@ export class CalendarService {
       classification: parsed.classification,
       status: parsed.status,
       responsible: parsed.responsible,
+      notifyDaysBefore: parsed.notifyDaysBefore,
       rules: parsed.rules,
       occurrences: parsed.occurrences.map((occurrence) => ({
         id: occurrence.id,
@@ -70,6 +71,7 @@ export class CalendarService {
         endDate: toIsoString(occurrence.endDate),
         minDays: occurrence.minDays,
         minDaysToNext: occurrence.minDaysToNext,
+        notifyDaysBeforeOverride: occurrence.notifyDaysBeforeOverride,
       })),
       user: request.auth.user,
     };
@@ -101,6 +103,7 @@ export class CalendarService {
       classification: parsed.classification,
       status: parsed.status,
       responsible: parsed.responsible,
+      notifyDaysBefore: parsed.notifyDaysBefore,
       rules: parsed.rules,
       occurrences: parsed.occurrences.map((occurrence) => ({
         id: occurrence.id,
@@ -109,6 +112,7 @@ export class CalendarService {
         endDate: toIsoString(occurrence.endDate),
         minDays: occurrence.minDays,
         minDaysToNext: occurrence.minDaysToNext,
+        notifyDaysBeforeOverride: occurrence.notifyDaysBeforeOverride,
       })),
       user: existing.user,
     };
@@ -350,6 +354,7 @@ export class CalendarService {
         endDate: shiftDateByYears(occurrence.endDate, delta),
         minDays: occurrence.minDays,
         minDaysToNext: occurrence.minDaysToNext,
+        notifyDaysBeforeOverride: occurrence.notifyDaysBeforeOverride,
       })),
     };
   }
