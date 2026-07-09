@@ -27,7 +27,7 @@ Figure~\ref{fig:login} shows the login form, which has three fields: \texttt{ema
 
 \begin{figure}[htbp]
 \begin{center}
-\resizebox{100mm}{!}{\includegraphics{./figures/app_screenshots/login_interface.png}}
+\resizebox{120mm}{!}{\includegraphics{./figures/app_screenshots/login_interface.png}}
 \end{center}
 \caption{Login interface.}\label{fig:login}
 \end{figure}
@@ -38,7 +38,7 @@ The interactive calendar (Figure~\ref{fig:calendar}) is the core of the applicat
 
 The five views (\textbf{Agenda}, \textbf{Day}, \textbf{Week}, \textbf{Month}, \textbf{Year}) offer different levels of temporal density, from a scrollable list grouped by date or category (Agenda) to a full-year grid overview (Year). Within the day/week grid views, occurrences can be rescheduled directly by dragging them to a different time slot, or resized to change their duration, both implemented with the native HTML5 drag-and-drop API and animated with \texttt{framer-motion}; both actions persist immediately through the mutation flow described in Section~\ref{sec:frontend-api}. When a month-view day has more occurrences than can be shown inline, an ``+N more'' control opens a simple list dialog for that day, from which any occurrence can be opened in full detail.
 
-Code Example~\ref{lst:draggable-event} shows the \texttt{DraggableEvent} component that wraps every occurrence block shown in the day and week views, connecting the browser's native drag events to the shared drag-and-drop context.
+Listing~\ref{lst:draggable-event} shows the \texttt{DraggableEvent} component that wraps every occurrence block shown in the day and week views, connecting the browser's native drag events to the shared drag-and-drop context.
 
 \begin{lstlisting}[caption={[The DraggableEvent wrapper component.]{The \texttt{DraggableEvent} wrapper component (\texttt{features/calendar/dnd/draggable-event.tsx}).}}, label={lst:draggable-event}]
 export function DraggableEvent({
@@ -82,7 +82,7 @@ Two controls narrow down what is shown: a category filter (multi-select dropdown
 
 \begin{figure}[htbp]
 \begin{center}
-\resizebox{140mm}{!}{\includegraphics{./figures/app_screenshots/calendar_View.png}}
+\resizebox{150mm}{!}{\includegraphics{./figures/app_screenshots/calendar_View.png}}
 \end{center}
 \caption{Main calendar interface (Month view).}\label{fig:calendar}
 \end{figure}
@@ -95,7 +95,7 @@ The \textbf{Add/Edit Event dialog} (Figure~\ref{fig:add-edit-event}) is a single
 
 \begin{figure}[htbp]
 \begin{center}
-\resizebox{140mm}{!}{\includegraphics{./figures/app_screenshots/add_edit_event.png}}
+\resizebox{150mm}{!}{\includegraphics{./figures/app_screenshots/add_edit_event.png}}
 \end{center}
 \caption{Add/Edit Event dialog.}\label{fig:add-edit-event}
 \end{figure}
@@ -107,7 +107,7 @@ Deleting an event goes through a dedicated \textbf{confirmation dialog} (a destr
 
 \begin{figure}[htbp]
 \begin{center}
-\resizebox{140mm}{!}{\includegraphics{./figures/app_screenshots/event_details.png}}
+\resizebox{150mm}{!}{\includegraphics{./figures/app_screenshots/event_details.png}}
 \end{center}
 \caption{Event Details dialog.}\label{fig:event-details}
 \end{figure}
@@ -118,7 +118,7 @@ The academic-year tools, part of the calendar's actions bar, let the user pick a
 
 \begin{figure}[htbp]
 \begin{center}
-\resizebox{!}{110mm}{\includegraphics{./figures/app_screenshots/rules_validate.png}}
+\resizebox{!}{130mm}{\includegraphics{./figures/app_screenshots/rules_validate.png}}
 \end{center}
 \caption{Validation/migration results modal.}\label{fig:migration-report}
 \end{figure}
@@ -126,7 +126,7 @@ The academic-year tools, part of the calendar's actions bar, let the user pick a
 
 \begin{figure}[htbp]
 \begin{center}
-\resizebox{70mm}{!}{\includegraphics{./figures/app_screenshots/vacations_dialog.png}}
+\resizebox{90mm}{!}{\includegraphics{./figures/app_screenshots/vacations_dialog.png}}
 \end{center}
 \caption{Vacation periods dialog.}\label{fig:vacations}
 \end{figure}
@@ -137,7 +137,7 @@ The administrative dashboard (Figure~\ref{fig:user-mgmt}), accessible only to ad
 
 \begin{figure}[htbp]
 \begin{center}
-\resizebox{110mm}{!}{\includegraphics{./figures/app_screenshots/user_management.png}}
+\resizebox{130mm}{!}{\includegraphics{./figures/app_screenshots/user_management.png}}
 \end{center}
 \caption{User management dashboard.}\label{fig:user-mgmt}
 \end{figure}

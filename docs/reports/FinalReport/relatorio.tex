@@ -10,6 +10,15 @@
 
 \usepackage{lipsum} % gerador de texto
 \usepackage{graphicx}
+% \texttt break
+\usepackage{seqsplit}
+\let\originaltexttt\texttt
+\renewcommand{\texttt}[1]{%
+  \begingroup
+    \spaceskip=\fontdimen2\font plus \fontdimen3\font minus \fontdimen4\font
+    \originaltexttt{\seqsplit{#1}}%
+  \endgroup
+}
 \usepackage{placeins} % \FloatBarrier: keeps figures from drifting past the
                        % point they're declared, without forcing blank gaps
                        % the way a strict [H] placement would
@@ -76,8 +85,8 @@
         {ç}{{\c c}}1 {Ç}{{\c C}}1,
 }
 
-\renewcommand{\lstlistingname}{Code Example}
-\renewcommand{\lstlistlistingname}{List of Code Examples}
+\renewcommand{\lstlistingname}{Listing}
+\renewcommand{\lstlistlistingname}{List of Listings}
 
 % Definições das dimensões das páginas
 \setlength{\textheight}{24.00cm}
