@@ -24,7 +24,9 @@ import { useTranslations } from "@/i18n/use-translations";
 interface IProps {
   event: IEvent;
   occurrence?: IOccurrence;
-  children: ReactNode;
+  children?: ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 function MetaField({ label, value }: { label: string; value: string }) {
@@ -38,7 +40,7 @@ function MetaField({ label, value }: { label: string; value: string }) {
   );
 }
 
-export default function EventDetailsDialog({ event, occurrence, children }: IProps) {
+export default function EventDetailsDialog({ event, occurrence, children, open, onOpenChange }: IProps) {
   const { use24HourFormat, canEditEvents, eventEnums, allEvents, academicYearStart } = useCalendar();
   const yearEvents = allEvents.filter((e) => getEventAcademicYearStart(e) === academicYearStart);
   const { t } = useTranslations();
@@ -49,8 +51,8 @@ export default function EventDetailsDialog({ event, occurrence, children }: IPro
   const occurrenceCount = (event.occurrences ?? []).length;
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent
         showCloseButton={false}
         aria-describedby={undefined}

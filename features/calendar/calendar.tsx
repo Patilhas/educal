@@ -3,6 +3,7 @@ import { CalendarProvider } from "@/features/calendar/contexts/calendar-context"
 import { DndProvider } from "@/features/calendar/contexts/dnd-context";
 import { CalendarActionsBar } from "@/features/calendar/header/calendar-actions-bar";
 import { CalendarHeader } from "@/features/calendar/header/calendar-header";
+import { NotificationEventOpener } from "@/features/calendar/notification-event-opener";
 import { getEventEnums, getEvents, getVacations, getUsers } from "@/features/calendar/requests";
 import type { IUser } from "@/shared/user/types";
 
@@ -41,6 +42,7 @@ export default async function Calendar({ currentUser }: { currentUser: IUser }) 
           <CalendarBody />
         </div>
       </DndProvider>
+      <NotificationEventOpener />
     </CalendarProvider>
   )
 }

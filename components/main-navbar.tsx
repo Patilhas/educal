@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { requestJson } from "@/lib/api-client";
 import { useTranslations } from "@/i18n/use-translations";
+import { NotificationBell } from "@/features/notifications/notification-bell";
 
 interface MainNavbarProps {
   currentUser: IUser;
@@ -70,6 +71,7 @@ export function MainNavbar({ currentUser, activePath }: MainNavbarProps) {
       </div>
 
       <div className="flex items-center gap-3">
+        <NotificationBell />
         <div className="text-right text-sm">
           <p className="font-medium">{currentUser.name}</p>
           <p className="text-xs text-muted-foreground">{getRoleLabel(currentUser.role)}</p>
