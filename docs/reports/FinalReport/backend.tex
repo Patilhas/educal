@@ -7,89 +7,23 @@ This chapter details the backend implementation of EduCal, covering its layered 
 
 \section{Organization} \label{sec:backend-organization}
 
-The backend is organized per feature (\texttt{auth}, \texttt{calendar}) under \texttt{server/}, each following the same three-layer structure of Controller, Service, and Data, plus a \texttt{server/shared/} module for cross-cutting concerns (the API response envelope, domain error type, and the data-layer factory). This mirrors the Controller-Service-Repository pattern used since the initial implementation: controllers such as \texttt{authController} and \texttt{calendarController} act as orchestrators that parse and validate the incoming HTTP request and hand off to the corresponding service, keeping the route handlers in \texttt{app/api/**/route.ts} as thin wrappers, as shown in Listing~\ref{lst:api-route}.
-
-\begin{lstlisting}[caption={[Calendar events API route.]{Calendar events API route (\texttt{app/api/events/route.ts}): each HTTP verb is wired directly to a controller method, behind the authentication middleware.}}, label={lst:api-route}]
-export const GET = withApiAuth(async () => {
-  return calendarController.listEvents();
-});
-
-export const POST = withApiAuth(async (request) => {
-  return calendarController.createEvent(request);
-});
-\end{lstlisting}
-
-Neither handler parses the request itself, checks the role, or catches errors: \texttt{withApiAuth} (Section~\ref{sec:backend-authentication}) resolves the session cookie into a user before either handler runs, and every failure, whether it comes from validation, authorization, or the database, is funnelled through the controller's own \texttt{fail()} call (Section~\ref{sec:backend-error-handling}). This keeps every route file in \texttt{app/api/} at a near-identical, one-line shape, regardless of which feature or HTTP verb it implements.
+The backend is organized per feature (\texttt{auth}, \texttt{calendar}) under \texttt{server/}, each following the same three-layer structure of Controller, Service, and Data, plus a \texttt{server/shared/} module for cross-cutting concerns (the API response envelope, domain error type, and the data-layer factory). This mirrors the Controller-Service-Repository pattern used since the initial implementation: controllers such as \texttt{authController} and \texttt{calendarController} act as orchestrators that parse and validate the incoming HTTP request and hand off to the corresponding service, keeping the route handlers in \texttt{app/api/**/route.ts} as thin, near-identical wrappers regardless of feature or HTTP verb, for example \texttt{export const POST = withApiAuth((req) => calendarController.createEvent(req))}. Neither the route nor the controller action parses the request itself, checks the role, or catches errors directly: \texttt{withApiAuth} (Section~\ref{sec:backend-authentication}) resolves the session cookie into a user before the handler runs, and every failure, whether it comes from validation, authorization, or the database, is funnelled through the controller's own \texttt{fail()} call (Section~\ref{sec:backend-error-handling}).
 
 \section{Authentication} \label{sec:backend-authentication}
 
-Passwords are never stored in plain text: they are hashed with Node.js's built-in \texttt{crypto} module~\cite{nodejscrypto} using \texttt{scrypt}, a per-password random 16-byte salt, and a 64-byte derived key, stored as \texttt{scrypt\$salt\$hash}. Password verification uses a constant-time comparison (\texttt{crypto.timingSafeEqual}) to reduce the risk of timing attacks. Listing~\ref{lst:crypto} shows the implementation of both functions.
+Passwords are never stored in plain text: they are hashed with Node.js's built-in \texttt{crypto} module~\cite{nodejscrypto} using \texttt{scrypt}, a per-password random 16-byte salt, and a 64-byte derived key, encoded as \texttt{scrypt\$salt\$hash} and stored in \texttt{users.password\_hash}. Verification re-derives the hash from the candidate password and the stored salt, then compares it against the stored hash with a constant-time comparison (\texttt{crypto.timingSafeEqual}) to reduce the risk of timing attacks; the two hashes' lengths are compared first, since that call throws on mismatched buffer sizes. The full implementation of both functions is given in Appendix~\ref{app:crypto} (Listing~\ref{lst:crypto-full}).
 
-\begin{lstlisting}[caption={[Password hashing and verification.]{Password hashing and verification (\texttt{server/auth/crypto.ts}).}}, label={lst:crypto}]
-export const hashPassword = (password: string): string => {
-  const salt = crypto.randomBytes(16).toString("hex");
-  const hash = crypto.scryptSync(password, salt, 64).toString("hex");
-  return `scrypt$${salt}$${hash}`;
-};
-
-export const verifyPassword = (password: string, encodedHash: string): boolean => {
-  const [algorithm, salt, storedHash] = encodedHash.split("$");
-  if (algorithm !== "scrypt" || !salt || !storedHash) {
-    return false;
-  }
-
-  const computedHash = crypto.scryptSync(password, salt, 64).toString("hex");
-  if (computedHash.length !== storedHash.length) return false;
-  return crypto.timingSafeEqual(
-    Buffer.from(storedHash, "hex"),
-    Buffer.from(computedHash, "hex"),
-  );
-};
-\end{lstlisting}
-
-\texttt{hashPassword} generates a fresh random salt for every password and derives a 64-byte key with \texttt{scryptSync}, encoding the algorithm tag, salt, and derived key into the single \texttt{\$}-delimited string that is stored in the \texttt{users.password\_hash} column. \texttt{verifyPassword} parses that string back into its three parts, rejecting anything not tagged \texttt{scrypt} or missing a segment, then re-derives the hash from the candidate password using the stored salt and compares it against the stored hash with \texttt{crypto.timingSafeEqual}. Comparing the two hashes' lengths before calling \texttt{timingSafeEqual} avoids that function throwing on mismatched buffer sizes, while still not leaking any timing information for hashes of equal length.
-
-On login, the service generates a random 48-byte, base64url-encoded session token and persists it, together with its expiration, in the \texttt{sessions} table. Two expiration policies are supported: a short-lived session (1 day) by default, or a 30-day session when the user selects ``Remember Me'' (\texttt{staySignedIn}). The session token is sent to the browser as a cookie that is \texttt{HttpOnly} (not accessible to client-side scripts, mitigating XSS-based token theft), \texttt{Secure} in production, and \texttt{SameSite=Lax}~\cite{owasp}; the cookie itself only carries a \texttt{maxAge} when ``Remember Me'' is selected, otherwise it is a session-only cookie. On every authenticated request, the session is also validated server-side against its stored expiration, and expired sessions are deleted rather than just ignored.
+On login, the service generates a random 48-byte, base64url-encoded session token and persists it, with its expiration, in the \texttt{sessions} table: a short-lived session (1 day) by default, or 30 days when the user selects ``Remember Me'' (\texttt{staySignedIn}). The token is sent as a cookie that is \texttt{HttpOnly}, \texttt{Secure} in production, and \texttt{SameSite=Lax}~\cite{owasp}, carrying a \texttt{maxAge} only when ``Remember Me'' is selected. Every authenticated request also re-validates the session server-side against its stored expiration, deleting it if expired.
 
 \section{Error Handling} \label{sec:backend-error-handling}
 
-API responses follow a consistent envelope: successful responses return \texttt{\{ data: ... \}}, and failures return \texttt{\{ error: \{ code, message, details \} \}}. Domain-level failures are raised as a typed \texttt{DomainError} (with an error code such as \texttt{UNAUTHORIZED}, \texttt{FORBIDDEN}, \texttt{NOT\_FOUND}, or \texttt{CONFLICT}, and an HTTP status), and Zod validation failures are caught and converted into a \texttt{VALIDATION\_ERROR} response with a structured, field-level breakdown of what failed. Every controller method funnels its errors through this single \texttt{fail()} helper, which guarantees the frontend always receives a predictable error shape to parse and display, regardless of which layer raised the error.
+API responses follow a consistent envelope: \texttt{\{ data: ... \}} on success, \texttt{\{ error: \{ code, message, details \} \}} on failure. Domain-level failures are raised as a typed \texttt{DomainError} (an error code such as \texttt{UNAUTHORIZED}, \texttt{FORBIDDEN}, \texttt{NOT\_FOUND}, or \texttt{CONFLICT}, plus an HTTP status), and Zod validation failures become a \texttt{VALIDATION\_ERROR} with a structured, field-level breakdown. Every controller method funnels its errors through this single \texttt{fail()} helper, so the frontend always receives a predictable error shape regardless of which layer raised it.
 
 \section{Role-Based Access Control} \label{sec:backend-rbac}
 
 Three roles are supported, \texttt{viewer}, \texttt{editor}, and \texttt{admin}, ordered in a strict hierarchy. Calendar-editing operations (creating, updating, or deleting events, occurrences, and vacation periods, and running the migration engine) require at least the \texttt{editor} role; user management requires the \texttt{admin} role. Authentication itself is enforced by HTTP-level middleware (\texttt{withApiAuth}/\texttt{withApiAuthContext}) that resolves the session cookie into a user and rejects unauthenticated requests before they reach a controller; role checks are then applied one layer down, inside the services.
 
-Rather than scattering an \texttt{if (role !== "editor") throw ...} check across each service method, role enforcement is centralized in a single generic wrapper, \texttt{withRolePolicy} (Listing~\ref{lst:with-role-policy}), applied once at the point where each service is instantiated. It takes the concrete service instance, a policy map from method name to a minimum role (or the literal \texttt{"any"} for methods with no restriction), and a \texttt{getRole} function that extracts the caller's role from that method's own arguments, since every authenticated service method already receives the caller's session as part of its first argument (Section~\ref{sec:backend-controller}). It returns a new object in which every listed method is re-wrapped to assert the minimum role before delegating to the original implementation.
-
-\begin{lstlisting}[caption={[The withRolePolicy authorization wrapper.]{The \texttt{withRolePolicy} authorization wrapper (\texttt{server/shared/authorize.ts}).}}, label={lst:with-role-policy}]
-export function withRolePolicy<
-  TInstance extends object,
-  TPolicy extends Partial<Record<keyof TInstance, TRolePolicy>>,
->(
-  instance: TInstance,
-  policy: TPolicy,
-  getRole: (args: unknown[]) => TUserRole,
-): { [K in keyof TPolicy]: TInstance[K & keyof TInstance] } {
-  const wrapped: Record<string, unknown> = {};
-
-  for (const key of Object.keys(policy)) {
-    const minimum = policy[key as keyof TPolicy] as TRolePolicy;
-    const original = instance[key as keyof TInstance] as unknown as
-      (...args: unknown[]) => unknown;
-
-    wrapped[key] = (...args: unknown[]) => {
-      if (minimum !== "any") {
-        assertRole(getRole(args), minimum);
-      }
-      return original.apply(instance, args);
-    };
-  }
-
-  return wrapped as { [K in keyof TPolicy]: TInstance[K & keyof TInstance] };
-}
-\end{lstlisting}
-
-The design is deny-by-default, and enforces this at the type level rather than only at runtime: a method the policy map omits is not merely left unchecked, it is absent from the returned object's TypeScript type entirely. Adding a new method to a service without adding a matching policy entry therefore fails to compile at every call site, instead of silently exposing an unauthorized method to the controllers that consume it. \texttt{calendarService} and \texttt{authService} are both exported as the result of this wrapper, each with its own policy map, for example \texttt{listEvents: "any"} alongside \texttt{createEvent: "editor"} and \texttt{migrateAcademicYear: "editor"} for \texttt{CalendarService}, mirroring the requirement, described above, that read access stays open while calendar mutation requires at least the \texttt{editor} role.
+Rather than scattering an \texttt{if (role !== "editor") throw ...} check across each service method, role enforcement is centralized in a single generic wrapper, \texttt{withRolePolicy}, applied once per service. It takes the service instance, a policy map from method name to a minimum role (or \texttt{"any"}), and a \texttt{getRole} function reading the caller's role off that method's own arguments (Section~\ref{sec:backend-controller}), and returns a new object where every listed method asserts the minimum role before delegating to the original. The design is deny-by-default at the type level, not only at runtime: a method the policy map omits is absent from the returned object's type entirely, so adding a service method without a matching policy entry fails to compile at every call site. \texttt{calendarService} and \texttt{authService} are both exported this way, e.g. \texttt{listEvents: "any"} alongside \texttt{createEvent: "editor"}; the full implementation is in Appendix~\ref{app:with-role-policy} (Listing~\ref{lst:with-role-policy-full}).
 
 Beyond the basic role hierarchy, the system enforces three self-management invariants to prevent an institution from locking itself out of administration:
 \begin{itemize}
@@ -100,7 +34,7 @@ Beyond the basic role hierarchy, the system enforces three self-management invar
 
 \section{Layers} \label{sec:backend-layers}
 
-Every backend feature, is organized into the same three layers, Controller, Service, and Data, each with a single, narrow responsibility and depending only on the layer directly below it. Figure~\ref{fig:layers} illustrates this flow for a single request, and the rest of this section walks through each layer in turn, using the notification feature's own controller, service, and repository as a concrete, small enough example to show in full.
+Every backend feature is organized into the same three layers, Controller, Service, and Data, each with a single, narrow responsibility and depending only on the layer directly below it. Figure~\ref{fig:layers} illustrates this flow for a single request, and the rest of this section walks through each layer in turn, using the notification feature's own controller, service, and repository as a concrete, small enough example to show in full.
 
 \begin{figure}[htbp]
 \begin{center}
@@ -108,8 +42,8 @@ Every backend feature, is organized into the same three layers, Controller, Serv
     layer/.style={draw, rectangle, rounded corners=2pt, align=center, font=\small, minimum width=8cm, minimum height=1.1cm, fill=white},
     lbl/.style={font=\scriptsize\itshape, align=center},
 ]
-\node[layer] (controller) at (0,4) {\textbf{Controller} \\ \texttt{notificationController}};
-\node[layer] (service)    at (0,2) {\textbf{Service} \\ \texttt{notificationService}};
+\node[layer] (controller) at (0,3) {\textbf{Controller} \\ \texttt{notificationController}};
+\node[layer] (service)    at (0,1.5) {\textbf{Service} \\ \texttt{notificationService}};
 \node[layer] (data)       at (0,0) {\textbf{Data} \\ \texttt{notificationData} (\texttt{INotificationRepository})};
 
 \draw[-{Latex[length=2mm]}] (controller) -- (service) node[lbl, midway, right=1mm] {parsed request};
@@ -124,6 +58,7 @@ Every backend feature, is organized into the same three layers, Controller, Serv
 \subsection{Controller} \label{sec:backend-controller}
 Controllers (\texttt{server/auth/controllers/}, \texttt{server/calendar/controllers/}, \texttt{server/notifications/controllers/}) are the entry point for each API route. They parse and validate route parameters and the request body, invoke the corresponding service method, and translate the result, or any error thrown, into an HTTP response using the shared \texttt{ok()}/\texttt{fail()} helpers. This is also where the session cookie is set on login and cleared on logout. Listing~\ref{lst:notification-controller} shows the notification controller's \texttt{markRead} action, a minimal case of this shape.
 
+\noindent\begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={[Controller layer example.]{Controller layer example (\texttt{server/notifications/controllers/notification.controller.ts}).}}, label={lst:notification-controller}]
 async markRead(request: IRequestWithAuth, notificationIdValue: string) {
   try {
@@ -135,61 +70,30 @@ async markRead(request: IRequestWithAuth, notificationIdValue: string) {
   }
 },
 \end{lstlisting}
+\end{minipage}
 
 The method does no business logic of its own: it validates that a notification id was actually supplied, delegates the read entirely to \texttt{notificationService.markRead}, and converts either outcome into the standard response envelope (Section~\ref{sec:backend-error-handling}). The \texttt{try}/\texttt{catch} boilerplate is identical across every controller action in the codebase, which is precisely what keeps the layer thin: nothing here depends on how a notification is read or where it is stored.
 
 \subsection{Service} \label{sec:backend-service}
-Services (\texttt{server/auth/services/auth.service.ts}, \texttt{server/calendar/services/calendar.service.ts}, \texttt{server/notifications/services/notification.service.ts}) hold all business logic and authorization checks, and are the bridge between the controllers and the data layer. This is where the RBAC invariants described in Section~\ref{sec:backend-rbac} are enforced, and where the central pieces of calendar business logic live: the Migration Engine (Section~\ref{sec:migration-engine}), the Business Rule Engine (Section~\ref{sec:rule-engine}), and the notification lead-time computation (Section~\ref{sec:backend-notifications}). Listing~\ref{lst:notification-service} shows the core of that last one, the per-occurrence check that decides whether a notification is due.
-
-\begin{lstlisting}[caption={[Service layer example.]{Service layer example (\texttt{server/notifications/services/notification.service.ts}).}}, label={lst:notification-service}]
-for (const event of events) {
-  for (const occurrence of event.occurrences) {
-    const effectiveLeadDays = occurrence.notifyDaysBeforeOverride ?? event.notifyDaysBefore;
-    // ... skip if a fresh record already exists for this occurrence ...
-
-    if (
-      typeof effectiveLeadDays === "number" &&
-      !alreadyGenerated &&
-      occurrenceStartDate > now &&
-      countWorkingDaysBetween(now, occurrenceStartDate) <= effectiveLeadDays
-    ) {
-      toInsert.push({ id: crypto.randomUUID(), occurrenceId: occurrence.id, /* ... */ });
-    }
-  }
-}
-\end{lstlisting}
-
-Each occurrence's own \texttt{notifyDaysBeforeOverride} takes precedence over its parent event's \texttt{notifyDaysBefore}, falling back to it when unset; if that effective lead time is defined, the occurrence has not already started, and the number of working days remaining (reusing the same \texttt{countWorkingDaysBetween} helper the rule engine uses, Section~\ref{sec:rule-engine}) has entered that window, a notification record is queued for insertion. This runs lazily, on read (Section~\ref{sec:backend-notifications}), rather than on a schedule, so it is the service, not a background job, that decides what counts as ``due''.
+Services (\texttt{server/auth/services/auth.service.ts}, \texttt{server/calendar/services/calendar.service.ts}, \texttt{server/notifications/services/notification.service.ts}) hold all business logic and authorization checks, and are the bridge between the controllers and the data layer. This is where the RBAC invariants described in Section~\ref{sec:backend-rbac} are enforced, and where the central pieces of calendar business logic live: the Migration Engine (Section~\ref{sec:migration-engine}), the Business Rule Engine (Section~\ref{sec:rule-engine}), and the notification lead-time computation (Section~\ref{sec:backend-notifications}), which decides whether a notification is due for a given occurrence by comparing its effective lead time, in working days, against the current date each time notifications are read, rather than on a schedule.
 
 \subsection{Data} \label{sec:backend-data}
-The data layer (\texttt{server/auth/data/}, \texttt{server/calendar/data/}, \texttt{server/notifications/data/}) exposes a repository interface (\texttt{IAuthRepository}, \texttt{ICalendarRepository}, \texttt{INotificationRepository}) per feature, abstracting all storage access. Services depend only on this interface, never on a concrete database client, which is what enables the pluggable PostgreSQL/Redis backend described in Section~\ref{sec:data-access}. Listing~\ref{lst:notification-repository} shows the notification feature's interface in full: every method a service is allowed to call, with no mention of SQL or Redis anywhere in sight.
-
-\begin{lstlisting}[caption={[Data layer example.]{Data layer example (\texttt{server/notifications/data/notification.repository.ts}).}}, label={lst:notification-repository}]
-export interface INotificationRepository {
-  listAll(): Promise<NotificationRecord[]>;
-  insertMany(records: NotificationRecord[]): Promise<void>;
-  deleteManyByOccurrenceIds(occurrenceIds: string[]): Promise<void>;
-  listReadNotificationIdsForUser(userId: string): Promise<string[]>;
-  markRead(notificationId: string, userId: string): Promise<void>;
-  markAllRead(notificationIds: string[], userId: string): Promise<void>;
-}
-\end{lstlisting}
-
-\texttt{NotificationRepositoryPostgres} implements this interface directly against the \texttt{notifications}/\texttt{notification\_reads} tables (Section~\ref{sec:data-model}) with Drizzle queries; \texttt{NotificationRepositoryRedis} implements the same interface against a single JSON blob in Upstash Redis.
+The data layer (\texttt{server/auth/data/}, \texttt{server/calendar/data/}, \texttt{server/notifications/data/}) exposes a repository interface per feature (\texttt{IAuthRepository}, \texttt{ICalendarRepository}, \texttt{INotificationRepository}), abstracting all storage access; \texttt{INotificationRepository}, for instance, is six methods, \texttt{listAll}, \texttt{insertMany}, \texttt{deleteManyByOccurrenceIds}, \texttt{listReadNotificationIdsForUser}, \texttt{markRead}, and \texttt{markAllRead}, with no mention of SQL or Redis anywhere in it. Services depend only on this interface, never on a concrete database client, which is what enables the pluggable PostgreSQL/Redis backend described in Section~\ref{sec:data-access}: \texttt{NotificationRepositoryPostgres} implements it directly against the \texttt{notifications}/\texttt{notification\_reads} tables (Section~\ref{sec:data-model}) with Drizzle queries, and \texttt{NotificationRepositoryRedis} implements the same interface against a single JSON blob in Upstash Redis.
 
 \section{Migration Engine} \label{sec:migration-engine}
 
 The migration of the academic calendar from one year to the next is implemented as a single service operation (\texttt{CalendarService.migrateAcademicYear}), exposed to editors and administrators through dedicated ``Validate'' and ``Migrate'' actions in the calendar header (Section~\ref{sec:frontend-academic-year-tools}).
 
 \begin{itemize}
-    \item \textbf{Vacation periods first:} for the target academic year (source year $+\ 1$), the engine migrates vacation periods before events, shifting each period's dates forward by one year so that subsequent rule checks against the target year already see the correct vacation windows.
-    \item \textbf{Idempotent event migration:} every source-year event is fingerprinted from a fixed subset of its fields (name, objective, category, classification, status, responsible, owner, and each occurrence's description and dates, deliberately excluding database-generated ids). If an equivalent event already exists in the target year, it is skipped; otherwise it is cloned and inserted. This makes the operation safe to run more than once without creating duplicates.
-    \item \textbf{Date shifting and leap years:} each occurrence's dates are shifted forward by one calendar year. The 29th of February is handled explicitly: if shifting the year would otherwise roll the date over into March (because the target year is not a leap year), the date is instead clamped back to the 28th of February.
-    \item \textbf{Validation, not automatic correction:} immediately after an event is migrated, the full business rule set (Section~\ref{sec:rule-engine}) is run against it, and any violations, such as an occurrence now falling on a weekend or holiday, are collected into a structured report returned to the caller. The engine does not shift dates to avoid these conflicts; resolving them is left as a manual, user-driven step, guided by the issue report shown in the application (Section~\ref{sec:frontend-academic-year-tools}). The same rule-checking logic also powers the standalone ``Validate'' action, which runs a read-only check without migrating anything.
+    \item \textbf{Vacation periods first:} for the target academic year (source year $+\ 1$), the engine migrates vacation periods before events, so subsequent rule checks against the target year already see the correct vacation windows.
+    \item \textbf{Idempotent event migration:} every source-year event is fingerprinted from a fixed subset of its fields (excluding database-generated ids); an existing equivalent in the target year is skipped, otherwise the event is cloned, so the operation is safe to run more than once.
+    \item \textbf{Date shifting and leap years:} each occurrence's dates shift forward one calendar year; the 29th of February is clamped back to the 28th when the target year is not a leap year.
+    \item \textbf{Validation, not automatic correction:} immediately after migrating, the full business rule set (Section~\ref{sec:rule-engine}) runs against the result, and any violations are collected into a report rather than auto-corrected, left as a manual step guided by the issue report shown in the application (Section~\ref{sec:frontend-academic-year-tools}). The same logic powers the standalone, read-only ``Validate'' action.
 \end{itemize}
 
 Listing~\ref{lst:shift-date} shows \texttt{shiftDateByYears}, the pure function every occurrence's start and end dates are passed through during migration, which implements the leap-year clamping described above.
 
+\noindent\begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={[Date shifting with leap-year clamping.]{Date shifting with leap-year clamping (\texttt{shared/calendar/academic-year.ts}).}}, label={lst:shift-date}]
 export const shiftDateByYears = (dateValue: string, years: number): string => {
   const source = new Date(dateValue);
@@ -203,69 +107,35 @@ export const shiftDateByYears = (dateValue: string, years: number): string => {
   return target.toISOString();
 };
 \end{lstlisting}
+\end{minipage}
 
 Adding one year to a date is not simply incrementing its year component: calling \texttt{setUTCFullYear} on the 29th of February of a leap year silently rolls the date forward into the 1st of March whenever the target year is not itself a leap year, since the 29th of February does not exist there. The function detects this by checking whether the resulting month still matches the source month; if it does not, the date is rolled back with \texttt{setUTCDate(0)}, which JavaScript resolves to the last day of the previous month, that is, the 28th of February. Every other date is left unaffected, since shifting a day that exists in every year by whole years never changes its month.
 
 \section{Business Rule Engine} \label{sec:rule-engine}
 
-A modular rule engine validates event occurrences against configurable institutional constraints. Each rule is a self-contained unit implementing a shared interface (a \texttt{validate} function that receives the event, the occurrence, its configuration, and validation context such as vacation periods and other events); the engine itself has no knowledge of what a rule checks, it only calls this function and collects the result. Rules are registered in a single, central list that the engine iterates over, with no branching logic deciding which rule applies, so new institutional rules can be added by writing one new file and registering it, without touching the migration or validation logic. This same rule registry also drives the rule-configuration UI in the event form (Section~\ref{sec:frontend-event-dialogs}), which reads each rule's field metadata to render the correct input controls.
+A modular rule engine validates event occurrences against configurable institutional constraints. Each rule is a self-contained unit implementing a shared interface; the engine itself has no knowledge of what a rule checks, it only calls the rule's \texttt{validate} function and collects the result. Rules are registered in a single, central list the engine iterates over, so a new institutional rule is added by writing one file and registering it, with no branching logic and no changes to the migration or validation code. This same registry also drives the rule-configuration UI in the event form (Section~\ref{sec:frontend-event-dialogs}), which reads each rule's field metadata to render the matching controls.
 
-Listing~\ref{lst:weekend-rule} shows the Weekend rule, which flags an occurrence whose start date, end date, or any date spanned by a multi-day occurrence, falls on a Saturday or Sunday. Its \texttt{fields} and \texttt{translations} entries are abbreviated in the listing: each is a small, self-descriptive object, three checkbox declarations and their labels, plus one message string per violation kind, with nothing algorithmic in either.
+\subsection{Rule Definitions} \label{sec:rule-definitions}
 
-\begin{lstlisting}[caption={[The Weekend rule definition.]{The Weekend rule definition (\texttt{server/calendar/rules/definitions/weekend.rule.ts}).}}, label={lst:weekend-rule}]
-export const weekendRule: IRuleDefinition = {
-  id: "weekend",
-  fields: [ /* checkStart, checkEnd, checkRange checkboxes */ ],
-  translations: { /* label, field labels, and one message per violation kind */ },
-  validate(_event, occurrence, config) {
-    return runDayRangeCheck<true>({
-      occurrence,
-      config: config as WeekendConfig,
-      matchDay: (day) => (isWeekend(day) ? true : undefined),
-      toViolation: (field, date) => ({ fieldLabelKey: field, date, messageKey: MESSAGE_KEYS[field] }),
-    });
-  },
-};
-\end{lstlisting}
+Every rule definition has the same four parts:
 
-Weekend, Holiday, and Vacation period all expose the same three independent toggles, checking the start date, the end date, and every date spanned by the occurrence, differing only in \emph{what} counts as a match on a given day. This shared checkStart/checkEnd/checkRange loop is factored into a single generic helper, \texttt{runDayRangeCheck} (Listing~\ref{lst:day-range-check}), which each rule parameterizes with its own day-matching and violation-building logic instead of implementing the loop itself.
+\begin{itemize}
+    \item \texttt{id}: the stable key stored in \texttt{event\_rules.type} and used to dispatch validation.
+    \item \texttt{fields}: the rule's configurable inputs and their defaults, read by the event form to render matching controls with no rule-specific UI code.
+    \item \texttt{translations}: every user-facing string the rule needs, one display label plus one message per violation kind, keyed by locale.
+    \item \texttt{validate}: a pure function taking the event, one occurrence, and the rule's configuration, returning zero or more violations, each carrying a message key and the field/date that triggered it, rather than a pre-formatted string, so the frontend renders every rule consistently (Section~\ref{sec:frontend-academic-year-tools}).
+\end{itemize}
 
-\begin{lstlisting}[caption={[The shared start/end/range check helper.]{The shared start/end/range check helper (\texttt{server/calendar/rules/utils/day-range-check.ts}).}}, label={lst:day-range-check}]
-export function runDayRangeCheck<TMatch>({
-  occurrence, config, matchDay, matchRange, toViolation,
-}: DayRangeCheckOptions<TMatch>): IRuleViolation[] {
-  const violations: IRuleViolation[] = [];
-  const start = parseISO(occurrence.startDate);
-  const end = parseISO(occurrence.endDate);
+The Weekend rule (Appendix~\ref{app:weekend-rule}, Listing~\ref{lst:weekend-rule-full}) is a representative example: it flags an occurrence whose start date, end date, or any spanned date falls on a Saturday or Sunday. Weekend, Holiday, and Vacation period share the same three independent toggles, checkStart/checkEnd/checkRange, differing only in \emph{what} counts as a match on a given day; this shared loop is factored into one generic helper, \texttt{runDayRangeCheck} (\texttt{server/calendar/rules/utils/day-range-check.ts}), that each rule supplies with:
 
-  if (config.checkStart) {
-    const match = matchDay(start);
-    if (match) violations.push(toViolation("start", occurrence.startDate, match));
-  }
-  // ... checkEnd follows the same shape, against `end` ...
+\begin{itemize}
+    \item \texttt{matchDay}: a single-day predicate (``is this a weekend'', ``a holiday'', ``inside a vacation period''), tested against the start date, the end date, and, for \texttt{checkRange}, every day in between, stopping at the first match.
+    \item \texttt{toViolation}: builds the rule's own \texttt{messageParams} from whatever \texttt{matchDay} matched.
+\end{itemize}
 
-  if (config.checkRange) {
-    if (matchRange) {
-      const match = matchRange(start, end);
-      if (match) violations.push(toViolation("range", occurrence.startDate, match));
-    } else {
-      for (const day of eachDayOfInterval({ start, end })) {
-        const match = matchDay(day);
-        if (match) {
-          violations.push(toViolation("range", day.toISOString(), match));
-          break;
-        }
-      }
-    }
-  }
+An optional \texttt{matchRange} lets a rule replace that day-by-day walk with a single whole-interval check instead, which Vacation period uses since a vacation period is a continuous range rather than a set of independently meaningful days.
 
-  return violations;
-}
-\end{lstlisting}
-
-\texttt{matchDay} is the single-day predicate each rule supplies (``is this day a weekend'', ``is this day a holiday'', ``is this day inside a vacation period''), returning whatever piece of matched data \texttt{toViolation} needs to build its \texttt{messageParams} (a holiday's name, a vacation period's label, or nothing at all for the Weekend rule, whose messages need no parameters). \texttt{checkRange} defaults to walking every day in the occurrence's span with \texttt{matchDay}, stopping at the first match, which is exactly what Weekend and Holiday need; the optional \texttt{matchRange} lets a rule override that with a whole-interval check instead, which the Vacation period rule uses (Listing~\ref{lst:vacation-rule}), since a vacation period is a continuous range rather than a set of independently meaningful days, so testing the whole span for overlap in one step is the more natural check.
-
-The \texttt{id} is the stable key stored in \texttt{event\_rules.type} and used to dispatch validation; \texttt{fields} declares the rule's three independent toggles, checking the start date, the end date, and every date in between, together with their default values, which the event form (Section~\ref{sec:frontend-event-dialogs}) reads to render the matching checkboxes with no rule-specific UI code required; \texttt{translations} supplies every user-facing string the rule needs, from its display label to one message per kind of violation, keyed by locale; and \texttt{validate} is the pure function the engine calls with the event, one of its occurrences, and this rule's configuration, returning zero or more violations. Each violation carries a message key and the specific field and date that triggered it, rather than a pre-formatted string, so the frontend can translate and render it consistently with every other rule (Section~\ref{sec:frontend-academic-year-tools}).
+\subsection{Built-in Rules} \label{sec:built-in-rules}
 
 Seven rules are currently implemented:
 
@@ -273,89 +143,28 @@ Seven rules are currently implemented:
     \item \textbf{Weekend:} flags occurrences whose start, end, or intermediate dates fall on a Saturday or Sunday.
     \item \textbf{Holiday:} flags occurrences that coincide with Portuguese national holidays.
     \item \textbf{Vacation period:} flags occurrences that overlap a registered school vacation period for that academic year.
-    \item \textbf{Event no-overlap:} flags occurrences whose overall date span overlaps the span of other, user-selected events.
-    \item \textbf{Minimum gap to event:} enforces a minimum number of working days between the end of one event and the start of a related, user-selected event.
-    \item \textbf{Minimum duration:} an always-on, built-in rule enforcing a minimum calendar-day duration for an occurrence, driven by the occurrence's own \texttt{minDays} field.
-    \item \textbf{Minimum gap to next occurrence:} an always-on, built-in rule enforcing a minimum working-day gap between consecutive occurrences of the same event, driven by \texttt{minDaysToNext}.
+    \item \textbf{Event no-overlap:} flags occurrences whose date span overlaps other, user-selected events.
+    \item \textbf{Minimum gap to event:} enforces a minimum working-day gap between one event's end and a related, user-selected event's start.
+    \item \textbf{Minimum duration:} always-on, enforces a minimum calendar-day duration, driven by the occurrence's own \texttt{minDays}.
+    \item \textbf{Minimum gap to next occurrence:} always-on, enforces a minimum working-day gap between consecutive occurrences, driven by \texttt{minDaysToNext}.
 \end{itemize}
 
-The first five rules are selectively enabled and parameterized per event through the event creation and editing interface; the last two are always active for every occurrence and are not exposed in the rule-configuration UI (they are marked \texttt{hidden} in the rule metadata). All rules are advisory: none of them block the creation, editing, or migration of an event; violations are surfaced for manual review rather than enforced automatically. This business-rule layer is distinct from the structural, blocking validation performed by Zod on every API request (e.g. ensuring an occurrence's end date is later than its start date).
+The first five rules are selectively enabled per event through the event editor; the last two are always active and not exposed in the rule-configuration UI (marked \texttt{hidden} in the rule metadata). All rules are advisory: violations are surfaced for manual review, not enforced automatically, distinct from the structural, blocking validation Zod performs on every API request.
 
-Most rules derive everything they need from the event and occurrence being validated, together with \texttt{context.allEvents}, the full set of other events, for cross-event checks such as Event no-overlap or Minimum gap to event. The Vacation period rule is the exception: instead of comparing occurrences against other occurrences, it consults \texttt{context.vacations}, a list populated from the dedicated, per-academic-year Vacation Period table (Section~\ref{sec:automation-entities}), managed independently through its own dialog (Section~\ref{sec:frontend-academic-year-tools}) rather than derived from other calendar events. Listing~\ref{lst:vacation-rule} shows its core validation logic; its \texttt{fields} and \texttt{translations}, following the same three-toggle shape as Weekend and Holiday, are abbreviated here for the same reason.
+Most rules derive everything they need from the event and occurrence being validated, plus \texttt{context.allEvents}, for cross-event checks such as Event no-overlap. Vacation period is the exception: it consults \texttt{context.vacations} instead, a list populated from the per-academic-year Vacation Period table (Section~\ref{sec:automation-entities}), managed through its own dialog (Section~\ref{sec:frontend-academic-year-tools}). Its \texttt{matchRange} tests whether the occurrence's whole span overlaps a vacation period, and every violation carries a \texttt{messageParams.vacationLabel} naming the period matched, e.g. ``The end coincides with the vacation period `Christmas break'\thinspace''. Holiday follows the same shape, using \texttt{date-holidays}' \texttt{isHoliday} lookup as \texttt{matchDay}.
 
-\begin{lstlisting}[caption={[The Vacation period rule's validation logic.]{The Vacation period rule's validation logic (\texttt{server/calendar/rules/definitions/vacation-period.rule.ts}).}}, label={lst:vacation-rule}]
-// vacationContaining(day, vacations): first vacation period containing `day`,
-// via date-fns's isWithinInterval.
-// vacationOverlapping(start, end, vacations): first vacation period whose
-// interval overlaps [start, end], via date-fns's areIntervalsOverlapping.
-// toUtcDay(d): normalizes a Date to midnight UTC of the same calendar day.
+\subsection{Rule Dispatch} \label{sec:rule-dispatch}
 
-validate(_event, occurrence, config, context) {
-  const { vacations } = context;
-  if (!vacations || vacations.length === 0) return [];
+Individual rule definitions are only half of the engine: something still has to decide, for every occurrence of every event, which rules apply and collect their results into a single report. That is \texttt{CalendarService.collectEventRuleIssues} (Appendix~\ref{app:collect-issues}, Listing~\ref{lst:collect-issues-full}), the actual entry point of the engine that both \texttt{validateAcademicYear} and \texttt{migrateAcademicYear} (Section~\ref{sec:migration-engine}) call to produce their issue reports.
 
-  return runDayRangeCheck({
-    occurrence,
-    config: config as VacationPeriodConfig,
-    matchDay: (day) => vacationContaining(toUtcDay(day), vacations),
-    matchRange: (start, end) => vacationOverlapping(toUtcDay(start), toUtcDay(end), vacations),
-    toViolation: (field, date, match) => ({
-      fieldLabelKey: field,
-      date,
-      messageKey: MESSAGE_KEYS[field],
-      messageParams: { vacationLabel: match.label },
-    }),
-  });
-},
-\end{lstlisting}
-
-Passing \texttt{matchRange} here, rather than leaving it unset as the Weekend rule does, makes \texttt{checkRange} test whether the occurrence's whole span overlaps any vacation period as a single interval check, rather than \texttt{runDayRangeCheck}'s default day-by-day walk; the two are not the same computation, and only the interval form matches what ``the occurrence overlaps a vacation period'' actually means. Unlike the Weekend rule, every violation here carries a \texttt{messageParams.vacationLabel}, the specific vacation period that was matched, so the frontend can name it in the rendered message (e.g. ``The end coincides with the vacation period `Christmas break'\thinspace'') instead of only stating that a vacation conflict exists. The Holiday rule (\texttt{server/calendar/rules/definitions/holiday.rule.ts}) follows the same adapter shape as the Vacation period rule, supplying \texttt{date-holidays}' \texttt{isHoliday} lookup as its \texttt{matchDay} and a \texttt{holidayName} as its message parameter, and is omitted here since it introduces no new pattern.
-
-Individual rule definitions are only half of the engine: something still has to decide, for every occurrence of every event in an academic year, which rules apply and collect what they return into a single report. That is the job of \texttt{CalendarService.collectEventRuleIssues} (Listing~\ref{lst:collect-issues}), a private method that is the actual entry point of the Business Rule Engine and the piece both \texttt{validateAcademicYear} and \texttt{migrateAcademicYear} (Section~\ref{sec:migration-engine}) call to produce their issue reports.
-
-\begin{lstlisting}[caption={[The global rule-validation dispatcher.]{The global rule-validation dispatcher (\texttt{server/calendar/services/calendar.service.ts}).}}, label={lst:collect-issues}]
-private collectEventRuleIssues(
-  event: IEvent,
-  academicYearStart: number,
-  allEvents: IEvent[],
-  vacations: IVacationPeriod[] = [],
-): ICalendarRuleIssue[] {
-  const context = { allEvents, academicYearStart, vacations };
-  const issues: ICalendarRuleIssue[] = [];
-  const sortedOccurrences = [...event.occurrences].sort(/* by startDate */);
-
-  // pushIssues(occurrence, ruleType, violations) flattens each violation
-  // returned by a rule into a self-contained ICalendarRuleIssue and appends
-  // it to `issues`; omitted here, shown inline in the source file.
-
-  for (const occurrence of sortedOccurrences) {
-    for (const builtInRule of [minDurationRule, minDaysToNextRule]) {
-      pushIssues(occurrence, builtInRule.id, builtInRule.validate(event, occurrence, {}, context));
-    }
-
-    for (const rule of (event.rules ?? [])) {
-      pushIssues(occurrence, rule.type, validateEventRule(rule, event, occurrence, context));
-    }
-  }
-
-  return issues;
-}
-\end{lstlisting}
-
-A single \texttt{context} object, the \texttt{allEvents}/\texttt{academicYearStart}/\texttt{vacations} triple every rule's \texttt{validate} function receives as its fourth argument, is built once per event and shared by every rule invocation for that event, which is what lets rules such as Event no-overlap or Vacation period compare an occurrence against the rest of the calendar without each rule having to fetch its own data. Occurrences are sorted chronologically first so that reported issues follow a predictable order regardless of how they were entered. \texttt{pushIssues} is a small local closure that copies the event and occurrence's identifying details onto every violation it is given, which is what lets both call sites below it, the two always-on built-in rules and every rule explicitly attached to the event through \texttt{validateEventRule} (Section~\ref{sec:rule-engine}), share the same object-construction logic instead of repeating it once per rule kind. Because \texttt{validateAcademicYear} and \texttt{migrateAcademicYear} both call this exact method, a read-only ``Validate'' check and the automatic check that runs immediately after migrating an event can never disagree about what counts as a violation.
+A single \texttt{context} object (\texttt{allEvents}/\texttt{academicYearStart}/\texttt{vacations}) is built once per event and shared across every rule invocation for it, so cross-event rules never fetch their own data. Occurrences are sorted chronologically first, and a small shared closure flattens every violation into a self-contained issue, so both the always-on built-in rules and every explicitly attached rule share the same construction logic instead of repeating it. Because \texttt{validateAcademicYear} and \texttt{migrateAcademicYear} both call this exact method, the read-only ``Validate'' check and the automatic check after a migration can never disagree about what counts as a violation.
 
 \section{Notifications} \label{sec:backend-notifications}
 
-Beyond validating dates against institutional rules, EduCal also reminds users of occurrences that are coming up soon, through an in-app notification system rather than the email-based templates originally scoped under RF04 (Section~\ref{sec:functional-requirements}); the remaining, undelivered part of that requirement is discussed in Chapter~\ref{cap:future-work}.
-
-Each event carries a default lead time, \texttt{notifyDaysBefore}, and any of its occurrences may override it with its own \texttt{notifyDaysBeforeOverride}, both configured directly in the event/occurrence form (Section~\ref{sec:frontend-event-dialogs}). \texttt{NotificationService} does not generate notifications on a schedule or background job; instead, \texttt{ensureGenerated} (Listing~\ref{lst:notification-service}) runs lazily, on every read (\texttt{listMine}, \texttt{markAllRead}), comparing the current date against each occurrence's effective lead time in working days. A notification, once generated, is a single row shared by every user, keyed uniquely by \texttt{occurrenceId}; read status is tracked separately, per user, in \texttt{notification\_reads} (Section~\ref{sec:data-model}), so marking a notification read for one user never affects whether another user still sees it as unread. If an occurrence's date or effective lead time changes after a notification was already generated for it, the stale record is deleted so it can be regenerated against the new value, and notifications for occurrences that no longer exist are cleaned up the same way.
+Beyond validating dates against institutional rules, EduCal reminds users of occurrences coming up soon, through an in-app notification system rather than the email-based templates originally scoped under RF04 (Section~\ref{sec:functional-requirements}); the remaining, undelivered part of that requirement is discussed in Chapter~\ref{cap:future-work}. Each event carries a default lead time, \texttt{notifyDaysBefore}, and any occurrence may override it with \texttt{notifyDaysBeforeOverride}, both set in the event/occurrence form (Section~\ref{sec:frontend-event-dialogs}). \texttt{ensureGenerated} runs lazily, on every read, comparing the current date against each occurrence's effective lead time in working days (Section~\ref{sec:backend-service}), rather than on a schedule. A notification, once generated, is a single row shared by every user, keyed uniquely by \texttt{occurrenceId}; read status is tracked separately, per user, in \texttt{notification\_reads} (Section~\ref{sec:data-model}), so marking one read for one user never affects whether another still sees it as unread. If an occurrence's date or lead time changes after generation, the stale record is deleted and regenerated, and notifications for deleted occurrences are cleaned up the same way.
 
 \section{Tests} \label{sec:backend-tests}
 
-An automated test suite, built with Vitest~\cite{vitest}, now covers the system's pure-logic layer: code with no database or network dependency, which is where the project's business-critical logic is concentrated. This comprises the seven business rules, the shared \texttt{runDayRangeCheck} helper they build on (Section~\ref{sec:rule-engine}), and the rule dispatcher; the working-day calculation utility that two of those rules depend on; the password hashing and verification functions and the \texttt{withRolePolicy} authorization wrapper (Section~\ref{sec:backend-authentication} and~\ref{sec:backend-rbac}); the academic-year date helpers used by the Migration Engine (Section~\ref{sec:migration-engine}); and the notification service's lead-time and staleness logic (Section~\ref{sec:backend-notifications}), exercised against an in-memory fake of its repository dependencies rather than a real database. The suite comprises 13 test files and 79 tests, all passing, reaching approximately 98\% statement coverage on the files it targets, as measured by \texttt{@vitest/coverage-v8}.
+An automated test suite, built with Vitest~\cite{vitest}, covers the system's pure-logic layer: the business rules and the rule dispatcher (Section~\ref{sec:rule-engine}), the working-day calculation utility, password hashing/verification, the \texttt{withRolePolicy} wrapper (Sections~\ref{sec:backend-authentication},~\ref{sec:backend-rbac}), the academic-year date helpers (Section~\ref{sec:migration-engine}), and the notification service's lead-time logic (Section~\ref{sec:backend-notifications}, exercised against an in-memory fake of its repository). It comprises 13 test files and 79 tests, all passing, reaching approximately 98\% statement coverage on the files it targets (\texttt{@vitest/coverage-v8}); the test process's timezone is pinned to UTC and cases use fixed calendar dates, including real Portuguese holidays, so results never depend on the host's timezone or the current date.
 
-Two choices keep the suite deterministic across machines and CI runs rather than dependent on the current date or the host's timezone: the test process's timezone is pinned to UTC, and test cases use fixed calendar dates, including real Portuguese public holidays and known weekend dates, instead of computing them relative to ``today''.
-
-The service layer, the repository/data-access layer (both the PostgreSQL and Redis implementations), API routes, and the React frontend are covered by manual testing: exercising each functional requirement's flows (event and occurrence CRUD, the migration engine, rule validation, login, and user management) directly through the application's UI and, for API endpoints, through direct HTTP requests.
-
-The application was also tried by a small group of ISEL academic staff, the system's intended end users, who used it on their own initiative rather than following a guided script. Their feedback, gathered through punctual meetings scheduled after each item was implemented and tested, was generally positive and led to a number of user-interface adjustments.
+The service layer, the data-access layer (PostgreSQL and Redis), API routes, and the frontend are covered by manual testing instead: exercising each requirement's flows through the UI and, for API endpoints, direct HTTP requests. The application was also tried by a small group of ISEL academic staff on their own initiative, with generally positive feedback leading to several UI adjustments.

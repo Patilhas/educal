@@ -11,7 +11,7 @@ EduCal follows a three-tier architecture that separates presentation, business l
 
 \begin{figure}[htbp]
 \begin{center}
-\resizebox{130mm}{!}{\includegraphics{./figures/system_architecture.png}}
+\resizebox{115mm}{!}{\includegraphics{./figures/system_architecture.png}}
 \end{center}
 \caption{System architecture diagram.}\label{fig:architecture}
 \end{figure}
@@ -20,12 +20,12 @@ EduCal follows a three-tier architecture that separates presentation, business l
 As illustrated in Figure~\ref{fig:architecture}, the system is organized into three layers:
 
 \begin{itemize}
-    \item \textbf{Presentation Layer (Frontend):} built with Next.js and React, it manages the state of the complex calendar views (Agenda, Day, Week, Month, and Year) and provides specialized interfaces for event and occurrence management, such as dynamic forms for multi-occurrence events.
-    \item \textbf{Logic Layer (Backend):} implemented as Next.js API routes backed by a Controller-Service-Data structure (detailed in Chapter~\ref{cap:backend}). The controllers act as the entry point, ensuring only authenticated users with the required role can modify the institutional calendar; the services hold the core business logic, including the Migration Engine (RF02) and the Business Rule Engine (RF03); and the data layer abstracts all communication with the underlying storage.
+    \item \textbf{Presentation Layer (Frontend):} built with Next.js and React, manages the complex calendar views (Agenda, Day, Week, Month, Year) and specialized interfaces for event/occurrence management, such as dynamic multi-occurrence forms.
+    \item \textbf{Logic Layer (Backend):} Next.js API routes backed by a Controller-Service-Data structure (Chapter~\ref{cap:backend}): controllers enforce role-based access, services hold the core business logic (the Migration Engine, RF02, and Business Rule Engine, RF03), and the data layer abstracts all storage communication.
     \item \textbf{Data Layer (DB):} a PostgreSQL relational database provides persistent storage for events, occurrences, and system configuration, accessed through the Drizzle ORM.
 \end{itemize}
 
-All components outlined in this architecture have been implemented, including PostgreSQL, so far tested only against a local instance (Chapter~\ref{cap:deployment}). The data access layer isolates all storage behind a single point in the code, so business services never talk to the database directly. This is what makes it possible to keep an alternative, JSON-based storage backend, currently used for the Vercel preview deployment, without any changes to the business logic, API routes, or frontend (see Section~\ref{sec:data-access}).
+All components outlined here have been implemented, including PostgreSQL, so far tested only against a local instance (Chapter~\ref{cap:deployment}). The data access layer isolates all storage behind a single point in the code, so business services never talk to the database directly, which is what makes it possible to keep an alternative JSON-based backend, currently used for the Vercel preview deployment, without any changes to the business logic, API routes, or frontend (Section~\ref{sec:data-access}).
 
 \section{Technology Stack} \label{sec:tech-stack}
 
