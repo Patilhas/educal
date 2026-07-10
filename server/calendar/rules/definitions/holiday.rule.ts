@@ -1,11 +1,16 @@
-import { parseISO, eachDayOfInterval } from "date-fns";
 import Holidays from "date-holidays";
 import type { IRuleDefinition, IRuleViolation } from "../types";
 import type { IEvent, IOccurrence } from "@/shared/calendar/types";
+import { runDayRangeCheck } from "../utils/day-range-check";
 
 const hd = new Holidays("PT", { languages: "pt" });
 
 type HolidayConfig = { checkStart: boolean; checkEnd: boolean; checkRange: boolean };
+const MESSAGE_KEYS = { start: "startIsHoliday", end: "endIsHoliday", range: "rangeHasHoliday" } as const;
+const holidayOnDay = (day: Date) => {
+  const data = hd.isHoliday(day);
+  return data ? data[0] : undefined;
+};
 
 export const holidayRule: IRuleDefinition = {
   id: "holiday",
@@ -35,27 +40,16 @@ export const holidayRule: IRuleDefinition = {
     },
   },
   validate(_event: IEvent, occurrence: IOccurrence, config: Record<string, unknown>): IRuleViolation[] {
-    const { checkStart, checkEnd, checkRange } = config as HolidayConfig;
-    const violations: IRuleViolation[] = [];
-
-    if (checkStart) {
-      const data = hd.isHoliday(parseISO(occurrence.startDate));
-      if (data) violations.push({ fieldLabelKey: "start", date: occurrence.startDate, messageKey: "startIsHoliday", messageParams: { holidayName: data[0].name } });
-    }
-    if (checkEnd) {
-      const data = hd.isHoliday(parseISO(occurrence.endDate));
-      if (data) violations.push({ fieldLabelKey: "end", date: occurrence.endDate, messageKey: "endIsHoliday", messageParams: { holidayName: data[0].name } });
-    }
-    if (checkRange) {
-      for (const day of eachDayOfInterval({ start: parseISO(occurrence.startDate), end: parseISO(occurrence.endDate) })) {
-        const data = hd.isHoliday(day);
-        if (data) {
-          violations.push({ fieldLabelKey: "range", date: day.toISOString(), messageKey: "rangeHasHoliday", messageParams: { holidayName: data[0].name } });
-          break;
-        }
-      }
-    }
-
-    return violations;
+    return runDayRangeCheck({
+      occurrence,
+      config: config as HolidayConfig,
+      matchDay: holidayOnDay,
+      toViolation: (field, date, match) => ({
+        fieldLabelKey: field,
+        date,
+        messageKey: MESSAGE_KEYS[field],
+        messageParams: { holidayName: match.name },
+      }),
+    });
   },
 };

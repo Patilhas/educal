@@ -1,6 +1,9 @@
-import { parseISO, isWeekend, eachDayOfInterval } from "date-fns";
+import { isWeekend } from "date-fns";
 import type { IRuleDefinition, IRuleViolation } from "../types";
 import type { IEvent, IOccurrence } from "@/shared/calendar/types";
+import { runDayRangeCheck } from "../utils/day-range-check";
+
+const MESSAGE_KEYS = { start: "startIsWeekend", end: "endIsWeekend", range: "rangeHasWeekend" } as const;
 
 type WeekendConfig = { checkStart: boolean; checkEnd: boolean; checkRange: boolean };
 
@@ -32,24 +35,11 @@ export const weekendRule: IRuleDefinition = {
     },
   },
   validate(_event: IEvent, occurrence: IOccurrence, config: Record<string, unknown>): IRuleViolation[] {
-    const { checkStart, checkEnd, checkRange } = config as WeekendConfig;
-    const violations: IRuleViolation[] = [];
-
-    if (checkStart && isWeekend(parseISO(occurrence.startDate))) {
-      violations.push({ fieldLabelKey: "start", date: occurrence.startDate, messageKey: "startIsWeekend" });
-    }
-    if (checkEnd && isWeekend(parseISO(occurrence.endDate))) {
-      violations.push({ fieldLabelKey: "end", date: occurrence.endDate, messageKey: "endIsWeekend" });
-    }
-    if (checkRange) {
-      for (const day of eachDayOfInterval({ start: parseISO(occurrence.startDate), end: parseISO(occurrence.endDate) })) {
-        if (isWeekend(day)) {
-          violations.push({ fieldLabelKey: "range", date: day.toISOString(), messageKey: "rangeHasWeekend" });
-          break;
-        }
-      }
-    }
-
-    return violations;
+    return runDayRangeCheck<true>({
+      occurrence,
+      config: config as WeekendConfig,
+      matchDay: (day) => (isWeekend(day) ? true : undefined),
+      toViolation: (field, date) => ({ fieldLabelKey: field, date, messageKey: MESSAGE_KEYS[field] }),
+    });
   },
 };
