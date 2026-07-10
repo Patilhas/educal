@@ -29,6 +29,8 @@ All components outlined in this architecture have been implemented, including Po
 
 \section{Technology Stack} \label{sec:tech-stack}
 
+The stack was chosen to keep the whole application, frontend and backend alike, in a single TypeScript codebase, avoiding the coordination overhead of separate languages or repositories for a project of this size.
+
 \subsection{Backend}
 The backend is built on \textbf{Next.js}~\cite{nextjs} (v16, App Router), using its API routes as the HTTP entry point rather than a separate server framework. Data persistence uses \textbf{PostgreSQL}~\cite{postgresql} through \textbf{Drizzle ORM}~\cite{drizzleorm}, a TypeScript-first ORM that provides both a relational query API and raw SQL migrations (\texttt{drizzle-kit}). Request payloads are validated end-to-end with \textbf{Zod}~\cite{zod}, including schemas that are built dynamically from live database values (e.g. valid event categories). Password hashing uses Node.js's built-in \texttt{crypto} module~\cite{nodejscrypto} (scrypt), and session cookies follow the \texttt{Secure}/\texttt{HttpOnly} guidance from the OWASP Session Management Cheat Sheet~\cite{owasp}. National holiday and business-day calculations use the \texttt{date-fns} and \texttt{date-holidays} libraries. The automated test suite (Section~\ref{sec:backend-tests}) is built on \textbf{Vitest}~\cite{vitest}.
 
@@ -37,7 +39,7 @@ The frontend is built with \textbf{React 19}~\cite{react} inside the same Next.j
 
 \section{Data Model and Entity-Relationship Diagram} \label{sec:data-model}
 
-To support automated year-to-year migration and rule validation, a relational database schema was designed and implemented with Drizzle ORM, visually outlined in the Entity-Relationship Diagram in Figure~\ref{fig:er-diagram}, generated directly from the Drizzle schema definitions (\texttt{db/schema/auth.schema.ts}, \texttt{db/schema/calendar.schema.ts}, \texttt{db/schema/relations.ts}).
+To support automated year-to-year migration, rule validation, and the notification system (Section~\ref{sec:backend-notifications}), a relational database schema was designed and implemented with Drizzle ORM, visually outlined in the simplified Entity-Relationship Diagram in Figure~\ref{fig:er-diagram}, generated directly from the Drizzle schema definitions (\texttt{db/schema/auth.schema.ts}, \texttt{db/schema/calendar.schema.ts}, \texttt{db/schema/notification.schema.ts}, \texttt{db/schema/relations.ts}). This diagram shows every table and its relationships but omits column-level attributes for readability; the full version, with every column and its type, is given in Appendix~\ref{app:er-diagram}.
 
 \begin{figure}[htbp]
 \begin{center}
@@ -62,6 +64,7 @@ To support automated year-to-year migration and rule validation, a relational da
 \node[entity] (responsibles) at (10,-4.5) {Responsible};
 \node[entity] (occurrences) at (-2.0,-10) {Occurrence};
 \node[entity] (rules) at (2,-10) {Event Rule};
+\node[entity] (notifications) at (-2.0,-14) {Notification};
 
 \node[relationship] (rel-ay-events) at ($(academicyears)!0.5!(events)$) {has};
 \node[relationship] (rel-ay-vac) at ($(academicyears)!0.5!(vacationperiods)$) {has};
@@ -73,6 +76,7 @@ To support automated year-to-year migration and rule validation, a relational da
 \node[relationship] (rel-events-resp) at ($(events)!0.7!(responsibles)$) {assigned\_to};
 \node[relationship] (rel-events-occ) at ($(events)!0.68!(occurrences)$) {has};
 \node[relationship] (rel-events-rules) at ($(events)!0.68!(rules)$) {has};
+\node[relationship] (rel-occ-notif) at ($(occurrences)!0.5!(notifications)$) {has};
 
 % --- edges: entity -- diamond -- entity, with cardinalities near each entity end ---
 \draw[cascade] (academicyears) -- (rel-ay-events) node[card, pos=0.2] {1};
@@ -105,6 +109,9 @@ To support automated year-to-year migration and rule validation, a relational da
 \draw[cascade] (events) -- (rel-events-rules) node[card, pos=0.2] {1};
 \draw[cascade] (rel-events-rules) -- (rules) node[card, pos=0.8] {N};
 
+\draw[cascade] (occurrences) -- (rel-occ-notif) node[card, pos=0.2] {1};
+\draw[cascade] (rel-occ-notif) -- (notifications) node[card, pos=0.8] {1};
+
 % --- legend ---
 \node[draw, align=left, font=\small, anchor=south west, fill=white] at (-9.3,9.4) {
     \tikz{\draw[cascade] (0,0) -- (0.5,0);} ON DELETE CASCADE \\
@@ -113,11 +120,11 @@ To support automated year-to-year migration and rule validation, a relational da
 \end{tikzpicture}%
 }
 \end{center}
-\caption{Entity-Relationship Diagram, derived from the Drizzle schema.}\label{fig:er-diagram}
+\caption{Simplified Entity-Relationship Diagram, derived from the Drizzle schema.}\label{fig:er-diagram}
 \end{figure}
 \FloatBarrier
 
-Each diamond names the relationship between the two entities it connects, with cardinalities (1/N) marked at each end. Solid lines are foreign keys with \texttt{ON DELETE CASCADE}; dashed lines are \texttt{ON DELETE NO ACTION} (the referenced row cannot be deleted while still in use).
+Each diamond names the relationship between the two entities it connects, with cardinalities (1/N) marked at each end. Solid lines are foreign keys with \texttt{ON DELETE CASCADE}; dashed lines are \texttt{ON DELETE NO ACTION} (the referenced row cannot be deleted while still in use). For clarity, this diagram omits the \texttt{notification\_reads} table, which tracks, per user, which notifications that user has already read; it is described in Section~\ref{sec:notification-entities} and included, with its attributes, in the appendix version of this diagram.
 
 \subsection{Core Scheduling Entities} \label{sec:core-entities}
 
@@ -136,6 +143,10 @@ To facilitate filtering and institutional reporting, the system uses four normal
 \subsection{Automation and Business Rules} \label{sec:automation-entities}
 
 Each event can have zero or more \textbf{Event Rules} attached (\texttt{event\_rules} table), storing a rule \texttt{type} and a JSON \texttt{config} object. These rows are what the Business Rule Engine evaluates for that event (Section~\ref{sec:rule-engine}); the \textbf{Vacation Period} table, scoped to an academic year, stores the school vacation periods that both the rule engine and the migration engine consult.
+
+\subsection{Notifications} \label{sec:notification-entities}
+
+The \textbf{Notification} table (\texttt{notifications}) stores one row per occurrence a notification has been generated for, uniquely keyed by \texttt{occurrence\_id} so at most one exists per occurrence at a time, together with the occurrence's start date and lead time as they were at generation, \texttt{occurrence\_start\_date\_at\_gen} and \texttt{lead\_days\_at\_gen}, which is how the service (Section~\ref{sec:backend-notifications}) detects that a notification has gone stale and needs regenerating. Rather than targeting a single user, a notification is shared institution-wide; per-user read state is tracked separately in \textbf{Notification Read} (\texttt{notification\_reads}), a table with a composite primary key of \texttt{notification\_id} and \texttt{user\_id} plus a \texttt{read\_at} timestamp, so the same notification can be read by one user and still show as unread to another. Both tables cascade-delete: a Notification is removed when its Occurrence is deleted, and a Notification Read row is removed when either its Notification or its User is deleted.
 
 \subsection{Security and Auditing} \label{sec:security-entities}
 
