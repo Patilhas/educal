@@ -70,6 +70,8 @@ export const calendar = {
         statusPlaceholder: "Selecione o estado",
         responsible: "Responsável",
         responsiblePlaceholder: "Selecione o responsável",
+        notifyDaysBefore: "Notificar (dias úteis antes)",
+        notifyDaysBeforePlaceholder: "ex.: 5",
       },
       occurrences: {
         title: "Ocorrências",
@@ -83,6 +85,8 @@ export const calendar = {
         minDaysPlaceholder: "ex.: 5",
         minDaysToNext: "Dias úteis para a próxima",
         minDaysToNextPlaceholder: "ex.: 2",
+        notifyDaysBeforeOverride: "Substituir notificação (dias úteis antes)",
+        notifyDaysBeforeOverridePlaceholder: "Padrão",
       },
       rules: {
         title: "Regras",

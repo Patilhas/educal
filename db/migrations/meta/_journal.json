@@ -8,6 +8,20 @@
       "when": 1783007623073,
       "tag": "0000_natural_sentry",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1783524267753,
+      "tag": "0001_heavy_quicksilver",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783612933030,
+      "tag": "0002_mute_toro",
+      "breakpoints": true
     }
   ]
 }

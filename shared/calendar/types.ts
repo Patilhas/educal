@@ -30,6 +30,7 @@ export interface IOccurrence {
   endDate: string;
   minDays?: number;
   minDaysToNext?: number;
+  notifyDaysBeforeOverride?: number;
 }
 
 export interface IAcademicYearRange {
@@ -98,6 +99,7 @@ export interface IEvent {
   classification: TEventClassification;
   status: TEventStatus;
   responsible: TEventResponsible;
+  notifyDaysBefore?: number;
   rules: IEventRule[];
   occurrences: IOccurrence[];
   user: IUser;

@@ -4,6 +4,9 @@ import type { ICalendarRepository } from "@/server/calendar/data/calendar.reposi
 import { AuthRepositoryRedis } from "@/server/auth/data/auth.repository.redis";
 import { AuthRepositoryPostgres } from "@/server/auth/data/auth.repository.postgres";
 import type { IAuthRepository } from "@/server/auth/data/auth.repository";
+import { NotificationRepositoryRedis } from "@/server/notifications/data/notification.repository.redis";
+import { NotificationRepositoryPostgres } from "@/server/notifications/data/notification.repository.postgres";
+import type { INotificationRepository } from "@/server/notifications/data/notification.repository";
 
 type TDataLayer = "postgres" | "redis";
 
@@ -17,4 +20,8 @@ export function createCalendarRepository(): ICalendarRepository {
 
 export function createAuthRepository(): IAuthRepository {
   return resolveDataLayer() === "redis" ? new AuthRepositoryRedis() : new AuthRepositoryPostgres();
+}
+
+export function createNotificationRepository(): INotificationRepository {
+  return resolveDataLayer() === "redis" ? new NotificationRepositoryRedis() : new NotificationRepositoryPostgres();
 }

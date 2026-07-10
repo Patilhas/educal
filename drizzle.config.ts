@@ -5,7 +5,11 @@ if (!process.env.DATABASE_URL) {
 }
 
 export default defineConfig({
-  schema: ["./db/schema/auth.schema.ts", "./db/schema/calendar.schema.ts"],
+  schema: [
+    "./db/schema/auth.schema.ts",
+    "./db/schema/calendar.schema.ts",
+    "./db/schema/notification.schema.ts",
+  ],
   out: "./db/migrations",
   dialect: "postgresql",
   dbCredentials: {

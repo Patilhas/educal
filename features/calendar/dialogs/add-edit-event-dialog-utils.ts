@@ -64,6 +64,7 @@ export const getEventFormDefaults = (
     classification: event?.classification ?? "",
     status: event?.status ?? "",
     responsible: event?.responsible ?? "",
+    notifyDaysBefore: event?.notifyDaysBefore,
     rules: event?.rules ?? [],
     occurrences:
       event?.occurrences?.map((occurrence) => ({
@@ -73,6 +74,7 @@ export const getEventFormDefaults = (
         endDate: new Date(occurrence.endDate),
         minDays: occurrence.minDays,
         minDaysToNext: occurrence.minDaysToNext,
+        notifyDaysBeforeOverride: occurrence.notifyDaysBeforeOverride,
       })) ?? [
         {
           id: crypto.randomUUID(),
@@ -111,6 +113,7 @@ export const formatEventFromForm = ({
     classification: values.classification,
     status: values.status,
     responsible: values.responsible,
+    notifyDaysBefore: values.notifyDaysBefore,
     rules: values.rules,
     occurrences: sortedOccurrences.map((occurrence) => ({
       id: occurrence.id,
@@ -119,6 +122,7 @@ export const formatEventFromForm = ({
       endDate: format(occurrence.endDate, "yyyy-MM-dd'T'HH:mm:ss"),
       minDays: occurrence.minDays,
       minDaysToNext: occurrence.minDaysToNext,
+      notifyDaysBeforeOverride: occurrence.notifyDaysBeforeOverride,
     })),
     user: isEditing && event ? event.user : defaultUser,
   };

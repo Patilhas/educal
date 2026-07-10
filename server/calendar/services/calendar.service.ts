@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { getAcademicYearRange, getEventAcademicYearStart, shiftDateByYears } from "@/shared/calendar/academic-year";
 import { validateEventRule, getRulesMetadata, minDurationRule, minDaysToNextRule } from "@/server/calendar/rules";
+import type { IRuleViolation } from "@/server/calendar/rules/types";
 import type {
   IAcademicYearMigrationResult,
   IAcademicYearValidationResult,
@@ -62,6 +63,7 @@ export class CalendarService {
       classification: parsed.classification,
       status: parsed.status,
       responsible: parsed.responsible,
+      notifyDaysBefore: parsed.notifyDaysBefore,
       rules: parsed.rules,
       occurrences: parsed.occurrences.map((occurrence) => ({
         id: occurrence.id,
@@ -70,6 +72,7 @@ export class CalendarService {
         endDate: toIsoString(occurrence.endDate),
         minDays: occurrence.minDays,
         minDaysToNext: occurrence.minDaysToNext,
+        notifyDaysBeforeOverride: occurrence.notifyDaysBeforeOverride,
       })),
       user: request.auth.user,
     };
@@ -101,6 +104,7 @@ export class CalendarService {
       classification: parsed.classification,
       status: parsed.status,
       responsible: parsed.responsible,
+      notifyDaysBefore: parsed.notifyDaysBefore,
       rules: parsed.rules,
       occurrences: parsed.occurrences.map((occurrence) => ({
         id: occurrence.id,
@@ -109,6 +113,7 @@ export class CalendarService {
         endDate: toIsoString(occurrence.endDate),
         minDays: occurrence.minDays,
         minDaysToNext: occurrence.minDaysToNext,
+        notifyDaysBeforeOverride: occurrence.notifyDaysBeforeOverride,
       })),
       user: existing.user,
     };
@@ -350,6 +355,7 @@ export class CalendarService {
         endDate: shiftDateByYears(occurrence.endDate, delta),
         minDays: occurrence.minDays,
         minDaysToNext: occurrence.minDaysToNext,
+        notifyDaysBeforeOverride: occurrence.notifyDaysBeforeOverride,
       })),
     };
   }
@@ -380,43 +386,30 @@ export class CalendarService {
       (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
     );
 
-    for (let i = 0; i < sortedOccurrences.length; i++) {
-      const occurrence = sortedOccurrences[i];
+    const pushIssues = (occurrence: (typeof sortedOccurrences)[number], ruleType: string, violations: IRuleViolation[]) => {
+      for (const v of violations) {
+        issues.push({
+          eventId: event.id,
+          eventName: event.name,
+          occurrenceId: occurrence.id,
+          occurrenceDescription: occurrence.description,
+          academicYearStart,
+          date: v.date,
+          ruleType,
+          fieldLabelKey: v.fieldLabelKey,
+          messageKey: v.messageKey,
+          messageParams: v.messageParams,
+        });
+      }
+    };
 
+    for (const occurrence of sortedOccurrences) {
       for (const builtInRule of [minDurationRule, minDaysToNextRule]) {
-        for (const v of builtInRule.validate(event, occurrence, {}, context)) {
-          issues.push({
-            eventId: event.id,
-            eventName: event.name,
-            occurrenceId: occurrence.id,
-            occurrenceDescription: occurrence.description,
-            academicYearStart,
-            date: v.date,
-            ruleType: builtInRule.id,
-            fieldLabelKey: v.fieldLabelKey,
-            messageKey: v.messageKey,
-            messageParams: v.messageParams,
-          });
-        }
+        pushIssues(occurrence, builtInRule.id, builtInRule.validate(event, occurrence, {}, context));
       }
 
       for (const rule of (event.rules ?? [])) {
-        const violations = validateEventRule(rule, event, occurrence, context);
-
-        for (const v of violations) {
-          issues.push({
-            eventId: event.id,
-            eventName: event.name,
-            occurrenceId: occurrence.id,
-            occurrenceDescription: occurrence.description,
-            academicYearStart,
-            date: v.date,
-            ruleType: rule.type,
-            fieldLabelKey: v.fieldLabelKey,
-            messageKey: v.messageKey,
-            messageParams: v.messageParams,
-          });
-        }
+        pushIssues(occurrence, rule.type, validateEventRule(rule, event, occurrence, context));
       }
     }
 

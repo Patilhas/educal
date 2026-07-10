@@ -69,6 +69,7 @@ export const events = pgTable(
     responsible: text("responsible")
       .notNull()
       .references(() => responsibles.value),
+    notifyDaysBefore: integer("notify_days_before"),
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id),
@@ -88,6 +89,7 @@ export const eventOccurrences = pgTable(
     endDate: timestamp("end_date", { withTimezone: true }).notNull(),
     minDays: integer("min_days"),
     minDaysToNext: integer("min_days_to_next"),
+    notifyDaysBeforeOverride: integer("notify_days_before_override"),
   },
   (table) => [
     index("event_occurrences_event_id_idx").on(table.eventId),

@@ -3,6 +3,12 @@ import type { TranslationKey } from "@/i18n";
 
 type Translator = (key: TranslationKey, variables?: Record<string, string | number>) => string;
 
+const optionalPositiveNumber = z.preprocess((val) => {
+  if (val === "" || val === undefined || val === null) return undefined
+  return Number(val)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+}, z.number().positive().optional()) as z.ZodType<number | undefined, any, any>
+
 export const createEventSchema = (t: Translator) => {
   const occurrenceSchema = z
     .object({
@@ -12,8 +18,9 @@ export const createEventSchema = (t: Translator) => {
         .min(1, t("calendar.dialogs.addEditEvent.validations.occurrenceDescriptionRequired")),
       startDate: z.date(t("calendar.dialogs.addEditEvent.validations.occurrenceStartDateRequired")),
       endDate: z.date(t("calendar.dialogs.addEditEvent.validations.occurrenceEndDateRequired")),
-      minDays: z.number().int().positive().optional(),
-      minDaysToNext: z.number().int().positive().optional(),
+      minDays: optionalPositiveNumber,
+      minDaysToNext: optionalPositiveNumber,
+      notifyDaysBeforeOverride: optionalPositiveNumber,
     })
     .refine((occurrence) => occurrence.endDate > occurrence.startDate, {
       message: t("calendar.dialogs.addEditEvent.validations.occurrenceEndAfterStart"),
@@ -29,6 +36,7 @@ export const createEventSchema = (t: Translator) => {
       .min(1, t("calendar.dialogs.addEditEvent.validations.classificationRequired")),
     status: z.string().min(1, t("calendar.dialogs.addEditEvent.validations.statusRequired")),
     responsible: z.string().min(1, t("calendar.dialogs.addEditEvent.validations.responsibleRequired")),
+    notifyDaysBefore: optionalPositiveNumber,
     rules: z.array(
       z.object({
         type: z.string().min(1),
