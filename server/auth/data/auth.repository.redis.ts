@@ -1,50 +1,19 @@
-import { Redis } from "@upstash/redis";
 import { AUTH_REDIS_DB_KEY } from "@/server/shared/config";
 import type { IUserStored } from "@/shared/user/types";
 import type { AuthDb, AuthSessionRecord } from "@/server/auth/types";
 import type { IAuthRepository } from "@/server/auth/data/auth.repository";
+import { RedisDbStore, clone } from "@/server/shared/data/redis-store";
 
-const clone = <T>(value: T): T => structuredClone(value);
-const CACHE_REVALIDATE_MS = 500;
-
-export class AuthRepositoryRedis implements IAuthRepository {
-  private writeQueue: Promise<void> = Promise.resolve();
-  private cachedDb: AuthDb | null = null;
-  private lastCacheValidationAt = 0;
-  private redis = Redis.fromEnv();
-
-  private requireDb(raw: AuthDb | null): AuthDb {
-    if (!raw) {
-      throw new Error(
-        `${AUTH_REDIS_DB_KEY} not found in Redis. Run \`pnpm run db:seed -- --target=redis\` first.`,
-      );
-    }
-    return raw;
-  }
-
-  private async readDb(): Promise<AuthDb> {
-    await this.writeQueue;
-
-    const now = Date.now();
-    if (this.cachedDb && now - this.lastCacheValidationAt < CACHE_REVALIDATE_MS) {
-      return this.cachedDb;
-    }
-
-    const db = this.requireDb((await this.redis.get(AUTH_REDIS_DB_KEY)) as AuthDb | null);
-    this.cachedDb = db;
-    this.lastCacheValidationAt = now;
-
-    return db;
-  }
-
-  private async persistDb(nextDb: AuthDb): Promise<void> {
-    this.writeQueue = this.writeQueue.then(async () => {
-      await this.redis.set(AUTH_REDIS_DB_KEY, JSON.stringify(nextDb));
-      this.cachedDb = clone(nextDb);
-      this.lastCacheValidationAt = Date.now();
+export class AuthRepositoryRedis extends RedisDbStore<AuthDb> implements IAuthRepository {
+  constructor() {
+    super(AUTH_REDIS_DB_KEY, (raw) => {
+      if (!raw) {
+        throw new Error(
+          `${AUTH_REDIS_DB_KEY} not found in Redis. Run \`pnpm run db:seed -- --target=redis\` first.`,
+        );
+      }
+      return raw;
     });
-
-    await this.writeQueue;
   }
 
   async listUsers(): Promise<IUserStored[]> {
@@ -63,40 +32,32 @@ export class AuthRepositoryRedis implements IAuthRepository {
   }
 
   async insertUser(user: IUserStored): Promise<IUserStored> {
-    const db = await this.readDb();
     const nextUser = clone(user);
-
-    await this.persistDb({ ...db, users: [...db.users, nextUser] });
-
+    await this.persistDb((db) => ({ ...db, users: [...db.users, nextUser] }));
     return clone(nextUser);
   }
 
   async updateUser(userId: string, patch: Partial<IUserStored>): Promise<IUserStored | null> {
-    const db = await this.readDb();
-    let updatedUser: IUserStored | null = null;
+    return this.persistDbWithResult((db) => {
+      let updatedUser: IUserStored | null = null;
+      const nextUsers = db.users.map((user) => {
+        if (user.id !== userId) return user;
+        updatedUser = { ...user, ...patch, id: user.id };
+        return updatedUser;
+      });
 
-    const nextUsers = db.users.map((user) => {
-      if (user.id !== userId) return user;
-      updatedUser = { ...user, ...patch, id: user.id };
-      return updatedUser;
+      if (!updatedUser) return { db, result: null };
+
+      return { db: { ...db, users: nextUsers }, result: clone(updatedUser) };
     });
-
-    if (!updatedUser) return null;
-
-    await this.persistDb({ ...db, users: nextUsers });
-
-    return clone(updatedUser);
   }
 
   async deleteUser(userId: string): Promise<boolean> {
-    const db = await this.readDb();
-    const nextUsers = db.users.filter((user) => user.id !== userId);
-
-    if (nextUsers.length === db.users.length) return false;
-
-    await this.persistDb({ ...db, users: nextUsers });
-
-    return true;
+    return this.persistDbWithResult((db) => {
+      const nextUsers = db.users.filter((user) => user.id !== userId);
+      if (nextUsers.length === db.users.length) return { db, result: false };
+      return { db: { ...db, users: nextUsers }, result: true };
+    });
   }
 
   async countUsersByRole(role: IUserStored["role"]): Promise<number> {
@@ -105,11 +66,11 @@ export class AuthRepositoryRedis implements IAuthRepository {
   }
 
   async upsertSession(session: AuthSessionRecord): Promise<void> {
-    const db = await this.readDb();
-    const nextSessions = db.sessions.filter((item) => item.token !== session.token);
-    nextSessions.push(session);
-
-    await this.persistDb({ ...db, sessions: nextSessions });
+    await this.persistDb((db) => {
+      const nextSessions = db.sessions.filter((item) => item.token !== session.token);
+      nextSessions.push(session);
+      return { ...db, sessions: nextSessions };
+    });
   }
 
   async findSessionByToken(token: string): Promise<AuthSessionRecord | null> {
@@ -118,18 +79,16 @@ export class AuthRepositoryRedis implements IAuthRepository {
   }
 
   async deleteSession(token: string): Promise<void> {
-    const db = await this.readDb();
-    await this.persistDb({
+    await this.persistDb((db) => ({
       ...db,
       sessions: db.sessions.filter((session) => session.token !== token),
-    });
+    }));
   }
 
   async deleteSessionsByUserId(userId: string): Promise<void> {
-    const db = await this.readDb();
-    await this.persistDb({
+    await this.persistDb((db) => ({
       ...db,
       sessions: db.sessions.filter((session) => session.userId !== userId),
-    });
+    }));
   }
 }

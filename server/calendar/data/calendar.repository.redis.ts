@@ -1,4 +1,3 @@
-import { Redis } from "@upstash/redis";
 import type {
   ICategory,
   IClassification,
@@ -11,49 +10,18 @@ import type { ICalendarDb } from "@/server/calendar/data/calendar.seed";
 import { getAcademicYearRange } from "@/shared/calendar/academic-year";
 import { CALENDAR_REDIS_DB_KEY } from "@/server/shared/config";
 import type { ICalendarRepository } from "@/server/calendar/data/calendar.repository";
+import { RedisDbStore, clone } from "@/server/shared/data/redis-store";
 
-const clone = <T>(value: T): T => structuredClone(value);
-const CACHE_REVALIDATE_MS = 500;
-
-export class CalendarRepositoryRedis implements ICalendarRepository {
-  private writeQueue: Promise<void> = Promise.resolve();
-  private cachedDb: ICalendarDb | null = null;
-  private lastCacheValidationAt = 0;
-  private redis = Redis.fromEnv();
-
-  private requireDb(raw: ICalendarDb | null): ICalendarDb {
-    if (!raw) {
-      throw new Error(
-        `${CALENDAR_REDIS_DB_KEY} not found in Redis. Run \`pnpm run db:seed -- --target=redis\` first.`,
-      );
-    }
-    return raw;
-  }
-
-  private async readDb(): Promise<ICalendarDb> {
-    await this.writeQueue;
-
-    const now = Date.now();
-    if (this.cachedDb && now - this.lastCacheValidationAt < CACHE_REVALIDATE_MS) {
-      return this.cachedDb;
-    }
-
-    const parsed = this.requireDb((await this.redis.get(CALENDAR_REDIS_DB_KEY)) as ICalendarDb | null);
-    this.cachedDb = parsed;
-    this.lastCacheValidationAt = now;
-
-    return parsed;
-  }
-
-  private async persistDb(mutate: (db: ICalendarDb) => ICalendarDb): Promise<void> {
-    this.writeQueue = this.writeQueue.then(async () => {
-      const db = this.requireDb((await this.redis.get(CALENDAR_REDIS_DB_KEY)) as ICalendarDb | null);
-      const nextDb = mutate(db);
-      await this.redis.set(CALENDAR_REDIS_DB_KEY, JSON.stringify(nextDb));
-      this.cachedDb = clone(nextDb);
-      this.lastCacheValidationAt = Date.now();
+export class CalendarRepositoryRedis extends RedisDbStore<ICalendarDb> implements ICalendarRepository {
+  constructor() {
+    super(CALENDAR_REDIS_DB_KEY, (raw) => {
+      if (!raw) {
+        throw new Error(
+          `${CALENDAR_REDIS_DB_KEY} not found in Redis. Run \`pnpm run db:seed -- --target=redis\` first.`,
+        );
+      }
+      return raw;
     });
-    await this.writeQueue;
   }
 
   async listCategories(): Promise<ICategory[]> {
@@ -91,11 +59,7 @@ export class CalendarRepositoryRedis implements ICalendarRepository {
   }
 
   async insertEventIntoAcademicYear(event: IEvent, academicYearStart?: number): Promise<IEvent> {
-    let result!: IEvent;
-
-    this.writeQueue = this.writeQueue.then(async () => {
-      const db = this.requireDb((await this.redis.get(CALENDAR_REDIS_DB_KEY)) as ICalendarDb | null);
-
+    return this.persistDbWithResult((db) => {
       const assignedId =
         event.id > 0
           ? event.id
@@ -129,19 +93,12 @@ export class CalendarRepositoryRedis implements ICalendarRepository {
         };
       }
 
-      await this.redis.set(CALENDAR_REDIS_DB_KEY, JSON.stringify(nextDb));
-      this.cachedDb = clone(nextDb);
-      this.lastCacheValidationAt = Date.now();
-      result = clone(finalEvent);
+      return { db: nextDb, result: clone(finalEvent) };
     });
-
-    await this.writeQueue;
-    return result;
   }
 
   async replaceEvent(eventId: number, event: IEvent): Promise<IEvent | null> {
-    let result: IEvent | null = null;
-    await this.persistDb((db) => {
+    return this.persistDbWithResult((db) => {
       for (let i = 0; i < db.academicYears.length; i++) {
         const ay = db.academicYears[i];
         const idx = ay.events.findIndex((item) => item.id === eventId);
@@ -150,26 +107,23 @@ export class CalendarRepositoryRedis implements ICalendarRepository {
           const nextEvents = [...ay.events];
           nextEvents[idx] = event;
           nextAcademicYears[i] = { ...ay, events: nextEvents };
-          result = clone(event);
-          return { ...db, academicYears: nextAcademicYears };
+          return { db: { ...db, academicYears: nextAcademicYears }, result: clone(event) };
         }
       }
-      return db;
+      return { db, result: null };
     });
-    return result;
   }
 
   async deleteEvent(eventId: number): Promise<boolean> {
-    let found = false;
-    await this.persistDb((db) => {
+    return this.persistDbWithResult((db) => {
+      let found = false;
       const nextAcademicYears = db.academicYears.map((ay) => {
         const filtered = ay.events.filter((e) => e.id !== eventId);
         if (filtered.length !== ay.events.length) found = true;
         return { ...ay, events: filtered };
       });
-      return found ? { ...db, academicYears: nextAcademicYears } : db;
+      return found ? { db: { ...db, academicYears: nextAcademicYears }, result: true } : { db, result: false };
     });
-    return found;
   }
 
   async listAllVacations(): Promise<Record<number, IVacationPeriod[]>> {
@@ -208,20 +162,17 @@ export class CalendarRepositoryRedis implements ICalendarRepository {
   }
 
   async deleteVacation(academicYearStart: number, vacationId: string): Promise<boolean> {
-    let found = false;
-    await this.persistDb((db) => {
+    return this.persistDbWithResult((db) => {
       const ayIndex = db.academicYears.findIndex((a) => a.startYear === academicYearStart);
-      if (ayIndex < 0) return db;
+      if (ayIndex < 0) return { db, result: false };
 
       const ay = db.academicYears[ayIndex];
       const filtered = (ay.vacations ?? []).filter((v) => v.id !== vacationId);
-      if (filtered.length === (ay.vacations ?? []).length) return db;
+      if (filtered.length === (ay.vacations ?? []).length) return { db, result: false };
 
-      found = true;
       const nextAcademicYears = [...db.academicYears];
       nextAcademicYears[ayIndex] = { ...ay, vacations: filtered };
-      return { ...db, academicYears: nextAcademicYears };
+      return { db: { ...db, academicYears: nextAcademicYears }, result: true };
     });
-    return found;
   }
 }

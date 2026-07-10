@@ -1,44 +1,13 @@
-import { Redis } from "@upstash/redis";
 import { NOTIFICATION_REDIS_DB_KEY } from "@/server/shared/config";
 import type { INotificationRepository } from "@/server/notifications/data/notification.repository";
 import type { NotificationDb, NotificationRecord } from "@/server/notifications/types";
+import { RedisDbStore, clone } from "@/server/shared/data/redis-store";
 
-const clone = <T>(value: T): T => structuredClone(value);
-const CACHE_REVALIDATE_MS = 500;
 const EMPTY_DB: NotificationDb = { notifications: [], reads: [] };
 
-export class NotificationRepositoryRedis implements INotificationRepository {
-  private writeQueue: Promise<void> = Promise.resolve();
-  private cachedDb: NotificationDb | null = null;
-  private lastCacheValidationAt = 0;
-  private redis = Redis.fromEnv();
-
-  private async readDb(): Promise<NotificationDb> {
-    await this.writeQueue;
-
-    const now = Date.now();
-    if (this.cachedDb && now - this.lastCacheValidationAt < CACHE_REVALIDATE_MS) {
-      return this.cachedDb;
-    }
-
-    const raw = (await this.redis.get(NOTIFICATION_REDIS_DB_KEY)) as NotificationDb | null;
-    const db = raw ?? clone(EMPTY_DB);
-    this.cachedDb = db;
-    this.lastCacheValidationAt = now;
-
-    return db;
-  }
-
-  private async persistDb(mutate: (db: NotificationDb) => NotificationDb): Promise<void> {
-    this.writeQueue = this.writeQueue.then(async () => {
-      const raw = (await this.redis.get(NOTIFICATION_REDIS_DB_KEY)) as NotificationDb | null;
-      const db = raw ?? clone(EMPTY_DB);
-      const nextDb = mutate(db);
-      await this.redis.set(NOTIFICATION_REDIS_DB_KEY, JSON.stringify(nextDb));
-      this.cachedDb = clone(nextDb);
-      this.lastCacheValidationAt = Date.now();
-    });
-    await this.writeQueue;
+export class NotificationRepositoryRedis extends RedisDbStore<NotificationDb> implements INotificationRepository {
+  constructor() {
+    super(NOTIFICATION_REDIS_DB_KEY, (raw) => raw ?? clone(EMPTY_DB));
   }
 
   async listAll(): Promise<NotificationRecord[]> {
