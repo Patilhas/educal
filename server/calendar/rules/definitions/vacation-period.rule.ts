@@ -1,15 +1,19 @@
 import { parseISO, isWithinInterval, areIntervalsOverlapping } from "date-fns";
 import type { IRuleDefinition, IRuleValidationContext, IRuleViolation } from "../types";
 import type { IEvent, IOccurrence, IVacationPeriod } from "@/shared/calendar/types";
+import { runDayRangeCheck } from "../utils/day-range-check";
 
 type VacationPeriodConfig = { checkStart: boolean; checkEnd: boolean; checkRange: boolean };
+const MESSAGE_KEYS = {
+  start: "startInVacation",
+  end: "endInVacation",
+  range: "rangeOverlapsVacation",
+} as const;
 
-// Normalize a datetime ISO string to its UTC calendar date (midnight UTC),
-// so occurrence times don't affect date-level comparisons with vacation ranges.
-const toUtcDay = (isoString: string): Date => {
-  const d = parseISO(isoString);
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-};
+// Normalize a datetime to its UTC calendar date (midnight UTC), so occurrence
+// times don't affect date-level comparisons with vacation ranges.
+const toUtcDay = (d: Date): Date =>
+  new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
 
 function vacationContaining(day: Date, vacations: IVacationPeriod[]): IVacationPeriod | undefined {
   return vacations.find((v) =>
@@ -60,25 +64,20 @@ export const vacationPeriodRule: IRuleDefinition = {
     config: Record<string, unknown>,
     context: IRuleValidationContext,
   ): IRuleViolation[] {
-    const { checkStart, checkEnd, checkRange } = config as VacationPeriodConfig;
     const { vacations } = context;
-    const violations: IRuleViolation[] = [];
+    if (!vacations || vacations.length === 0) return [];
 
-    if (!vacations || vacations.length === 0) return violations;
-
-    if (checkStart) {
-      const v = vacationContaining(toUtcDay(occurrence.startDate), vacations);
-      if (v) violations.push({ fieldLabelKey: "start", date: occurrence.startDate, messageKey: "startInVacation", messageParams: { vacationLabel: v.label } });
-    }
-    if (checkEnd) {
-      const v = vacationContaining(toUtcDay(occurrence.endDate), vacations);
-      if (v) violations.push({ fieldLabelKey: "end", date: occurrence.endDate, messageKey: "endInVacation", messageParams: { vacationLabel: v.label } });
-    }
-    if (checkRange) {
-      const v = vacationOverlapping(toUtcDay(occurrence.startDate), toUtcDay(occurrence.endDate), vacations);
-      if (v) violations.push({ fieldLabelKey: "range", date: occurrence.startDate, messageKey: "rangeOverlapsVacation", messageParams: { vacationLabel: v.label } });
-    }
-
-    return violations;
+    return runDayRangeCheck({
+      occurrence,
+      config: config as VacationPeriodConfig,
+      matchDay: (day) => vacationContaining(toUtcDay(day), vacations),
+      matchRange: (start, end) => vacationOverlapping(toUtcDay(start), toUtcDay(end), vacations),
+      toViolation: (field, date, match) => ({
+        fieldLabelKey: field,
+        date,
+        messageKey: MESSAGE_KEYS[field],
+        messageParams: { vacationLabel: match.label },
+      }),
+    });
   },
 };

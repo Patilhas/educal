@@ -1,0 +1,192 @@
+%
+% Appendix B - Selected Code Listings
+%
+\chapter{Selected Code Listings} \label{app:code-listings}
+
+This appendix gives the full, unabridged source of a few backend and frontend units that Chapters~\ref{cap:backend} and~\ref{cap:frontend} show only in an abbreviated form, to keep those chapters within the report's page budget.
+
+\section{The Weekend Rule Definition} \label{app:weekend-rule}
+
+Referenced from Section~\ref{sec:rule-engine}.
+
+\begin{lstlisting}[caption={[The Weekend rule definition, in full.]{The Weekend rule definition, in full (\texttt{server/calendar/rules/definitions/weekend.rule.ts}).}}, label={lst:weekend-rule-full}]
+export const weekendRule: IRuleDefinition = {
+  id: "weekend",
+  fields: [
+    { id: "checkStart", type: "checkbox", defaultValue: true },
+    { id: "checkEnd",   type: "checkbox", defaultValue: true },
+    { id: "checkRange", type: "checkbox", defaultValue: false },
+  ],
+  translations: {
+    pt: {
+      label: "Fim de semana",
+      fields: { checkStart: "Verificar início", checkEnd: "Verificar fim", checkRange: "Verificar período" },
+      fieldLabels: { start: "Início", end: "Fim", range: "Período" },
+      messages: {
+        startIsWeekend: "O início coincide com um fim de semana",
+        endIsWeekend: "O fim coincide com um fim de semana",
+        rangeHasWeekend: "O período inclui um dia de fim de semana",
+      },
+    },
+  },
+  validate(_event, occurrence, config) {
+    return runDayRangeCheck<true>({
+      occurrence,
+      config: config as WeekendConfig,
+      matchDay: (day) => (isWeekend(day) ? true : undefined),
+      toViolation: (field, date) => ({ fieldLabelKey: field, date, messageKey: MESSAGE_KEYS[field] }),
+    });
+  },
+};
+\end{lstlisting}
+
+\clearpage
+\section{The Global Rule-Validation Dispatcher} \label{app:collect-issues}
+
+Referenced from Section~\ref{sec:rule-engine}.
+
+\begin{lstlisting}[caption={[The global rule-validation dispatcher, in full.]{The global rule-validation dispatcher, in full (\texttt{server/calendar/services/calendar.service.ts}).}}, label={lst:collect-issues-full}]
+private collectEventRuleIssues(
+  event: IEvent,
+  academicYearStart: number,
+  allEvents: IEvent[],
+  vacations: IVacationPeriod[] = [],
+): ICalendarRuleIssue[] {
+  const context = { allEvents, academicYearStart, vacations };
+  const issues: ICalendarRuleIssue[] = [];
+
+  const sortedOccurrences = [...event.occurrences].sort(
+    (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
+  );
+
+  const pushIssues = (occurrence: (typeof sortedOccurrences)[number], ruleType: string, violations: IRuleViolation[]) => {
+    for (const v of violations) {
+      issues.push({
+        eventId: event.id,
+        eventName: event.name,
+        occurrenceId: occurrence.id,
+        occurrenceDescription: occurrence.description,
+        academicYearStart,
+        date: v.date,
+        ruleType,
+        fieldLabelKey: v.fieldLabelKey,
+        messageKey: v.messageKey,
+        messageParams: v.messageParams,
+      });
+    }
+  };
+
+  for (const occurrence of sortedOccurrences) {
+    for (const builtInRule of [minDurationRule, minDaysToNextRule]) {
+      pushIssues(occurrence, builtInRule.id, builtInRule.validate(event, occurrence, {}, context));
+    }
+
+    for (const rule of (event.rules ?? [])) {
+      pushIssues(occurrence, rule.type, validateEventRule(rule, event, occurrence, context));
+    }
+  }
+
+  return issues;
+}
+\end{lstlisting}
+
+\clearpage
+\section{Password Hashing and Verification} \label{app:crypto}
+
+Referenced from Section~\ref{sec:backend-authentication}.
+
+\begin{lstlisting}[caption={[Password hashing and verification, in full.]{Password hashing and verification, in full (\texttt{server/auth/crypto.ts}).}}, label={lst:crypto-full}]
+export const hashPassword = (password: string): string => {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const hash = crypto.scryptSync(password, salt, 64).toString("hex");
+  return `scrypt$${salt}$${hash}`;
+};
+
+export const verifyPassword = (password: string, encodedHash: string): boolean => {
+  const [algorithm, salt, storedHash] = encodedHash.split("$");
+  if (algorithm !== "scrypt" || !salt || !storedHash) {
+    return false;
+  }
+
+  const computedHash = crypto.scryptSync(password, salt, 64).toString("hex");
+  if (computedHash.length !== storedHash.length) return false;
+  return crypto.timingSafeEqual(
+    Buffer.from(storedHash, "hex"),
+    Buffer.from(computedHash, "hex"),
+  );
+};
+\end{lstlisting}
+
+\clearpage
+\section{The withRolePolicy Authorization Wrapper} \label{app:with-role-policy}
+
+Referenced from Section~\ref{sec:backend-rbac}.
+
+\begin{lstlisting}[caption={[The withRolePolicy authorization wrapper, in full.]{The \texttt{withRolePolicy} authorization wrapper, in full (\texttt{server/shared/authorize.ts}).}}, label={lst:with-role-policy-full}]
+export function withRolePolicy<
+  TInstance extends object,
+  TPolicy extends Partial<Record<keyof TInstance, TRolePolicy>>,
+>(
+  instance: TInstance,
+  policy: TPolicy,
+  getRole: (args: unknown[]) => TUserRole,
+): { [K in keyof TPolicy]: TInstance[K & keyof TInstance] } {
+  const wrapped: Record<string, unknown> = {};
+
+  for (const key of Object.keys(policy)) {
+    const minimum = policy[key as keyof TPolicy] as TRolePolicy;
+    const original = instance[key as keyof TInstance] as unknown as
+      (...args: unknown[]) => unknown;
+
+    wrapped[key] = (...args: unknown[]) => {
+      if (minimum !== "any") {
+        assertRole(getRole(args), minimum);
+      }
+      return original.apply(instance, args);
+    };
+  }
+
+  return wrapped as { [K in keyof TPolicy]: TInstance[K & keyof TInstance] };
+}
+\end{lstlisting}
+
+\clearpage
+\section{The DraggableEvent Component} \label{app:draggable-event}
+
+Referenced from Section~\ref{sec:frontend-calendar-ui}.
+
+\begin{lstlisting}[caption={[The DraggableEvent wrapper component, in full.]{The \texttt{DraggableEvent} wrapper component, in full (\texttt{features/calendar/dnd/draggable-event.tsx}).}}, label={lst:draggable-event-full}]
+export function DraggableEvent({
+  event,
+  occurrence,
+  children,
+  className,
+}: DraggableEventProps) {
+  const { canEditEvents } = useCalendar();
+  const { startDrag, endDrag, isDragging, draggedOccurrence } = useDragDrop();
+
+  if (!canEditEvents) {
+    return <>{children}</>;
+  }
+
+  const isCurrentlyDragged =
+    isDragging && draggedOccurrence?.occurrence.id === occurrence.id;
+
+  return (
+    <motion.div
+      className={`${className || ""} ${
+        isCurrentlyDragged ? "opacity-50 cursor-grabbing" : "cursor-grab"
+      }`}
+      draggable
+      onClick={(e) => e.stopPropagation()}
+      onDragStart={(e) => {
+        (e as DragEvent).dataTransfer!.setData("text/plain", occurrence.id);
+        startDrag(event, occurrence);
+      }}
+      onDragEnd={() => endDrag()}
+    >
+      {children}
+    </motion.div>
+  );
+}
+\end{lstlisting}

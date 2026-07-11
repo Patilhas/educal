@@ -22,9 +22,10 @@
 \usepackage{placeins} % \FloatBarrier: keeps figures from drifting past the
                        % point they're declared, without forcing blank gaps
                        % the way a strict [H] placement would
+\usepackage{pdflscape} % rotated, landscape pages for wide appendix figures
 \usepackage{url}
 \usepackage{tikz}
-\usetikzlibrary{shapes.geometric,calc}
+\usetikzlibrary{shapes.geometric,calc,arrows.meta}
 \usepackage[Algoritmo]{algorithm}
 \usepackage{algorithmicx}
 \usepackage{algpseudocode}
@@ -165,14 +166,14 @@ Julho de 2026\\
 % Página de resumo em Inglês
 \cleardoublepage
 \chapter*{Abstract}
-ISEL's academic services currently plan recurring institutional activities, such as application periods, enrolments, exams, and their associated deadlines, using spreadsheets. This process requires the entire calendar to be manually rebuilt every academic year, with every date individually checked against weekends, holidays, and vacation periods, making it slow and prone to error. EduCal is a web application that replaces this manual process with a structured, rule-aware academic planning tool. Events are modeled hierarchically, with each high-level academic objective linked to one or more dated occurrences carrying institutional metadata such as category, status, and responsible department. Its central feature, the Migration Engine, transfers the calendar from one academic year to the next, idempotently cloning events and shifting their dates forward by one year, while a modular Business Rule Engine checks the result against configurable institutional constraints, namely weekends, national holidays, vacation periods, and minimum gaps between events, surfacing violations for manual review rather than silently correcting them. The system is built with Next.js and PostgreSQL, and secures access through a role-based authentication system (Viewer, Editor, Administrator). At the conclusion of the project, event management, the migration engine, the rule engine, and role-based access control are fully implemented and in use; notification templates and PDF schedule export, both part of the original scope, were not delivered.
+ISEL's academic services currently plan recurring institutional activities, such as application periods, enrolments, exams, and their associated deadlines, using spreadsheets. This process requires the entire calendar to be manually rebuilt every academic year, with every date individually checked against weekends, holidays, and vacation periods, making it slow and prone to error. EduCal is a web application that replaces this manual process with a structured, rule-aware academic planning tool. Events are modeled hierarchically, with each high-level academic objective linked to one or more dated occurrences carrying institutional metadata such as category, status, and responsible department. Its central feature, the Migration Engine, transfers the calendar from one academic year to the next, idempotently cloning events and shifting their dates forward by one year, while a modular Business Rule Engine checks the result against configurable institutional constraints, namely weekends, national holidays, vacation periods, and minimum gaps between events, surfacing violations for manual review rather than silently correcting them. The system is built with Next.js and PostgreSQL, and secures access through a role-based authentication system (Viewer, Editor, Administrator). At the conclusion of the project, event management, the migration engine, the rule engine, and role-based access control are fully implemented and in use. An in-app notification system, reminding users of upcoming occurrences within a configurable lead time, was also delivered, though its originally-scoped companion feature, a manually-sent email template field, and Excel schedule export, were not.
 
 \textbf{Keywords:} academic planning; calendar management; business rule engine; Next.js; PostgreSQL.
 
 % Página de resumo em Português
 \cleardoublepage
 \chapter*{Resumo}
-Os serviços académicos do ISEL planeiam atualmente atividades institucionais recorrentes, como candidaturas, matrículas, exames e os respetivos prazos, recorrendo a folhas de cálculo. Este processo obriga a reconstruir manualmente todo o calendário em cada ano letivo, com cada data a ser verificada individualmente contra fins de semana, feriados e períodos de férias, tornando o processo lento e sujeito a erros. O EduCal é uma aplicação web que substitui este processo manual por uma ferramenta de planeamento académico estruturada e sensível a regras institucionais. Os eventos são modelados de forma hierárquica, em que cada objetivo académico de alto nível está associado a uma ou mais ocorrências datadas, com metadados institucionais como categoria, estado e responsável. A sua funcionalidade central, o Motor de Migração, transfere o calendário de um ano letivo para o seguinte, clonando eventos de forma idempotente e avançando as suas datas em um ano, enquanto um Motor de Regras de Negócio modular valida o resultado face a restrições institucionais configuráveis, nomeadamente fins de semana, feriados nacionais, períodos de férias e intervalos mínimos entre eventos, assinalando violações para revisão manual em vez de as corrigir silenciosamente. O sistema foi desenvolvido com Next.js e PostgreSQL, e protege o acesso através de um sistema de autenticação baseado em papéis (Visualizador, Editor, Administrador). À conclusão do projeto, a gestão de eventos, o motor de migração, o motor de regras e o controlo de acesso baseado em papéis encontram-se totalmente implementados e em uso; os templates de notificações e a exportação de calendários em PDF, ambos previstos no âmbito inicial, não foram entregues.
+Os serviços académicos do ISEL planeiam atualmente atividades institucionais recorrentes, como candidaturas, matrículas, exames e os respetivos prazos, recorrendo a folhas de cálculo. Este processo obriga a reconstruir manualmente todo o calendário em cada ano letivo, com cada data a ser verificada individualmente contra fins de semana, feriados e períodos de férias, tornando o processo lento e sujeito a erros. O EduCal é uma aplicação web que substitui este processo manual por uma ferramenta de planeamento académico estruturada e sensível a regras institucionais. Os eventos são modelados de forma hierárquica, em que cada objetivo académico de alto nível está associado a uma ou mais ocorrências datadas, com metadados institucionais como categoria, estado e responsável. A sua funcionalidade central, o Motor de Migração, transfere o calendário de um ano letivo para o seguinte, clonando eventos de forma idempotente e avançando as suas datas em um ano, enquanto um Motor de Regras de Negócio modular valida o resultado face a restrições institucionais configuráveis, nomeadamente fins de semana, feriados nacionais, períodos de férias e intervalos mínimos entre eventos, assinalando violações para revisão manual em vez de as corrigir silenciosamente. O sistema foi desenvolvido com Next.js e PostgreSQL, e protege o acesso através de um sistema de autenticação baseado em papéis (Visualizador, Editor, Administrador). À conclusão do projeto, a gestão de eventos, o motor de migração, o motor de regras e o controlo de acesso baseado em papéis encontram-se totalmente implementados e em uso. Foi também entregue um sistema de notificações na própria aplicação, que alerta os utilizadores para ocorrências próximas dentro de um prazo de aviso configurável; já a funcionalidade complementar prevista no âmbito inicial, um campo de modelo de texto para envio manual por email, e a exportação de calendários em Excel, não foram entregues.
 
 \textbf{Palavras-chave:} planeamento académico; gestão de calendário; motor de regras de negócio; Next.js; PostgreSQL.
 
@@ -221,6 +222,9 @@ Os serviços académicos do ISEL planeiam atualmente atividades institucionais r
 \include{deployment}
 
 % Capitulo 7
+\include{futurework}
+
+% Capitulo 8
 \include{conclusion}
 
 % Referências
@@ -228,8 +232,10 @@ Os serviços académicos do ISEL planeiam atualmente atividades institucionais r
 \bibliography{referencias}
 \addcontentsline{toc}{chapter}{References}
 
-% Apêndices (opcional)
-%\appendix
-%\include{apendiceex}
+% Apêndices
+\appendix
+\include{appendix-er-diagram}
+\include{appendix-code-listings}
+\include{appendix-screenshots}
 
 \end{document}
