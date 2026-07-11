@@ -9,15 +9,22 @@
 \addto{\captionsenglish}{\renewcommand{\appendixname}{Appendix}}
 
 \usepackage{graphicx}
-% \texttt break
+% \texttt break: seqsplit lets a single long, space-free identifier/path
+% wrap at any character. Applied directly to multi-word text it silently
+% swallows real spaces instead, so split on spaces first, seqsplit each
+% word individually, and rejoin with a genuine breakable space.
 \usepackage{seqsplit}
+\ExplSyntaxOn
 \let\originaltexttt\texttt
 \renewcommand{\texttt}[1]{%
   \begingroup
     \spaceskip=\fontdimen2\font plus \fontdimen3\font minus \fontdimen4\font
-    \originaltexttt{\seqsplit{#1}}%
+    \seq_set_split:NVn \l_tmpa_seq \c_space_tl { #1 }
+    \seq_set_map:NNn \l_tmpa_seq \l_tmpa_seq { \exp_not:n { \seqsplit{##1} } }
+    \originaltexttt{ \seq_use:Nn \l_tmpa_seq { \c_space_tl } }
   \endgroup
 }
+\ExplSyntaxOff
 \usepackage{placeins} % \FloatBarrier: keeps figures from drifting past the
                        % point they're declared, without forcing blank gaps
                        % the way a strict [H] placement would

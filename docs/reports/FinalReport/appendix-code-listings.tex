@@ -12,24 +12,12 @@ Referenced from Section~\ref{sec:rule-engine}.
 \begin{lstlisting}[caption={[The Weekend rule definition, in full.]{The Weekend rule definition, in full (\texttt{server/calendar/rules/definitions/weekend.rule.ts}).}}, label={lst:weekend-rule-full}]
 export const weekendRule: IRuleDefinition = {
   id: "weekend",
-  fields: [
-    { id: "checkStart", type: "checkbox", defaultValue: true },
-    { id: "checkEnd",   type: "checkbox", defaultValue: true },
-    { id: "checkRange", type: "checkbox", defaultValue: false },
-  ],
+  fields: [{ id: "checkStart", type: "checkbox", defaultValue: true }, { id: "checkEnd",   type: "checkbox", defaultValue: true }, { id: "checkRange", type: "checkbox", defaultValue: false }],
   translations: {
     pt: {
       label: "Fim de semana",
-      fields: {
-        checkStart: "Verificar início",
-        checkEnd: "Verificar fim",
-        checkRange: "Verificar período",
-      },
-      fieldLabels: {
-        start: "Início",
-        end: "Fim",
-        range: "Período",
-      },
+      fields: { checkStart: "Verificar início", checkEnd: "Verificar fim", checkRange: "Verificar período" },
+      fieldLabels: { start: "Início", end: "Fim", range: "Período" },
       messages: {
         startIsWeekend: "O início coincide com um fim de semana",
         endIsWeekend: "O fim coincide com um fim de semana",
