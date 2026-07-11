@@ -20,8 +20,16 @@ export const weekendRule: IRuleDefinition = {
   translations: {
     pt: {
       label: "Fim de semana",
-      fields: { checkStart: "Verificar início", checkEnd: "Verificar fim", checkRange: "Verificar período" },
-      fieldLabels: { start: "Início", end: "Fim", range: "Período" },
+      fields: {
+        checkStart: "Verificar início",
+        checkEnd: "Verificar fim",
+        checkRange: "Verificar período",
+      },
+      fieldLabels: {
+        start: "Início",
+        end: "Fim",
+        range: "Período",
+      },
       messages: {
         startIsWeekend: "O início coincide com um fim de semana",
         endIsWeekend: "O fim coincide com um fim de semana",
@@ -29,7 +37,7 @@ export const weekendRule: IRuleDefinition = {
       },
     },
   },
-  validate(_event, occurrence, config) {
+  validate(_event: IEvent, occurrence: IOccurrence, config: Record<string, unknown>): IRuleViolation[] {
     return runDayRangeCheck<true>({
       occurrence,
       config: config as WeekendConfig,
