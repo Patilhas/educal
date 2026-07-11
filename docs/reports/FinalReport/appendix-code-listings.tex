@@ -169,21 +169,27 @@ export function DraggableEvent({
     return <>{children}</>;
   }
 
-  const isCurrentlyDragged =
-    isDragging && draggedOccurrence?.occurrence.id === occurrence.id;
+  const isCurrentlyDragged = isDragging && draggedOccurrence?.occurrence.id === occurrence.id;
+
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+  };
 
   return (
     <motion.div
-      className={`${className || ""} ${
-        isCurrentlyDragged ? "opacity-50 cursor-grabbing" : "cursor-grab"
-      }`}
+      className={`${className || ""} ${isCurrentlyDragged ? "opacity-50 cursor-grabbing" : "cursor-grab"}`}
       draggable
-      onClick={(e) => e.stopPropagation()}
+      onClick={(e: React.MouseEvent<HTMLDivElement>) => handleClick(e)}
       onDragStart={(e) => {
-        (e as DragEvent).dataTransfer!.setData("text/plain", occurrence.id);
+        (e as DragEvent).dataTransfer!.setData(
+          "text/plain",
+          occurrence.id,
+        );
         startDrag(event, occurrence);
       }}
-      onDragEnd={() => endDrag()}
+      onDragEnd={() => {
+        endDrag();
+      }}
     >
       {children}
     </motion.div>

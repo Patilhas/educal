@@ -18,6 +18,8 @@ export default defineConfig({
         "server/calendar/rules/**/*.ts",
         "server/auth/crypto.ts",
         "shared/calendar/academic-year.ts",
+        "server/shared/authorize.ts",
+        "server/notifications/services/notification.service.ts",
       ],
       exclude: [
         "server/calendar/rules/**/*.test.ts",
