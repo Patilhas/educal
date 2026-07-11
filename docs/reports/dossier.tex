@@ -1,0 +1,82 @@
+\documentclass[a4paper,11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[portuguese]{babel}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=black,urlcolor=blue,citecolor=black]{hyperref}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+
+\definecolor{iselblue}{RGB}{0,51,102}
+
+\titleformat{\section}{\large\bfseries\color{iselblue}}{\thesection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.4em}{0.6em}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.6pt}
+\fancyhead[L]{\small Instituto Superior de Engenharia de Lisboa}
+\fancyhead[R]{\small EduCal --- Informações de Entrega}
+\fancyfoot[C]{\small\thepage}
+
+\begin{document}
+
+\begin{center}
+  \includegraphics[width=45mm]{./FinalReport/figures/logoISELnew2.png}\\[4mm]
+  {\Large\bfseries\color{iselblue} EduCal --- Academic Planning Application}\\[2mm]
+  {\large Informações de Entrega}\\[4mm]
+  \begin{tabular}{rl}
+    Autor: & Daniel Santos, nº 51701 \\
+    Curso: & Licenciatura em Engenharia Informática, Redes e Telecomunicações \\
+    Orientadores: & Filipe Freitas e Sandra Ferreira \\
+    Data: & Julho de 2026 \\
+  \end{tabular}
+\end{center}
+
+\vspace{6mm}
+\noindent Este documento acompanha o Relatório Final (\texttt{FinalReport.pdf}) e tem como objetivo situar quem o recebe: onde está o código-fonte, onde pode ser experimentada a aplicação, e como o próprio relatório está organizado.
+
+\section{Repositório de Código}
+\url{https://github.com/Patilhas/educal}
+
+\noindent O repositório contém a totalidade do código-fonte do projeto (frontend, backend e camada de dados), bem como o próprio código-fonte LaTeX deste relatório, em \texttt{docs/reports/FinalReport/}.
+
+\section{Aplicação em Produção (Vercel)}
+A aplicação encontra-se atualmente em execução numa demonstração pública, alojada na Vercel:
+
+\begin{center}
+  \url{https://educal-azure.vercel.app/}
+\end{center}
+
+\noindent \textbf{Utilizador de demonstração}:
+\begin{center}
+\begin{tabular}{rl}
+  Email: & \texttt{daniel@educal.local} \\
+  Password: & \texttt{Password123!} \\
+\end{tabular}
+\end{center}
+
+\noindent \textit{Nota:} esta demonstração utiliza a implementação de dados assente em Redis (Upstash), conforme descrito na Secção 3.4 do relatório (``Data Access Strategy''), e não a base de dados PostgreSQL prevista para a instalação institucional final (Capítulo 6, ``Deployment and Infrastructure'').
+
+\section{Estrutura do Relatório}
+O relatório está organizado nos seguintes capítulos e apêndices:
+
+\begin{description}[style=nextline, leftmargin=0pt]
+  \item[Capítulo 1 --- Introduction] Contexto do projeto, objetivos e requisitos funcionais/não funcionais.
+  \item[Capítulo 2 --- Background and Problem Definition] Descrição do processo atual (baseado em folhas de cálculo) e das suas limitações e estado da arte face a ferramentas de calendário genéricas.
+  \item[Capítulo 3 --- System Architecture and Data Model] Arquitetura em três camadas, stack tecnológica (Next.js, PostgreSQL, Drizzle ORM, React), modelo de dados e diagrama Entidade-Relação, e a estratégia de acesso a dados (PostgreSQL/Redis, intercambiável).
+  \item[Capítulo 4 --- Backend] Organização em camadas (Controller-Service-Data), autenticação e controlo de acesso baseado em papéis, tratamento de erros, o Motor de Migração, o Motor de Regras de Negócio, o sistema de notificações, e os testes automatizados.
+  \item[Capítulo 5 --- Frontend] Organização do código do frontend, comunicação com o backend, e descrição de todos os ecrãs e diálogos da aplicação.
+  \item[Capítulo 6 --- Deployment and Infrastructure] Estratégia de implementação prevista e infraestrutura atual (Vercel para demonstração, VM institucional do ISEL como destino final).
+  \item[Capítulo 7 --- Future Work] Partes do âmbito inicial ainda não entregues (exportação para Excel, modelos de texto para email) e os próximos passos concretos para a instalação institucional.
+  \item[Capítulo 8 --- Conclusion] Síntese dos requisitos entregues e balanço final do projeto.
+  \item[Referências] Bibliografia citada ao longo do relatório.
+  \item[Apêndice A --- Detailed Entity-Relationship Diagram] Versão completa do diagrama Entidade-Relação, com todas as colunas e respetivos tipos.
+  \item[Apêndice B --- Selected Code Listings] Código-fonte integral de alguns componentes centrais, mostrados de forma abreviada nos capítulos principais.
+  \item[Apêndice C --- Additional Screenshots] Capturas de ecrã adicionais das vistas do calendário e do modal de validação/migração, referidas no Capítulo 5.
+\end{description}
+
+\end{document}
