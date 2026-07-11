@@ -64,7 +64,15 @@ The \textbf{Add/Edit Event dialog} (Figure~\ref{fig:add-edit-event}) is a single
 \end{figure}
 \FloatBarrier
 
-The \textbf{Event Details dialog} is the read-only counterpart, opened when a user clicks an occurrence anywhere in the calendar. It shows the event's name, category/classification/status badges, its objective, who created it, the selected occurrence's dates, every occurrence in a scrollable grid, and a summary of the rules attached to the event, in the same terms an end user configured them in. Users with edit rights see shortcuts here to open the Edit dialog or delete the event directly.
+The \textbf{Event Details dialog} (Figure~\ref{fig:event-details}) is the read-only counterpart, opened when a user clicks an occurrence anywhere in the calendar. It shows the event's name, category/classification/status badges, its objective, who created it, the selected occurrence's dates, every occurrence in a scrollable grid, and a summary of the rules attached to the event, in the same terms an end user configured them in. Users with edit rights see shortcuts here to open the Edit dialog or delete the event directly.
+
+\begin{figure}[htbp]
+\begin{center}
+\resizebox{\textwidth}{!}{\includegraphics{./figures/app_screenshots/event_details.png}}
+\end{center}
+\caption{Event Details dialog.}\label{fig:event-details}
+\end{figure}
+\FloatBarrier
 
 Deleting an event goes through a dedicated \textbf{confirmation dialog} (a destructive-styled button that opens an alert requiring explicit confirmation) before the event and all of its occurrences are removed, since occurrence deletion cascades from the event at the database level (Section~\ref{sec:data-model}).
 
