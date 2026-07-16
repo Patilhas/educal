@@ -11,7 +11,7 @@ vi.mock("@/server/calendar/data/calendar.data", () => ({
 
 import { CalendarService } from "@/server/calendar/services/calendar.service";
 
-const baseUser = { id: "u1", name: "Ana", email: "ana@example.com", role: "editor" } as IEvent["user"];
+const baseUser: IEvent["user"] = { id: "u1", name: "Ana", picturePath: null, role: "editor" };
 
 describe("CalendarService.exportAcademicYear", () => {
   it("returns the academic year range and rows scoped to that year only", async () => {

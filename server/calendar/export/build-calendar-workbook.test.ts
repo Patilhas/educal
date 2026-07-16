@@ -8,7 +8,13 @@ const academicYear = getAcademicYearRange(2025);
 
 const readBack = async (buffer: Buffer) => {
   const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(buffer);
+  // exceljs's shipped types declare `load(buffer: Buffer, ...)` against a Buffer
+  // shape that doesn't structurally match this project's @types/node Buffer<T>
+  // (a known exceljs/@types/node type mismatch, not a real runtime issue — the
+  // same ambient Buffer name resolves identically everywhere in this project, so
+  // an `as unknown as Buffer` cast can't paper over it; `any` is the pragmatic exit).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await workbook.xlsx.load(buffer as any);
   return workbook;
 };
 

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { buildExportRows } from "./build-export-rows";
 import type { IEvent } from "@/shared/calendar/types";
 
-const baseUser = { id: "u1", name: "Ana", email: "ana@example.com", role: "editor" } as IEvent["user"];
+const baseUser: IEvent["user"] = { id: "u1", name: "Ana", picturePath: null, role: "editor" };
 
 const makeEvent = (overrides: Partial<IEvent> = {}): IEvent => ({
   id: 1,
