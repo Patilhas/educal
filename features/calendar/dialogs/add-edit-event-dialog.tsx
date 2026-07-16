@@ -349,6 +349,7 @@ export default function AddEditEventDialog({ children, startDate, startTime, eve
                           type="number"
                           placeholder={t("calendar.dialogs.addEditEvent.fields.notifyDaysBeforePlaceholder")}
                           {...field}
+                          value={field.value ?? ""}
                           className={fieldState.invalid ? "border-red-500" : ""}
                         />
                       </FormControl>
@@ -549,6 +550,7 @@ export default function AddEditEventDialog({ children, startDate, startTime, eve
                                 type="number"
                                 placeholder={t("calendar.dialogs.addEditEvent.occurrences.minDaysPlaceholder")}
                                 {...field}
+                                value={field.value ?? ""}
                                 className={fieldState.invalid ? "border-red-500" : ""}
                               />
                             </FormControl>
@@ -567,6 +569,7 @@ export default function AddEditEventDialog({ children, startDate, startTime, eve
                                 type="number"
                                 placeholder={t("calendar.dialogs.addEditEvent.occurrences.minDaysToNextPlaceholder")}
                                 {...field}
+                                value={field.value ?? ""}
                                 className={fieldState.invalid ? "border-red-500" : ""}
                               />
                             </FormControl>
@@ -585,6 +588,7 @@ export default function AddEditEventDialog({ children, startDate, startTime, eve
                                 type="number"
                                 placeholder={t("calendar.dialogs.addEditEvent.occurrences.notifyDaysBeforeOverridePlaceholder")}
                                 {...field}
+                                value={field.value ?? ""}
                                 className={fieldState.invalid ? "border-red-500" : ""}
                               />
                             </FormControl>
