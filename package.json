@@ -27,6 +27,7 @@
     "date-fns": "^4.1.0",
     "date-holidays": "^3.30.2",
     "drizzle-orm": "^0.45.2",
+    "exceljs": "^4.4.0",
     "framer-motion": "^12.38.0",
     "lucide-react": "^0.577.0",
     "motion": "^12.38.0",
