@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRightLeft, BadgeAlert, CalendarOff, CheckCircle2 } from "lucide-react";
+import { ArrowRightLeft, BadgeAlert, CalendarOff, CheckCircle2, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -164,6 +164,13 @@ export function AcademicYearTools() {
         >
           <CalendarOff className="h-4 w-4" />
           {t("calendar.academicYearTools.vacations.button")}
+        </Button>
+
+        <Button type="button" variant="outline" size="sm" asChild>
+          <a href={`/api/events/academic-year/export?academicYearStart=${academicYearStart}`}>
+            <FileSpreadsheet className="h-4 w-4" />
+            {t("calendar.academicYearTools.export.button")}
+          </a>
         </Button>
       </div>
 

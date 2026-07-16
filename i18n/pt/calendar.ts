@@ -196,6 +196,9 @@ export const calendar = {
       deleteSuccess: "Período eliminado com sucesso.",
       deleteError: "Não foi possível eliminar o período.",
     },
+    export: {
+      button: "Exportar Excel",
+    },
   },
   messages: {
     noUser: "Não existe utilizador disponível para criar o evento",
