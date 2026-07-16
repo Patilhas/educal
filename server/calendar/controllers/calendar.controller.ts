@@ -1,4 +1,5 @@
 import { calendarService } from "@/server/calendar/services/calendar.service";
+import { buildCalendarWorkbook } from "@/server/calendar/export/build-calendar-workbook";
 import { fail, ok, readJson } from "@/server/shared/api-response";
 import { DomainError } from "@/server/shared/domain-error";
 import type { IRequestWithAuth } from "@/server/auth/session";
@@ -33,6 +34,29 @@ export const calendarController = {
   async listEvents() {
     try {
       return ok(await calendarService.listEvents());
+    } catch (error) {
+      return fail(error);
+    }
+  },
+
+  async exportAcademicYear(request: IRequestWithAuth) {
+    try {
+      const academicYearStart = parseAcademicYearStart(
+        new URL(request.url).searchParams.get("academicYearStart") ??
+          new Date().getFullYear().toString(),
+      );
+
+      const { academicYear, rows } = await calendarService.exportAcademicYear(academicYearStart);
+      const buffer = await buildCalendarWorkbook(rows, academicYear);
+      const filename = `calendario-${academicYear.label.replace("/", "-")}.xlsx`;
+
+      return new Response(new Uint8Array(buffer), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "Content-Disposition": `attachment; filename="${filename}"`,
+        },
+      });
     } catch (error) {
       return fail(error);
     }
