@@ -1,9 +1,11 @@
 import { z } from "zod";
 import { getAcademicYearRange, getEventAcademicYearStart, shiftDateByYears } from "@/shared/calendar/academic-year";
+import { buildExportRows, type IExportRow } from "@/server/calendar/export/build-export-rows";
 import { validateEventRule, getRulesMetadata, minDurationRule, minDaysToNextRule } from "@/server/calendar/rules";
 import type { IRuleViolation } from "@/server/calendar/rules/types";
 import type {
   IAcademicYearMigrationResult,
+  IAcademicYearRange,
   IAcademicYearValidationResult,
   ICalendarRuleIssue,
   IEvent,
@@ -46,6 +48,16 @@ export class CalendarService {
       statuses: statuses.map((s) => s.name),
       responsibles: responsibles.map((r) => r.value),
       rules: getRulesMetadata(),
+    };
+  }
+
+  async exportAcademicYear(
+    academicYearStart: number,
+  ): Promise<{ academicYear: IAcademicYearRange; rows: IExportRow[] }> {
+    const events = await calendarData.listEvents();
+    return {
+      academicYear: getAcademicYearRange(academicYearStart),
+      rows: buildExportRows(events, academicYearStart),
     };
   }
 
@@ -423,6 +435,7 @@ export const calendarService = withRolePolicy(
   calendarServiceInstance,
   {
     listEvents: "any",
+    exportAcademicYear: "any",
     listEnums: "any",
     createEvent: "editor",
     updateEvent: "editor",
