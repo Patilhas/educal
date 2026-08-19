@@ -12,6 +12,11 @@ import { CALENDAR_REDIS_DB_KEY } from "@/server/shared/config";
 import type { ICalendarRepository } from "@/server/calendar/data/calendar.repository";
 import { RedisDbStore, clone } from "@/server/shared/data/redis-store";
 
+const withAcademicYearStart = (event: IEvent, bucketStartYear: number): IEvent => ({
+  ...event,
+  academicYearStart: event.academicYearStart ?? bucketStartYear,
+});
+
 export class CalendarRepositoryRedis extends RedisDbStore<ICalendarDb> implements ICalendarRepository {
   constructor() {
     super(CALENDAR_REDIS_DB_KEY, (raw) => {
@@ -47,9 +52,7 @@ export class CalendarRepositoryRedis extends RedisDbStore<ICalendarDb> implement
   async listEvents(): Promise<IEvent[]> {
     const db = await this.readDb();
     return clone(
-      db.academicYears.flatMap((ay) =>
-        ay.events.map((event) => ({ ...event, academicYearStart: event.academicYearStart ?? ay.startYear })),
-      ),
+      db.academicYears.flatMap((ay) => ay.events.map((event) => withAcademicYearStart(event, ay.startYear))),
     );
   }
 
@@ -57,7 +60,7 @@ export class CalendarRepositoryRedis extends RedisDbStore<ICalendarDb> implement
     const db = await this.readDb();
     for (const ay of db.academicYears) {
       const found = ay.events.find((event) => event.id === eventId);
-      if (found) return clone({ ...found, academicYearStart: found.academicYearStart ?? ay.startYear });
+      if (found) return clone(withAcademicYearStart(found, ay.startYear));
     }
     return null;
   }

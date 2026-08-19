@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -89,7 +89,7 @@ export default function AddEditEventDialog({ children, startDate, startTime, eve
   const eligibleAcademicYearOptions = useMemo(() => {
     const occurrenceDates = (watchedOccurrences ?? [])
       .flatMap((o) => [o.startDate, o.endDate])
-      .filter(Boolean) as Date[];
+      .filter((d): d is Date => d instanceof Date && !Number.isNaN(d.getTime()));
 
     if (occurrenceDates.length === 0) {
       return getAcademicYearOptions(event?.academicYearStart ?? academicYearStart, 2);
@@ -105,7 +105,13 @@ export default function AddEditEventDialog({ children, startDate, startTime, eve
     });
   }, [watchedOccurrences, event?.academicYearStart, academicYearStart]);
 
+  const hasMountedEligibilityCheck = useRef(false);
   useEffect(() => {
+    if (!hasMountedEligibilityCheck.current) {
+      hasMountedEligibilityCheck.current = true;
+      return;
+    }
+
     if (eligibleAcademicYearOptions.length === 0) return;
 
     const current = form.getValues("academicYearStart");
@@ -144,12 +150,8 @@ export default function AddEditEventDialog({ children, startDate, startTime, eve
   };
 
   useEffect(() => {
-    // Resetting whenever `defaultValues` changes reference (rather than only
-    // when the dialog opens) would wipe in-progress edits any time an
-    // ancestor re-renders with a new `event`/`startTime` object while the
-    // dialog is still open - form.reset() only makes sense at the moment we
-    // start editing a (possibly new) target.
     if (isOpen) {
+      hasMountedEligibilityCheck.current = false;
       form.reset(defaultValues);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
