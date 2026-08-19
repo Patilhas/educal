@@ -41,7 +41,7 @@ import { useTranslations } from "@/i18n/use-translations";
 export function AcademicYearTools() {
   const router = useRouter();
   const { t } = useTranslations();
-  const { academicYearStart, selectedDate, setSelectedDate, canEditEvents, allEvents } = useCalendar();
+  const { academicYearStart, setAcademicYearStart, canEditEvents, allEvents } = useCalendar();
   const [isValidating, setIsValidating] = useState(false);
   const [isMigrating, setIsMigrating] = useState(false);
   const [validationResult, setValidationResult] =
@@ -52,8 +52,8 @@ export function AcademicYearTools() {
   const [isVacationsOpen, setIsVacationsOpen] = useState(false);
 
   const yearOptions = useMemo(
-    () => getAcademicYearOptions(selectedDate.getFullYear(), 2),
-    [selectedDate],
+    () => getAcademicYearOptions(academicYearStart, 2),
+    [academicYearStart],
   );
 
   const currentYearLabel = getAcademicYearLabel(academicYearStart);
@@ -61,7 +61,7 @@ export function AcademicYearTools() {
   const handleYearChange = (value: string) => {
     const nextYear = Number(value);
     if (!Number.isInteger(nextYear) || nextYear <= 0) return;
-    setSelectedDate(new Date(nextYear, 0, 1));
+    setAcademicYearStart(nextYear);
   };
 
   const handleValidate = async () => {

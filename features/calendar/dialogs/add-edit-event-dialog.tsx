@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -34,7 +34,7 @@ import { EventConstraintList } from "@/features/calendar/components/event-constr
 import type { EventGapConstraint } from "@/features/calendar/components/event-constraint-list";
 import { useDisclosure } from "@/features/calendar/hooks";
 import type { IEvent } from "@/shared/calendar/types";
-import { getEventAcademicYearStart } from "@/shared/calendar/academic-year";
+import { getAcademicYearLabel, getAcademicYearOptions, getAcademicYearRange } from "@/shared/calendar/academic-year";
 import { computeDefaultConfig } from "@/shared/calendar/rules";
 import { createEventSchema, type TEventFormData } from "@/features/calendar/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -58,7 +58,7 @@ export default function AddEditEventDialog({ children, startDate, startTime, eve
   const { isOpen, onClose, onToggle } = useDisclosure();
   const { addEvent, updateEvent, users, eventEnums, canEditEvents, allEvents, academicYearStart } = useCalendar();
   const yearEvents = useMemo(
-    () => allEvents.filter((e) => getEventAcademicYearStart(e) === academicYearStart),
+    () => allEvents.filter((e) => e.academicYearStart === academicYearStart),
     [allEvents, academicYearStart],
   );
   const isEditing = !!event;
@@ -70,8 +70,8 @@ export default function AddEditEventDialog({ children, startDate, startTime, eve
   );
 
   const defaultValues = useMemo(
-    () => getEventFormDefaults(event, initialDates),
-    [event, initialDates],
+    () => getEventFormDefaults(event, initialDates, academicYearStart),
+    [event, initialDates, academicYearStart],
   );
 
   const form = useForm({
@@ -83,6 +83,43 @@ export default function AddEditEventDialog({ children, startDate, startTime, eve
     control: form.control,
     name: "occurrences",
   });
+
+  const watchedOccurrences = useWatch({ control: form.control, name: "occurrences" });
+
+  const eligibleAcademicYearOptions = useMemo(() => {
+    const occurrenceDates = (watchedOccurrences ?? [])
+      .flatMap((o) => [o.startDate, o.endDate])
+      .filter((d): d is Date => d instanceof Date && !Number.isNaN(d.getTime()));
+
+    if (occurrenceDates.length === 0) {
+      return getAcademicYearOptions(event?.academicYearStart ?? academicYearStart, 2);
+    }
+
+    const minDate = new Date(Math.min(...occurrenceDates.map((d) => d.getTime())));
+    const maxDate = new Date(Math.max(...occurrenceDates.map((d) => d.getTime())));
+
+    const candidateYears = getAcademicYearOptions(minDate.getFullYear(), 3);
+    return candidateYears.filter((year) => {
+      const range = getAcademicYearRange(year);
+      return minDate >= new Date(range.startDate) && maxDate <= new Date(range.endDate);
+    });
+  }, [watchedOccurrences, event?.academicYearStart, academicYearStart]);
+
+  const hasMountedEligibilityCheck = useRef(false);
+  useEffect(() => {
+    if (!hasMountedEligibilityCheck.current) {
+      hasMountedEligibilityCheck.current = true;
+      return;
+    }
+
+    if (eligibleAcademicYearOptions.length === 0) return;
+
+    const current = form.getValues("academicYearStart");
+    if (!eligibleAcademicYearOptions.includes(current)) {
+      form.setValue("academicYearStart", eligibleAcademicYearOptions[0], { shouldValidate: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eligibleAcademicYearOptions]);
 
   const activeRules = useWatch({ control: form.control, name: "rules" }) ?? [];
   const availableRuleDefs = eventEnums.rules.filter(
@@ -113,12 +150,8 @@ export default function AddEditEventDialog({ children, startDate, startTime, eve
   };
 
   useEffect(() => {
-    // Resetting whenever `defaultValues` changes reference (rather than only
-    // when the dialog opens) would wipe in-progress edits any time an
-    // ancestor re-renders with a new `event`/`startTime` object while the
-    // dialog is still open - form.reset() only makes sense at the moment we
-    // start editing a (possibly new) target.
     if (isOpen) {
+      hasMountedEligibilityCheck.current = false;
       form.reset(defaultValues);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -238,6 +271,34 @@ export default function AddEditEventDialog({ children, startDate, startTime, eve
               />
 
               <div className="grid gap-4 grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="academicYearStart"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="required">{t("calendar.dialogs.addEditEvent.fields.academicYear")}</FormLabel>
+                      <FormControl>
+                        <Select
+                          value={String(field.value)}
+                          onValueChange={(value) => field.onChange(Number(value))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {eligibleAcademicYearOptions.map((year) => (
+                              <SelectItem value={String(year)} key={year}>
+                                {getAcademicYearLabel(year)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="category"

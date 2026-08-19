@@ -62,6 +62,7 @@ export const calendar = {
         namePlaceholder: "Introduza o nome do evento",
         objective: "Objetivo",
         objectivePlaceholder: "Descreva o objetivo do evento",
+        academicYear: "Ano letivo",
         category: "Categoria",
         categoryPlaceholder: "Selecione a categoria",
         classification: "Classificação",

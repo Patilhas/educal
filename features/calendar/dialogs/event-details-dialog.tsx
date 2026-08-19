@@ -16,7 +16,6 @@ import { useCalendar } from "@/features/calendar/contexts/calendar-context";
 import AddEditEventDialog from "@/features/calendar/dialogs/add-edit-event-dialog";
 import DeleteEventDialog from "@/features/calendar/dialogs/delete-event-dialog";
 import { formatTime, getEventCategoryLabel } from "@/features/calendar/helpers";
-import { getEventAcademicYearStart } from "@/shared/calendar/academic-year";
 import type { IEvent, IOccurrence } from "@/shared/calendar/types";
 import type { EventGapConstraint } from "@/features/calendar/components/event-constraint-list";
 import { useTranslations } from "@/i18n/use-translations";
@@ -42,7 +41,7 @@ function MetaField({ label, value }: { label: string; value: string }) {
 
 export default function EventDetailsDialog({ event, occurrence, children, open, onOpenChange }: IProps) {
   const { use24HourFormat, canEditEvents, eventEnums, allEvents, academicYearStart } = useCalendar();
-  const yearEvents = allEvents.filter((e) => getEventAcademicYearStart(e) === academicYearStart);
+  const yearEvents = allEvents.filter((e) => e.academicYearStart === academicYearStart);
   const { t } = useTranslations();
 
   const displayOccurrence = occurrence || event.occurrences[0];

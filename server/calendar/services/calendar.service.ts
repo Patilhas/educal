@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getAcademicYearRange, getEventAcademicYearStart, shiftDateByYears } from "@/shared/calendar/academic-year";
+import { getAcademicYearRange, shiftDateByYears } from "@/shared/calendar/academic-year";
 import { validateEventRule, getRulesMetadata, minDurationRule, minDaysToNextRule } from "@/server/calendar/rules";
 import type { IRuleViolation } from "@/server/calendar/rules/types";
 import type {
@@ -59,6 +59,7 @@ export class CalendarService {
       id: 0,
       name: parsed.name,
       objective: parsed.objective,
+      academicYearStart,
       category: parsed.category,
       classification: parsed.classification,
       status: parsed.status,
@@ -100,6 +101,7 @@ export class CalendarService {
       id: eventId,
       name: parsed.name,
       objective: parsed.objective,
+      academicYearStart: targetAcademicYearStart,
       category: parsed.category,
       classification: parsed.classification,
       status: parsed.status,
@@ -119,8 +121,7 @@ export class CalendarService {
     };
 
     // If academic year changed, remove from old and insert into new academic year
-    const existingAcademicYearStart = getEventAcademicYearStart({ occurrences: existing.occurrences });
-    if (existingAcademicYearStart !== targetAcademicYearStart) {
+    if (existing.academicYearStart !== targetAcademicYearStart) {
       // delete existing event and insert into target year
       const deleted = await calendarData.deleteEvent(eventId);
       if (!deleted) throw new DomainError("NOT_FOUND", 404, "Evento não encontrado");
@@ -144,7 +145,7 @@ export class CalendarService {
       calendarData.listVacations(academicYearStart),
     ]);
     const academicYearEvents = events.filter(
-      (event) => getEventAcademicYearStart(event) === academicYearStart,
+      (event) => event.academicYearStart === academicYearStart,
     );
 
     const issues = academicYearEvents.flatMap((event) =>
@@ -196,10 +197,10 @@ export class CalendarService {
     const allEvents = await calendarData.listEvents();
 
     const sourceEvents = allEvents.filter(
-      (event) => getEventAcademicYearStart({ occurrences: event.occurrences }) === sourceAcademicYearStart,
+      (event) => event.academicYearStart === sourceAcademicYearStart,
     );
     const targetEvents = allEvents.filter(
-      (event) => getEventAcademicYearStart({ occurrences: event.occurrences }) === targetAcademicYearStart,
+      (event) => event.academicYearStart === targetAcademicYearStart,
     );
 
     const existingSignatures = new Set(
@@ -344,10 +345,11 @@ export class CalendarService {
   }
 
   private cloneEventForAcademicYear(event: IEvent, academicYearStart: number): IEvent {
-    const delta = academicYearStart - getEventAcademicYearStart({ occurrences: event.occurrences });
+    const delta = academicYearStart - event.academicYearStart;
     return {
       ...structuredClone(event),
       id: 0,
+      academicYearStart,
       occurrences: event.occurrences.map((occurrence) => ({
         id: crypto.randomUUID(),
         description: occurrence.description,
@@ -364,7 +366,7 @@ export class CalendarService {
     return JSON.stringify({
       name: event.name,
       objective: event.objective,
-      academicYearStart: getEventAcademicYearStart({ occurrences: event.occurrences }),
+      academicYearStart: event.academicYearStart,
       category: event.category,
       classification: event.classification,
       status: event.status,

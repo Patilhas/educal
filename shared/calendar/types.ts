@@ -95,6 +95,7 @@ export interface IEvent {
   id: number;
   name: string;
   objective: string;
+  academicYearStart: number;
   category: TEventCategory;
   classification: TEventClassification;
   status: TEventStatus;

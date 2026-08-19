@@ -83,6 +83,7 @@ function makeEvent(overrides: Partial<IEvent> = {}): IEvent {
     id: 1,
     name: "Test Event",
     objective: "",
+    academicYearStart: 2026,
     category: "generic",
     classification: "generic",
     status: "active",

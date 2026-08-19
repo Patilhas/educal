@@ -9,7 +9,6 @@ import {
   updateOccurrenceRequest,
 } from "@/features/calendar/client-requests";
 import { useLocalStorage } from "@/features/calendar/hooks";
-import { getEventAcademicYearStart } from "@/shared/calendar/academic-year";
 import type { IEvent, IEventEnums, IVacationPeriod, TEventCategory } from "@/shared/calendar/types";
 import type { IUser } from "@/shared/user/types";
 import { canManageCalendarEvents } from "@/shared/user/roles";
@@ -20,6 +19,7 @@ import { registerRuleTranslations } from "@/i18n/register-rules";
 interface ICalendarContext {
   selectedDate: Date;
   academicYearStart: number;
+  setAcademicYearStart: (academicYearStart: number) => void;
   view: TCalendarView;
   setView: (view: TCalendarView) => void;
   agendaModeGroupBy: "date" | "category";
@@ -128,7 +128,7 @@ export function CalendarProvider({
   const [allEvents, setAllEvents] = useState<IEvent[]>(events || []);
   const [vacationsByYear, setVacationsByYear] = useState<Record<number, IVacationPeriod[]>>(initialVacationsByYear);
   const canEditEvents = currentUser ? canManageCalendarEvents(currentUser.role) : false;
-  const academicYearStart = selectedDate.getFullYear();
+  const [academicYearStart, setAcademicYearStart] = useState(new Date().getFullYear());
 
   const categoryColorMap = useMemo(
     () =>
@@ -264,8 +264,7 @@ export function CalendarProvider({
         selectedCategories.length === 0 || selectedCategories.includes(event.category);
       const matchesUser =
         selectedUserId === "all" || event.user.id === selectedUserId;
-      const matchesAcademicYear =
-        getEventAcademicYearStart(event) === academicYearStart;
+      const matchesAcademicYear = event.academicYearStart === academicYearStart;
 
       return matchesCategory && matchesUser && matchesAcademicYear;
     });
@@ -279,6 +278,7 @@ export function CalendarProvider({
   const value = {
     selectedDate,
     academicYearStart,
+    setAcademicYearStart,
     setSelectedDate: handleSelectDate,
     selectedUserId,
     setSelectedUserId,

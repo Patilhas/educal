@@ -1,4 +1,5 @@
 import type { IEvent, IAcademicYear } from "@/shared/calendar/types";
+import { getAcademicYearRange } from "@/shared/calendar/academic-year";
 import type {
   ICategory,
   IClassification,
@@ -147,11 +148,13 @@ const createRandomOccurrence = (startRange: Date, endRange: Date): IEvent["occur
 const createEvent = (
   id: number,
   occurrences: IEvent["occurrences"],
+  academicYearStart: number,
 ): IEvent => {
   return {
     id,
     name: randomArrayItem(eventNames),
     objective: randomArrayItem(EVENT_OBJECTIVES),
+    academicYearStart,
     category: randomArrayItem(CATEGORIES_SEED).value,
     classification: randomArrayItem(CLASSIFICATIONS_SEED).value,
     status: randomArrayItem(STATUSES_SEED).name,
@@ -162,7 +165,7 @@ const createEvent = (
   };
 };
 
-const generateEvents = (totalOccurrencesTarget: number): IEvent[] => {
+const generateEvents = (totalOccurrencesTarget: number, academicYearStart: number): IEvent[] => {
   if (totalOccurrencesTarget <= 0) {
     return [];
   }
@@ -190,7 +193,7 @@ const generateEvents = (totalOccurrencesTarget: number): IEvent[] => {
     generatedOccurrences += 1;
   }
 
-  result.push(createEvent(currentId++, firstEventOccurrences));
+  result.push(createEvent(currentId++, firstEventOccurrences, academicYearStart));
 
   while (generatedOccurrences < totalOccurrencesTarget) {
     const remainingOccurrences = totalOccurrencesTarget - generatedOccurrences;
@@ -204,7 +207,7 @@ const generateEvents = (totalOccurrencesTarget: number): IEvent[] => {
       () => createRandomOccurrence(startRange, endRange),
     );
 
-    result.push(createEvent(currentId++, occurrences));
+    result.push(createEvent(currentId++, occurrences, academicYearStart));
     generatedOccurrences += occurrencesCountForEvent;
   }
 
@@ -213,15 +216,16 @@ const generateEvents = (totalOccurrencesTarget: number): IEvent[] => {
 
 export const buildCalendarSeed = (): ICalendarDb => {
   const academicYearStart = new Date().getFullYear();
+  const range = getAcademicYearRange(academicYearStart);
   return {
     academicYears: [
       {
         startYear: academicYearStart,
-        label: `${academicYearStart}/${academicYearStart + 1}`,
-        startDate: new Date(academicYearStart, 0, 1).toISOString(),
-        endDate: new Date(academicYearStart + 1, 8, 30, 23, 59, 59, 999).toISOString(),
+        label: range.label,
+        startDate: range.startDate,
+        endDate: range.endDate,
         vacations: [],
-        events: generateEvents(50),
+        events: generateEvents(50, academicYearStart),
       },
     ],
     categories: structuredClone(CATEGORIES_SEED),
