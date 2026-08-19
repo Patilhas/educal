@@ -56,10 +56,12 @@ export const getInitialDates = ({
 export const getEventFormDefaults = (
   event: IEvent | undefined,
   initialDates: { startDate: Date; endDate: Date },
+  defaultAcademicYearStart: number,
 ): TEventFormData => {
   return {
     name: event?.name ?? "",
     objective: event?.objective ?? "",
+    academicYearStart: event?.academicYearStart ?? defaultAcademicYearStart,
     category: event?.category ?? "",
     classification: event?.classification ?? "",
     status: event?.status ?? "",
@@ -109,6 +111,7 @@ export const formatEventFromForm = ({
     id,
     name: values.name,
     objective: values.objective,
+    academicYearStart: values.academicYearStart,
     category: values.category,
     classification: values.classification,
     status: values.status,

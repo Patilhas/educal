@@ -30,6 +30,7 @@ export const createEventSchema = (t: Translator) => {
   return z.object({
     name: z.string().min(1, t("calendar.dialogs.addEditEvent.validations.eventNameRequired")),
     objective: z.string().min(1, t("calendar.dialogs.addEditEvent.validations.objectiveRequired")),
+    academicYearStart: z.number().int().positive(),
     category: z.string().min(1, t("calendar.dialogs.addEditEvent.validations.categoryRequired")),
     classification: z
       .string()

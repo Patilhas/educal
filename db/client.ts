@@ -11,7 +11,13 @@ if (!connectionString) {
   throw new Error("DATABASE_URL is not set");
 }
 
-const queryClient = postgres(connectionString);
+const globalForDb = globalThis as unknown as { queryClient?: ReturnType<typeof postgres> };
+
+const queryClient = globalForDb.queryClient ?? postgres(connectionString);
+if (process.env.NODE_ENV !== "production") {
+  globalForDb.queryClient = queryClient;
+}
+
 export const db = drizzle(queryClient, { schema });
 
 export type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];

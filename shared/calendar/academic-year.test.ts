@@ -14,12 +14,12 @@ describe("getAcademicYearLabel", () => {
 });
 
 describe("getAcademicYearRange", () => {
-  it("returns Jan 1 of the start year through Sep 30 of the following year", () => {
+  it("returns Jan 1 of the start year through Aug 30 of the following year", () => {
     expect(getAcademicYearRange(2026)).toEqual({
       startYear: 2026,
       label: "2026/2027",
       startDate: "2026-01-01T00:00:00.000Z",
-      endDate: "2027-09-30T23:59:59.999Z",
+      endDate: "2027-08-30T23:59:59.999Z",
     });
   });
 });

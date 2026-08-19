@@ -40,6 +40,7 @@ function toDomainEvent(row: EventWithRelations): IEvent {
     id: row.id,
     name: row.name,
     objective: row.objective,
+    academicYearStart: row.academicYearStart,
     category: row.category,
     classification: row.classification,
     status: row.status,

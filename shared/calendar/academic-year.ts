@@ -6,7 +6,8 @@ export const getAcademicYearLabel = (startYear: number): string => {
 
 export const getAcademicYearRange = (startYear: number): IAcademicYearRange => {
   const startDate = new Date(startYear, 0, 1, 0, 0, 0, 0);
-  const endDate = new Date(startYear + 1, 8, 30, 23, 59, 59, 999);
+  // Date months are 0-indexed (0 = Jan), so 7 = August, not 8 (September).
+  const endDate = new Date(startYear + 1, 7, 30, 23, 59, 59, 999);
 
   return {
     startYear,
