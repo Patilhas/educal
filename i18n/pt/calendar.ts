@@ -213,6 +213,11 @@ export const calendar = {
     TFM: "TFM",
     CANDIDATURAS: "Candidaturas",
     MATRICULAS_INSCRICOES: "Matrículas e Inscrições",
+    PAUTAS: "Pautas",
+    FUCS: "FUCs",
+    REQUERIMENTOS: "Requerimentos e Documentação",
+    RAIDES: "RAIDES",
+    PRESCRICAO: "Prescrição"
   },
   classifications: {
     PLANEAMENTO: "Planeamento",

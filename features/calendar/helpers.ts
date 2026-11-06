@@ -360,6 +360,11 @@ const AGENDA_COLORED_CLASS: Record<TEventColor, string> = {
 		"border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-950 dark:text-orange-300",
 	purple:
 		"border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-950 dark:text-purple-300",
+	teal: "border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-800 dark:bg-teal-950 dark:text-teal-300",
+	pink: "border-pink-200 bg-pink-50 text-pink-700 dark:border-pink-800 dark:bg-pink-950 dark:text-pink-300",
+	indigo:
+		"border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-300",
+	lime: "border-lime-200 bg-lime-50 text-lime-700 dark:border-lime-800 dark:bg-lime-950 dark:text-lime-300",
 };
 
 const MONTH_DOT_CLASS: Record<TEventColor, string> = {
@@ -369,6 +374,10 @@ const MONTH_DOT_CLASS: Record<TEventColor, string> = {
 	blue: "bg-secondary text-foreground [&_svg]:fill-blue-600",
 	orange: "bg-secondary text-foreground [&_svg]:fill-orange-600",
 	purple: "bg-secondary text-foreground [&_svg]:fill-purple-600",
+	teal: "bg-secondary text-foreground [&_svg]:fill-teal-600",
+	pink: "bg-secondary text-foreground [&_svg]:fill-pink-600",
+	indigo: "bg-secondary text-foreground [&_svg]:fill-indigo-600",
+	lime: "bg-secondary text-foreground [&_svg]:fill-lime-600",
 };
 
 const WEEK_COLORED_CLASS: Record<TEventColor, string> = {
@@ -382,6 +391,11 @@ const WEEK_COLORED_CLASS: Record<TEventColor, string> = {
 		"border-orange-200 bg-orange-100/50 text-orange-700 hover:bg-orange-100 dark:border-orange-800 dark:bg-orange-950/50 dark:text-orange-300 dark:hover:bg-orange-950",
 	purple:
 		"border-purple-200 bg-purple-100/50 text-purple-700 hover:bg-purple-100 dark:border-purple-800 dark:bg-purple-950/50 dark:text-purple-300 dark:hover:bg-purple-950",
+	teal: "border-teal-200 bg-teal-100/50 text-teal-700 hover:bg-teal-100 dark:border-teal-800 dark:bg-teal-950/50 dark:text-teal-300 dark:hover:bg-teal-950",
+	pink: "border-pink-200 bg-pink-100/50 text-pink-700 hover:bg-pink-100 dark:border-pink-800 dark:bg-pink-950/50 dark:text-pink-300 dark:hover:bg-pink-950",
+	indigo:
+		"border-indigo-200 bg-indigo-100/50 text-indigo-700 hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-300 dark:hover:bg-indigo-950",
+	lime: "border-lime-200 bg-lime-100/50 text-lime-700 hover:bg-lime-100 dark:border-lime-800 dark:bg-lime-950/50 dark:text-lime-300 dark:hover:bg-lime-950",
 };
 
 const WEEK_DOT_FILL_CLASS: Record<TEventColor, string> = {
@@ -391,6 +405,10 @@ const WEEK_DOT_FILL_CLASS: Record<TEventColor, string> = {
 	blue: "fill-blue-600 dark:fill-blue-500",
 	orange: "fill-orange-600 dark:fill-orange-500",
 	purple: "fill-purple-600 dark:fill-purple-500",
+	teal: "fill-teal-600 dark:fill-teal-500",
+	pink: "fill-pink-600 dark:fill-pink-500",
+	indigo: "fill-indigo-600 dark:fill-indigo-500",
+	lime: "fill-lime-600 dark:fill-lime-500",
 };
 
 const BULLET_CLASS: Record<TEventColor, string> = {
@@ -400,6 +418,10 @@ const BULLET_CLASS: Record<TEventColor, string> = {
 	blue: "bg-blue-600 dark:bg-blue-500",
 	orange: "bg-orange-600 dark:bg-orange-500",
 	purple: "bg-purple-600 dark:bg-purple-500",
+	teal: "bg-teal-600 dark:bg-teal-500",
+	pink: "bg-pink-600 dark:bg-pink-500",
+	indigo: "bg-indigo-600 dark:bg-indigo-500",
+	lime: "bg-lime-600 dark:bg-lime-500",
 };
 
 const AVATAR_BG_CLASS: Record<TEventColor, string> = {
@@ -409,6 +431,10 @@ const AVATAR_BG_CLASS: Record<TEventColor, string> = {
 	blue: "bg-blue-400 dark:bg-blue-600",
 	orange: "bg-orange-400 dark:bg-orange-600",
 	purple: "bg-purple-400 dark:bg-purple-600",
+	teal: "bg-teal-400 dark:bg-teal-600",
+	pink: "bg-pink-400 dark:bg-pink-600",
+	indigo: "bg-indigo-400 dark:bg-indigo-600",
+	lime: "bg-lime-400 dark:bg-lime-600",
 };
 
 export const getColorClass = (color: string): string => {
@@ -455,6 +481,10 @@ export const getFilterDotColorClass = (color: TEventColor): string => {
 		blue: "bg-blue-600 dark:bg-blue-700",
 		orange: "bg-orange-600 dark:bg-orange-700",
 		purple: "bg-purple-600 dark:bg-purple-700",
+		teal: "bg-teal-600 dark:bg-teal-700",
+		pink: "bg-pink-600 dark:bg-pink-700",
+		indigo: "bg-indigo-600 dark:bg-indigo-700",
+		lime: "bg-lime-600 dark:bg-lime-700",
 	};
 
 	return map[color] || "";
